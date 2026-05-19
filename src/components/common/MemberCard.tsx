@@ -183,7 +183,8 @@ const MemberCard: React.FC<MemberCardProps> = ({
             <VisibilityIcon />
           </IconButton>
         </Tooltip>
-        {canEdit && (
+        {/* Botões de editar e deletar removidos - apenas visualização */}
+        {false && canEdit && (
           <Tooltip title="Editar" arrow>
             <IconButton
               size="small"
@@ -195,7 +196,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
             </IconButton>
           </Tooltip>
         )}
-        {canDelete && (
+        {false && canDelete && (
           <Tooltip title="Excluir" arrow>
             <IconButton
               size="small"

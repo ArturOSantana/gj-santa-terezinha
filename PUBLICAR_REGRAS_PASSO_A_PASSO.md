@@ -1,4 +1,3 @@
-
 # 🚨 URGENTE: Publicar Regras do Firestore - Passo a Passo Visual
 
 ## ⚠️ ERRO ATUAL
@@ -142,3 +141,72 @@ service cloud.firestore {
 
 ## ❌ SE AINDA DER ERRO
 
+### Erro: "Firestore não disponível"
+**Causa**: Você publicou no banco errado
+
+**Solução**:
+1. Volte para Firebase Console
+2. Firestore Database > Regras
+3. Verifique o nome do banco NO TOPO
+4. Deve ser **(default)**
+5. Se não for, mude e publique novamente
+
+### Erro: "Missing or insufficient permissions"
+**Causa**: As regras não foram publicadas corretamente
+
+**Solução**:
+1. Copie as regras novamente
+2. Cole no editor
+3. Clique em "Publicar"
+4. Aguarde 10 segundos
+5. Recarregue o sistema
+
+## 🎯 CHECKLIST FINAL
+
+Antes de testar, confirme:
+- [ ] Acessei Firebase Console
+- [ ] Fui em Firestore Database
+- [ ] Mudei para o banco **(default)**
+- [ ] Fui na aba "Regras"
+- [ ] Verifiquei que estou no banco **(default)**
+- [ ] Deletei as regras antigas
+- [ ] Colei as regras novas
+- [ ] Cliquei em "Publicar"
+- [ ] Aguardei 10 segundos
+- [ ] Recarreguei o sistema
+
+## 📞 INFORMAÇÕES PARA DEBUG
+
+Se ainda não funcionar, me informe:
+
+1. **Qual banco você está usando?**
+   - (default) ou gjterezinha?
+
+2. **As regras foram publicadas?**
+   - Apareceu mensagem de sucesso?
+
+3. **Quanto tempo aguardou?**
+   - Aguardou pelo menos 10 segundos?
+
+4. **Erro no console?**
+   - Copie a mensagem completa
+
+## 🚀 DEPOIS DE PUBLICAR
+
+1. Recarregue o sistema
+2. Vá em /register
+3. Crie um usuário de teste
+4. Verifique se aparece no Firestore
+5. Faça login como admin
+6. Verifique se aparece em /users
+
+## ⚡ ATALHO RÁPIDO
+
+Se você tem Firebase CLI instalado:
+
+```bash
+cd gj-santa-terezinha
+firebase deploy --only firestore:rules --project gjterezinha
+```
+
+Isso publica as regras do arquivo `firestore.rules` automaticamente!

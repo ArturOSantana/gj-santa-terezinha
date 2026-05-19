@@ -82,23 +82,12 @@ const Members: React.FC = () => {
         >
           <Box>
             <Typography variant="h4" component="h1" gutterBottom>
-              Gestão de Membros
+              Membros do Grupo
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Gerencie os membros do grupo e visualize estatísticas
+              Visualize os membros do grupo e suas informações
             </Typography>
           </Box>
-          {permissions.canCreateMember && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={handleNewMember}
-              fullWidth={isMobile}
-            >
-              Novo Membro
-            </Button>
-          )}
         </Box>
 
         {/* Cards de Estatísticas */}
