@@ -25,10 +25,9 @@ import {
   Cake as CakeIcon,
   CalendarToday as CalendarIcon,
   Person as PersonIcon,
-  CheckCircle as CheckCircleIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import { Member, MemberStatus, Event } from '../../types';
+import { Member, MemberStatus } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -37,7 +36,6 @@ interface MemberDetailsModalProps {
   onClose: () => void;
   onEdit: (member: Member) => void;
   member: Member | null;
-  events?: Event[];
   canEdit?: boolean;
 }
 
@@ -62,31 +60,11 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase();
 };
 
-const calculateAttendanceStats = (memberId: string, events: Event[]) => {
-  const memberEvents = events.filter(event =>
-    event.attendance && event.attendance[memberId]
-  );
-  
-  const totalEvents = memberEvents.length;
-  const presentCount = memberEvents.filter(event => 
-    event.attendance[memberId] === 'present'
-  ).length;
-  
-  const attendanceRate = totalEvents > 0 ? (presentCount / totalEvents) * 100 : 0;
-  
-  return {
-    totalEvents,
-    presentCount,
-    attendanceRate: attendanceRate.toFixed(1),
-  };
-};
-
 const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
   open,
   onClose,
   onEdit,
   member,
-  events = [],
   canEdit = true,
 }) => {
   const theme = useTheme();
@@ -96,7 +74,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
 
   const age = calculateAge(member.birthDate);
   const initials = getInitials(member.name);
-  const stats = calculateAttendanceStats(member.id, events);
 
   // Cores por gênero
   const genderColor = member.gender === 'male' ? '#2196f3' : '#e91e63';
@@ -110,12 +87,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
   };
 
   const statusInfo = statusConfig[member.status];
-
-  // Eventos que o membro participou
-  const memberEvents = events
-    .filter(event => event.attendance && event.attendance[member.id] === 'present')
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 5);
 
   return (
     <Dialog
@@ -252,71 +223,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
             />
           </ListItem>
         </List>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Estatísticas de Presença */}
-        <Typography variant="subtitle2" color="primary" gutterBottom>
-          Estatísticas de Presença
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, my: 2 }}>
-          <Box
-            sx={{
-              flex: 1,
-              p: 2,
-              bgcolor: 'primary.light',
-              color: 'primary.contrastText',
-              borderRadius: 1,
-              textAlign: 'center',
-            }}
-          >
-            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.attendanceRate}%
-            </Typography>
-            <Typography variant="body2">
-              Taxa de Presença
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              flex: 1,
-              p: 2,
-              bgcolor: 'success.light',
-              color: 'success.contrastText',
-              borderRadius: 1,
-              textAlign: 'center',
-            }}
-          >
-            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.presentCount}/{stats.totalEvents}
-            </Typography>
-            <Typography variant="body2">
-              Eventos Participados
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Últimos Eventos */}
-        {memberEvents.length > 0 && (
-          <>
-            <Typography variant="subtitle2" color="primary" gutterBottom sx={{ mt: 2 }}>
-              Últimos Eventos Participados
-            </Typography>
-            <List dense>
-              {memberEvents.map((event) => (
-                <ListItem key={event.id}>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={event.title}
-                    secondary={format(event.date, "dd/MM/yyyy", { locale: ptBR })}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </>
-        )}
 
         {/* Observações */}
         {member.notes && (
