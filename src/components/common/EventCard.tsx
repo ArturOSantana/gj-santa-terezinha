@@ -13,7 +13,8 @@ import {
   AccessTime as TimeIcon,
   LocationOn as LocationIcon,
 } from '@mui/icons-material';
-import { Event, SaturdayType } from '../../types';
+import { Event, EventCategory } from '../../types';
+import { EVENT_CATEGORIES } from '../../utils/constants';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -25,43 +26,22 @@ interface EventCardProps {
 }
 
 const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardProps) => {
-  // Configuração de cores por tipo de sábado
-  const getSaturdayTypeConfig = (type: SaturdayType) => {
-    switch (type) {
-      case SaturdayType.FIRST:
-        return {
-          label: '1º Sábado - Oração',
-          color: '#9c27b0' as const, // Purple
-          bgColor: '#f3e5f5',
-        };
-      case SaturdayType.SECOND:
-        return {
-          label: '2º Sábado - Evento',
-          color: '#ff9800' as const, // Orange
-          bgColor: '#fff3e0',
-        };
-      case SaturdayType.THIRD:
-        return {
-          label: '3º Sábado - Formação I',
-          color: '#2196f3' as const, // Blue
-          bgColor: '#e3f2fd',
-        };
-      case SaturdayType.FOURTH:
-        return {
-          label: '4º Sábado - Formação II',
-          color: '#4caf50' as const, // Green
-          bgColor: '#e8f5e9',
-        };
-      default:
-        return {
-          label: 'Encontro',
-          color: '#757575' as const,
-          bgColor: '#f5f5f5',
-        };
-    }
+  // Configuração de cores por categoria de evento
+  const getCategoryConfig = (category: EventCategory) => {
+    const categoryInfo = EVENT_CATEGORIES[category];
+    const color = categoryInfo?.color || '#757575';
+    
+    // Gera cor de fundo mais clara baseada na cor principal
+    const bgColor = color + '20'; // Adiciona transparência
+    
+    return {
+      label: categoryInfo?.label || 'Evento',
+      color,
+      bgColor,
+    };
   };
 
-  const typeConfig = getSaturdayTypeConfig(event.saturdayType);
+  const categoryConfig = getCategoryConfig(event.category);
 
   // Formata a data do evento
   const formattedDate = format(event.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -72,7 +52,7 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
       sx={{
         height: '100%',
         transition: 'all 0.3s ease',
-        borderLeft: `4px solid ${typeConfig.color}`,
+        borderLeft: `4px solid ${categoryConfig.color}`,
         '&:hover': {
           transform: 'translateY(-2px)',
           boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
@@ -82,11 +62,11 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Chip
-            label={typeConfig.label}
+            label={categoryConfig.label}
             size="small"
             sx={{
-              backgroundColor: typeConfig.bgColor,
-              color: typeConfig.color,
+              backgroundColor: categoryConfig.bgColor,
+              color: categoryConfig.color,
               fontWeight: 600,
               fontSize: '0.75rem',
             }}
@@ -168,24 +148,6 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
           </Box>
         </Box>
 
-        {event.isSpecialEvent && (
-          <Box sx={{ mt: 2 }}>
-            <Chip
-              label="Evento Especial"
-              size="small"
-              color="secondary"
-              sx={{ fontWeight: 500 }}
-            />
-          </Box>
-        )}
-
-        {event.attendees.length > 0 && (
-          <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="body2" color="text.secondary">
-              {event.attendees.length} {event.attendees.length === 1 ? 'participante' : 'participantes'}
-            </Typography>
-          </Box>
-        )}
       </CardContent>
     </Card>
   );

@@ -3,7 +3,8 @@ import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Event, SaturdayType } from '../../types';
+import { Event, EventCategory } from '../../types';
+import { EVENT_CATEGORIES } from '../../utils/constants';
 import { Box } from '@mui/material';
 
 // Configuração do localizador para português
@@ -84,25 +85,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     };
   });
 
-  // Função para estilizar eventos baseado no tipo de sábado
+  // Função para estilizar eventos baseado na categoria
   const eventStyleGetter = (event: CalendarEvent) => {
-    const saturdayType = event.resource.saturdayType;
-    let backgroundColor = '#3174ad';
-
-    switch (saturdayType) {
-      case SaturdayType.FIRST:
-        backgroundColor = '#9c27b0'; // Purple - Oração
-        break;
-      case SaturdayType.SECOND:
-        backgroundColor = '#ff9800'; // Orange - Grande Evento
-        break;
-      case SaturdayType.THIRD:
-        backgroundColor = '#2196f3'; // Blue - Formação I
-        break;
-      case SaturdayType.FOURTH:
-        backgroundColor = '#4caf50'; // Green - Formação II
-        break;
-    }
+    const category = event.resource.category;
+    const categoryInfo = EVENT_CATEGORIES[category];
+    const backgroundColor = categoryInfo?.color || '#3174ad';
 
     return {
       style: {

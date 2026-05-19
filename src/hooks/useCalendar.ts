@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Event, SaturdayType } from '../types';
+import { Event, EventCategory } from '../types';
 import { View } from 'react-big-calendar';
 import { firestoreService } from '../services/firestore.service';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,11 +13,13 @@ export const useCalendar = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [filters, setFilters] = useState<SaturdayType[]>([
-    SaturdayType.FIRST,
-    SaturdayType.SECOND,
-    SaturdayType.THIRD,
-    SaturdayType.FOURTH,
+  const [filters, setFilters] = useState<EventCategory[]>([
+    EventCategory.SATURDAY,
+    EventCategory.SOLEMNITY,
+    EventCategory.SAINT_DAY,
+    EventCategory.BIRTHDAY,
+    EventCategory.PARISH_EVENT,
+    EventCategory.NOVENA,
   ]);
   const [view, setView] = useState<View>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -54,7 +56,7 @@ export const useCalendar = () => {
   // Filtra eventos baseado nos filtros selecionados
   useEffect(() => {
     const filtered = events.filter((event) =>
-      filters.includes(event.saturdayType)
+      filters.includes(event.category)
     );
     setFilteredEvents(filtered);
   }, [events, filters]);
@@ -144,10 +146,10 @@ export const useCalendar = () => {
   );
 
   /**
-   * Atualiza os filtros de tipo de sábado
+   * Atualiza os filtros de categoria de evento
    */
-  const handleFilterChange = useCallback((types: SaturdayType[]) => {
-    setFilters(types);
+  const handleFilterChange = useCallback((categories: EventCategory[]) => {
+    setFilters(categories);
   }, []);
 
   /**
@@ -216,14 +218,16 @@ export const useCalendar = () => {
    * Alterna todos os filtros
    */
   const handleToggleAllFilters = useCallback(() => {
-    if (filters.length === 4) {
+    if (filters.length === 6) {
       setFilters([]);
     } else {
       setFilters([
-        SaturdayType.FIRST,
-        SaturdayType.SECOND,
-        SaturdayType.THIRD,
-        SaturdayType.FOURTH,
+        EventCategory.SATURDAY,
+        EventCategory.SOLEMNITY,
+        EventCategory.SAINT_DAY,
+        EventCategory.BIRTHDAY,
+        EventCategory.PARISH_EVENT,
+        EventCategory.NOVENA,
       ]);
     }
   }, [filters]);

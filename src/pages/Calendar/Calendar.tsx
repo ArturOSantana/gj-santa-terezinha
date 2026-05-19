@@ -24,7 +24,8 @@ import CalendarView from '../../components/common/CalendarView';
 import EventDetailsModal from '../../components/common/EventDetailsModal';
 import EventFormModal from '../../components/common/EventFormModal';
 import { useCalendar } from '../../hooks/useCalendar';
-import { SaturdayType } from '../../types';
+import { EventCategory } from '../../types';
+import { EVENT_CATEGORIES } from '../../utils/constants';
 
 const Calendar: React.FC = () => {
   const theme = useTheme();
@@ -62,36 +63,15 @@ const Calendar: React.FC = () => {
     permissions,
   } = useCalendar();
 
-  // Informações dos tipos de sábado
-  const saturdayTypes = [
-    {
-      type: SaturdayType.FIRST,
-      label: '1º Sábado',
-      description: 'Oração e Espiritualidade',
-      color: '#9c27b0',
-    },
-    {
-      type: SaturdayType.SECOND,
-      label: '2º Sábado',
-      description: 'Grande Evento/Convivência',
-      color: '#ff9800',
-    },
-    {
-      type: SaturdayType.THIRD,
-      label: '3º Sábado',
-      description: 'Formação I - Doutrinário',
-      color: '#2196f3',
-    },
-    {
-      type: SaturdayType.FOURTH,
-      label: '4º Sábado',
-      description: 'Formação II - Aprofundamento',
-      color: '#4caf50',
-    },
-  ];
+  // Informações das categorias de eventos
+  const eventCategories = Object.entries(EVENT_CATEGORIES).map(([key, value]) => ({
+    type: key as EventCategory,
+    label: value.label,
+    color: value.color,
+  }));
 
   // Manipula mudança de filtros
-  const handleFilterToggle = (type: SaturdayType) => {
+  const handleFilterToggle = (type: EventCategory) => {
     const newFilters = filters.includes(type)
       ? filters.filter((f) => f !== type)
       : [...filters, type];
@@ -241,29 +221,29 @@ const Calendar: React.FC = () => {
                     onClick={handleToggleAllFilters}
                     sx={{ textTransform: 'none' }}
                   >
-                    {filters.length === 4 ? 'Limpar' : 'Todos'}
+                    {filters.length === eventCategories.length ? 'Limpar' : 'Todos'}
                   </Button>
                 </Box>
 
                 <FormGroup>
-                  {saturdayTypes.map((type) => (
+                  {eventCategories.map((category) => (
                     <FormControlLabel
-                      key={type.type}
+                      key={category.type}
                       control={
                         <Checkbox
-                          checked={filters.includes(type.type)}
-                          onChange={() => handleFilterToggle(type.type)}
+                          checked={filters.includes(category.type)}
+                          onChange={() => handleFilterToggle(category.type)}
                           sx={{
-                            color: type.color,
+                            color: category.color,
                             '&.Mui-checked': {
-                              color: type.color,
+                              color: category.color,
                             },
                           }}
                         />
                       }
                       label={
                         <Typography variant="body2">
-                          {type.label}
+                          {category.label}
                         </Typography>
                       }
                     />
@@ -279,9 +259,9 @@ const Calendar: React.FC = () => {
                   Legenda
                 </Typography>
                 <Stack spacing={1.5}>
-                  {saturdayTypes.map((type) => (
+                  {eventCategories.map((category) => (
                     <Box
-                      key={type.type}
+                      key={category.type}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -293,7 +273,7 @@ const Calendar: React.FC = () => {
                           width: 16,
                           height: 16,
                           borderRadius: 1,
-                          backgroundColor: type.color,
+                          backgroundColor: category.color,
                           flexShrink: 0,
                         }}
                       />
@@ -302,14 +282,7 @@ const Calendar: React.FC = () => {
                           variant="body2"
                           sx={{ fontWeight: 600, lineHeight: 1.2 }}
                         >
-                          {type.label}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ lineHeight: 1.2 }}
-                        >
-                          {type.description}
+                          {category.label}
                         </Typography>
                       </Box>
                     </Box>

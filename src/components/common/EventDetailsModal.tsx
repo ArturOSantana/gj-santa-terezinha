@@ -20,9 +20,9 @@ import {
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
   LocationOn as LocationIcon,
-  People as PeopleIcon,
 } from '@mui/icons-material';
-import { Event, SaturdayType } from '../../types';
+import { Event, EventCategory } from '../../types';
+import { EVENT_CATEGORIES } from '../../utils/constants';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -36,19 +36,12 @@ interface EventDetailsModalProps {
   canDelete?: boolean;
 }
 
-const getSaturdayTypeInfo = (type: SaturdayType) => {
-  switch (type) {
-    case SaturdayType.FIRST:
-      return { color: '#9c27b0', label: '1º Sábado - Oração e Espiritualidade' };
-    case SaturdayType.SECOND:
-      return { color: '#ff9800', label: '2º Sábado - Grande Evento/Convivência' };
-    case SaturdayType.THIRD:
-      return { color: '#2196f3', label: '3º Sábado - Formação I - Doutrinário' };
-    case SaturdayType.FOURTH:
-      return { color: '#4caf50', label: '4º Sábado - Formação II - Aprofundamento' };
-    default:
-      return { color: '#757575', label: 'Tipo desconhecido' };
-  }
+const getCategoryInfo = (category: EventCategory) => {
+  const categoryInfo = EVENT_CATEGORIES[category];
+  return {
+    color: categoryInfo?.color || '#757575',
+    label: categoryInfo?.label || 'Evento',
+  };
 };
 
 const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
@@ -65,7 +58,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
   if (!event) return null;
 
-  const saturdayTypeInfo = getSaturdayTypeInfo(event.saturdayType);
+  const categoryInfo = getCategoryInfo(event.category);
   const formattedDate = format(event.date, "EEEE, dd 'de' MMMM 'de' yyyy", {
     locale: ptBR,
   });
@@ -119,24 +112,17 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
           {event.title}
         </Typography>
 
-        {/* Tipo de Sábado */}
+        {/* Categoria do Evento */}
         <Box sx={{ mb: 3 }}>
           <Chip
-            label={saturdayTypeInfo.label}
+            label={categoryInfo.label}
             sx={{
-              backgroundColor: saturdayTypeInfo.color,
-              color: 'white',
+              backgroundColor: categoryInfo.color + '20',
+              color: categoryInfo.color,
               fontWeight: 500,
               fontSize: '0.875rem',
             }}
           />
-          {event.isSpecialEvent && (
-            <Chip
-              label="Evento Especial"
-              color="secondary"
-              sx={{ ml: 1, fontWeight: 500 }}
-            />
-          )}
         </Box>
 
         {/* Data */}
@@ -174,19 +160,6 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
               {event.location}
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Participantes */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <PeopleIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Participantes Confirmados
-            </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {event.attendees.length} pessoa(s)
             </Typography>
           </Box>
         </Box>

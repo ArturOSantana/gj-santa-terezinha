@@ -13,11 +13,10 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  FormControlLabel,
-  Switch,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { Event, SaturdayType } from '../../types';
+import { Event, EventCategory } from '../../types';
+import { EVENT_CATEGORY_OPTIONS } from '../../utils/constants';
 import { format } from 'date-fns';
 
 interface EventFormModalProps {
@@ -30,26 +29,6 @@ interface EventFormModalProps {
   readOnly?: boolean;
 }
 
-const getSaturdayTypeFromDate = (date: Date): SaturdayType => {
-  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-  const firstSaturday = new Date(firstDayOfMonth);
-  
-  // Encontra o primeiro sábado do mês
-  while (firstSaturday.getDay() !== 6) {
-    firstSaturday.setDate(firstSaturday.getDate() + 1);
-  }
-  
-  // Calcula qual sábado do mês é a data fornecida
-  const daysDiff = Math.floor((date.getTime() - firstSaturday.getTime()) / (1000 * 60 * 60 * 24));
-  const saturdayNumber = Math.floor(daysDiff / 7) + 1;
-  
-  // Retorna o tipo de sábado (1-4)
-  if (saturdayNumber >= 1 && saturdayNumber <= 4) {
-    return saturdayNumber as SaturdayType;
-  }
-  
-  return SaturdayType.FIRST;
-};
 
 const EventFormModal: React.FC<EventFormModalProps> = ({
   event,
@@ -72,8 +51,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
     startTime: '18:00',
     endTime: '21:15',
     location: 'Paróquia Santa Terezinha',
-    saturdayType: SaturdayType.FIRST,
-    isSpecialEvent: false,
+    category: EventCategory.SATURDAY,
     notes: '',
   });
 
@@ -89,28 +67,16 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         startTime: event.startTime,
         endTime: event.endTime,
         location: event.location,
-        saturdayType: event.saturdayType,
-        isSpecialEvent: event.isSpecialEvent,
+        category: event.category,
         notes: event.notes || '',
       });
     } else if (initialDate) {
-      const suggestedType = getSaturdayTypeFromDate(initialDate);
       setFormData((prev) => ({
         ...prev,
         date: format(initialDate, 'yyyy-MM-dd'),
-        saturdayType: suggestedType,
       }));
     }
   }, [event, initialDate, open]);
-
-  // Atualiza o tipo de sábado quando a data muda
-  const handleDateChange = (newDate: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      date: newDate,
-      saturdayType: getSaturdayTypeFromDate(new Date(newDate)),
-    }));
-  };
 
   // Valida o formulário
   const validateForm = (): boolean => {
@@ -178,10 +144,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       startTime: formData.startTime,
       endTime: formData.endTime,
       location: formData.location.trim(),
-      saturdayType: formData.saturdayType,
-      isSpecialEvent: formData.isSpecialEvent,
-      attendees: event?.attendees || [],
-      attendance: event?.attendance || {},
+      category: formData.category,
       notes: formData.notes.trim(),
     };
 
@@ -203,8 +166,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       startTime: '18:00',
       endTime: '21:15',
       location: 'Paróquia Santa Terezinha',
-      saturdayType: SaturdayType.FIRST,
-      isSpecialEvent: false,
+      category: EventCategory.SATURDAY,
       notes: '',
     });
     setErrors({});
@@ -279,7 +241,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             label="Data"
             type="date"
             value={formData.date}
-            onChange={(e) => handleDateChange(e.target.value)}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             disabled={readOnly}
             error={!!errors.date}
             helperText={errors.date}
@@ -334,34 +296,22 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             fullWidth
           />
 
-          {/* Tipo de Sábado */}
+          {/* Categoria do Evento */}
           <TextField
-            label="Tipo de Sábado"
+            label="Categoria do Evento"
             select
-            value={formData.saturdayType}
-            onChange={(e) => setFormData({ ...formData, saturdayType: Number(e.target.value) as SaturdayType })}
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value as EventCategory })}
             disabled={readOnly}
             required
             fullWidth
           >
-            <MenuItem value={SaturdayType.FIRST}>1º Sábado - Oração e Espiritualidade</MenuItem>
-            <MenuItem value={SaturdayType.SECOND}>2º Sábado - Grande Evento/Convivência</MenuItem>
-            <MenuItem value={SaturdayType.THIRD}>3º Sábado - Formação I - Doutrinário</MenuItem>
-            <MenuItem value={SaturdayType.FOURTH}>4º Sábado - Formação II - Aprofundamento</MenuItem>
+            {EVENT_CATEGORY_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
           </TextField>
-
-          {/* Evento Especial */}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.isSpecialEvent}
-                onChange={(e) => setFormData({ ...formData, isSpecialEvent: e.target.checked })}
-                disabled={readOnly}
-                color="primary"
-              />
-            }
-            label="Marcar como evento especial"
-          />
 
           {/* Observações */}
           <TextField
