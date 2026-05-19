@@ -16,7 +16,6 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -26,7 +25,7 @@ import {
   isValidName,
 } from '../../utils/validation';
 import brasaoGJ from '../../assets/brasao-gj.png';
-//MDS!
+
 export const Register: React.FC = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();

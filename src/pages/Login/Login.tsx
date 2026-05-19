@@ -15,7 +15,6 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  Login as LoginIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { isValidEmail } from '../../utils/validation';
