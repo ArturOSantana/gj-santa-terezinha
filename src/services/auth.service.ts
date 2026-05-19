@@ -13,6 +13,7 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { User, UserRole, AuthUser } from '../types';
@@ -149,20 +150,17 @@ export const signUp = async (
 
     if (await isFirestoreAvailable()) {
       try {
-        const userData: User = {
+        // Converter birthDate para Timestamp do Firestore
+        const birthDateTimestamp = Timestamp.fromDate(birthDate);
+        
+        await setDoc(doc(db, 'users', user.uid), {
           id: user.uid,
           email: email,
           displayName: displayName,
           phone: phone,
-          birthDate: birthDate,
+          birthDate: birthDateTimestamp,
           role: finalRole,
-          photoUrl: undefined,
-          createdAt: new Date(),
-          lastLogin: new Date(),
-        };
-
-        await setDoc(doc(db, 'users', user.uid), {
-          ...userData,
+          photoUrl: null,
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
         });

@@ -34,8 +34,10 @@
         // Leitura de lista: apenas admin
         allow list: if isAdmin();
         
-        // Criação: próprio usuário (durante registro) ou admin
-        allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        // Criação: qualquer usuário autenticado pode criar seu próprio documento
+        // OU admin pode criar para qualquer um
+        allow create: if (request.auth != null && request.auth.uid == userId) ||
+                        (isAuthenticated() && isAdmin());
         
         // Atualização: admin pode tudo, usuário pode atualizar seus próprios dados de perfil
         allow update: if isAdmin() ||
