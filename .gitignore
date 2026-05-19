@@ -62,3 +62,4 @@ coverage
 scripts/
 
 # Made with Bob
+.env*.local

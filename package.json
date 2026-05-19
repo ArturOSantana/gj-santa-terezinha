@@ -6,11 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:check": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "migrate": "tsx scripts/migrate-to-firestore.ts",
-    "migrate:admin": "tsx scripts/migrate-with-admin.ts"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

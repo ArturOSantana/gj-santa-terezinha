@@ -112,12 +112,6 @@ const FirebaseConfigWarning: React.FC = () => {
             </Button>
           </Box>
 
-          <Alert severity="info" sx={{ mt: 3 }}>
-            <AlertTitle>Documentação</AlertTitle>
-            Consulte o arquivo <strong>SOLUCAO_ERRO_API_KEY.md</strong> na raiz do projeto
-            para instruções detalhadas.
-          </Alert>
-
           <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
             <strong>Erro técnico:</strong> Firebase API Key não válida ou com restrições.
             <br />
@@ -130,5 +124,3 @@ const FirebaseConfigWarning: React.FC = () => {
 };
 
 export default FirebaseConfigWarning;
-
-// Made with Bob
