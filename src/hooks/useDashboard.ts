@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { DashboardStats, Event, Activity, AttendanceStatus, Member, Transaction, TransactionType } from '../types';
+import { DashboardStats, Event, Activity, Member, Transaction, TransactionType } from '../types';
 import { firestoreService } from '../services/firestore.service';
 import { useAuth } from '../contexts/AuthContext';
 import { canView } from '../utils/permissions';
@@ -96,27 +96,11 @@ export const useDashboard = () => {
         }, 0)
       : 0;
 
-    const eventsWithAttendance = events.filter(
-      (event) => event.attendance && Object.keys(event.attendance).length > 0
-    );
-
-    const attendanceRate =
-      eventsWithAttendance.length > 0
-        ? eventsWithAttendance.reduce((acc, event) => {
-            const total = Object.keys(event.attendance).length;
-            const present = Object.values(event.attendance).filter(
-              (status) => status === AttendanceStatus.PRESENT
-            ).length;
-
-            return acc + (total > 0 ? (present / total) * 100 : 0);
-          }, 0) / eventsWithAttendance.length
-        : 0;
-
     return {
       totalMembers,
       nextEvent,
       balance,
-      attendanceRate: Math.round(attendanceRate * 10) / 10,
+      attendanceRate: 0, // Funcionalidade de presença removida
     };
   }, [user, members, events, transactions]);
 

@@ -12,5 +12,4 @@ export { default as MemberFormModal } from './MemberFormModal';
 export { default as MemberDetailsModal } from './MemberDetailsModal';
 export { UserCard } from './UserCard';
 export { UserRoleModal } from './UserRoleModal';
-export { default as AttendanceDialog } from './AttendanceDialog';
 
