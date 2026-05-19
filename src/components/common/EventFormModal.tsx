@@ -27,11 +27,9 @@ interface EventFormModalProps {
   onSave: (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdate?: (id: string, eventData: Partial<Event>) => void;
   initialDate?: Date;
+  readOnly?: boolean;
 }
 
-/**
- * Identifica automaticamente o tipo de sábado baseado na data
- */
 const getSaturdayTypeFromDate = (date: Date): SaturdayType => {
   const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
   const firstSaturday = new Date(firstDayOfMonth);
@@ -53,9 +51,6 @@ const getSaturdayTypeFromDate = (date: Date): SaturdayType => {
   return SaturdayType.FIRST;
 };
 
-/**
- * Modal de formulário para criar/editar evento
- */
 const EventFormModal: React.FC<EventFormModalProps> = ({
   event,
   open,
@@ -63,6 +58,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
   onSave,
   onUpdate,
   initialDate,
+  readOnly = false,
 }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -166,6 +162,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
 
   // Submete o formulário
   const handleSubmit = () => {
+    if (readOnly) {
+      handleClose();
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -254,6 +255,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             label="Título"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            disabled={readOnly}
             error={!!errors.title}
             helperText={errors.title}
             required
@@ -266,6 +268,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             label="Descrição"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            disabled={readOnly}
             multiline
             rows={3}
             fullWidth
@@ -277,6 +280,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             type="date"
             value={formData.date}
             onChange={(e) => handleDateChange(e.target.value)}
+            disabled={readOnly}
             error={!!errors.date}
             helperText={errors.date}
             required
@@ -293,6 +297,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
               type="time"
               value={formData.startTime}
               onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+              disabled={readOnly}
               error={!!errors.startTime}
               helperText={errors.startTime}
               required
@@ -306,6 +311,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
               type="time"
               value={formData.endTime}
               onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              disabled={readOnly}
               error={!!errors.endTime}
               helperText={errors.endTime}
               required
@@ -321,6 +327,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             label="Local"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            disabled={readOnly}
             error={!!errors.location}
             helperText={errors.location}
             required
@@ -333,6 +340,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             select
             value={formData.saturdayType}
             onChange={(e) => setFormData({ ...formData, saturdayType: Number(e.target.value) as SaturdayType })}
+            disabled={readOnly}
             required
             fullWidth
           >
@@ -348,6 +356,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
               <Switch
                 checked={formData.isSpecialEvent}
                 onChange={(e) => setFormData({ ...formData, isSpecialEvent: e.target.checked })}
+                disabled={readOnly}
                 color="primary"
               />
             }
@@ -359,6 +368,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             label="Observações"
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            disabled={readOnly}
             multiline
             rows={2}
             fullWidth
@@ -373,9 +383,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         <Button onClick={handleClose} color="inherit">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          {isEditing ? 'Salvar Alterações' : 'Criar Evento'}
-        </Button>
+        {!readOnly && (
+          <Button onClick={handleSubmit} variant="contained" color="primary">
+            {isEditing ? 'Salvar Alterações' : 'Criar Evento'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -383,4 +395,3 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
 
 export default EventFormModal;
 
-// Made with Bob

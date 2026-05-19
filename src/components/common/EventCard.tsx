@@ -17,10 +17,6 @@ import { Event, SaturdayType } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-/**
- * Componente EventCard - Card de Evento
- * Exibe informações de um evento com badge colorido por tipo de sábado
- */
 interface EventCardProps {
   event: Event;
   onEdit?: (event: Event) => void;
@@ -197,4 +193,3 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
 
 export default EventCard;
 
-// Made with Bob

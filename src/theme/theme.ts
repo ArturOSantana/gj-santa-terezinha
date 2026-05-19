@@ -1,27 +1,21 @@
 import { createTheme } from '@mui/material/styles';
 
-/**
- * Tema customizado para o Sistema de Gestão do Grupo de Jovens
- * Paróquia Santa Terezinha
- * 
- * Cores inspiradas na identidade católica e visual moderno
- */
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2', // Azul católico
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#2c5f2d',
+      light: '#4a8f4c',
+      dark: '#1b3a1c',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#dc004e', // Vermelho
-      light: '#e33371',
-      dark: '#9a0036',
-      contrastText: '#ffffff',
+      main: '#d4af37',
+      light: '#e6c966',
+      dark: '#a68b2a',
+      contrastText: '#000000',
     },
     background: {
-      default: '#f5f5f5',
+      default: '#fafafa',
       paper: '#ffffff',
     },
     error: {
@@ -145,4 +139,3 @@ const theme = createTheme({
 
 export default theme;
 
-// Made with Bob

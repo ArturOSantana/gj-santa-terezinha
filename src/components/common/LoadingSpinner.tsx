@@ -1,9 +1,5 @@
 import { Box, CircularProgress } from '@mui/material';
 
-/**
- * Componente de Loading Spinner
- * Exibe um spinner de carregamento centralizado
- */
 interface LoadingSpinnerProps {
   size?: number;
   message?: string;
@@ -33,4 +29,3 @@ const LoadingSpinner = ({ size = 40, message }: LoadingSpinnerProps) => {
 
 export default LoadingSpinner;
 
-// Made with Bob

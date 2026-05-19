@@ -37,18 +37,27 @@ service cloud.firestore {
     // Coordenadores podem ler todos os usuários
     // Apenas o próprio usuário ou admin pode atualizar
     match /users/{userId} {
+      // Qualquer usuário autenticado pode ler QUALQUER documento de usuário
+      // Isso é necessário para que o sistema possa carregar o role do usuário
       allow read: if isAuthenticated();
+      
+      // Apenas o próprio usuário pode criar seu documento
       allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      
+      // Apenas o próprio usuário OU admin pode atualizar
+      // Admin pode atualizar qualquer usuário (para mudar roles)
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Apenas admin pode deletar
       allow delete: if isAdmin();
     }
     
     // Coleção: members
-    // Todos autenticados podem ler
-    // Apenas coordenadores podem criar/editar/deletar
+    // Apenas admin pode visualizar lista completa de membros
+    // Apenas admin pode criar/editar/deletar membros
     match /members/{memberId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isCoordinator();
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
     
     // Coleção: events

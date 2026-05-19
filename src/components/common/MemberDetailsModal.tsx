@@ -28,24 +28,19 @@ import {
   CheckCircle as CheckCircleIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import { Member, MemberStatus } from '../../types';
+import { Member, MemberStatus, Event } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { mockEvents } from '../../utils/mockData';
 
-/**
- * Props do componente MemberDetailsModal
- */
 interface MemberDetailsModalProps {
   open: boolean;
   onClose: () => void;
   onEdit: (member: Member) => void;
   member: Member | null;
+  events?: Event[];
+  canEdit?: boolean;
 }
 
-/**
- * Calcula a idade a partir da data de nascimento
- */
 const calculateAge = (birthDate: Date): number => {
   const today = new Date();
   const birth = new Date(birthDate);
@@ -59,9 +54,6 @@ const calculateAge = (birthDate: Date): number => {
   return age;
 };
 
-/**
- * Gera as iniciais do nome
- */
 const getInitials = (name: string): string => {
   const parts = name.split(' ');
   if (parts.length >= 2) {
@@ -70,11 +62,8 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase();
 };
 
-/**
- * Calcula estatísticas de presença do membro
- */
-const calculateAttendanceStats = (memberId: string) => {
-  const memberEvents = mockEvents.filter(event => 
+const calculateAttendanceStats = (memberId: string, events: Event[]) => {
+  const memberEvents = events.filter(event =>
     event.attendance && event.attendance[memberId]
   );
   
@@ -92,15 +81,13 @@ const calculateAttendanceStats = (memberId: string) => {
   };
 };
 
-/**
- * Componente MemberDetailsModal
- * Modal com detalhes completos de um membro
- */
 const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
   open,
   onClose,
   onEdit,
   member,
+  events = [],
+  canEdit = true,
 }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -109,7 +96,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
 
   const age = calculateAge(member.birthDate);
   const initials = getInitials(member.name);
-  const stats = calculateAttendanceStats(member.id);
+  const stats = calculateAttendanceStats(member.id, events);
 
   // Cores por gênero
   const genderColor = member.gender === 'male' ? '#2196f3' : '#e91e63';
@@ -125,7 +112,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
   const statusInfo = statusConfig[member.status];
 
   // Eventos que o membro participou
-  const memberEvents = mockEvents
+  const memberEvents = events
     .filter(event => event.attendance && event.attendance[member.id] === 'present')
     .sort((a, b) => b.date.getTime() - a.date.getTime())
     .slice(0, 5);
@@ -349,17 +336,19 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
         <Button onClick={onClose} color="inherit">
           Fechar
         </Button>
-        <Button
-          onClick={() => {
-            onEdit(member);
-            onClose();
-          }}
-          variant="contained"
-          color="primary"
-          startIcon={<EditIcon />}
-        >
-          Editar
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={() => {
+              onEdit(member);
+              onClose();
+            }}
+            variant="contained"
+            color="primary"
+            startIcon={<EditIcon />}
+          >
+            Editar
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -367,4 +356,3 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
 
 export default MemberDetailsModal;
 
-// Made with Bob

@@ -20,19 +20,15 @@ import {
 } from '@mui/icons-material';
 import { Member, MemberStatus } from '../../types';
 
-/**
- * Props do componente MemberCard
- */
 interface MemberCardProps {
   member: Member;
   onEdit: (member: Member) => void;
   onDelete: (memberId: string) => void;
   onViewDetails: (member: Member) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-/**
- * Calcula a idade a partir da data de nascimento
- */
 const calculateAge = (birthDate: Date): number => {
   const today = new Date();
   const birth = new Date(birthDate);
@@ -46,9 +42,6 @@ const calculateAge = (birthDate: Date): number => {
   return age;
 };
 
-/**
- * Gera as iniciais do nome
- */
 const getInitials = (name: string): string => {
   const parts = name.split(' ');
   if (parts.length >= 2) {
@@ -57,15 +50,13 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase();
 };
 
-/**
- * Componente MemberCard
- * Exibe informações resumidas de um membro em formato de card
- */
 const MemberCard: React.FC<MemberCardProps> = ({
   member,
   onEdit,
   onDelete,
   onViewDetails,
+  canEdit = true,
+  canDelete = true,
 }) => {
   const age = calculateAge(member.birthDate);
   const initials = getInitials(member.name);
@@ -192,26 +183,30 @@ const MemberCard: React.FC<MemberCardProps> = ({
             <VisibilityIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Editar" arrow>
-          <IconButton
-            size="small"
-            color="primary"
-            onClick={() => onEdit(member)}
-            aria-label="editar membro"
-          >
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Excluir" arrow>
-          <IconButton
-            size="small"
-            color="error"
-            onClick={() => onDelete(member.id)}
-            aria-label="excluir membro"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
+        {canEdit && (
+          <Tooltip title="Editar" arrow>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => onEdit(member)}
+              aria-label="editar membro"
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+        {canDelete && (
+          <Tooltip title="Excluir" arrow>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => onDelete(member.id)}
+              aria-label="excluir membro"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        )}
       </CardActions>
     </Card>
   );
@@ -219,4 +214,3 @@ const MemberCard: React.FC<MemberCardProps> = ({
 
 export default MemberCard;
 
-// Made with Bob

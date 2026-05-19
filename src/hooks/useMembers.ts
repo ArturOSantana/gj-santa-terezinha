@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Member, MemberStatus, Event, AttendanceStatus } from '../types';
-import { mockMembers, mockEvents } from '../utils/mockData';
+import { firestoreService } from '../services/firestore.service';
+import { useAuth } from '../contexts/AuthContext';
+import { canCreate, canDelete, canEdit } from '../utils/permissions';
 
-/**
- * Interface para os filtros de membros
- */
 interface MemberFilters {
   search: string;
   group: 'all' | 'male' | 'female';
@@ -12,23 +11,20 @@ interface MemberFilters {
   ageRange: 'all' | '14-16' | '17-19' | '20-22';
 }
 
-/**
- * Interface para as estatísticas de membros
- */
 interface MemberStats {
   total: number;
   active: number;
   averageAttendance: number;
 }
 
-/**
- * Custom Hook para gerenciar membros
- * Fornece funcionalidades CRUD, filtros e estatísticas
- */
 export const useMembers = () => {
-  // Estado dos membros
+  const { user } = useAuth();
+  
+  // Estado dos membros e eventos
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Estado dos modais
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -44,11 +40,38 @@ export const useMembers = () => {
     ageRange: 'all',
   });
 
-  // Carrega dados mockados na inicialização
+  // Configura listeners em tempo real para membros e eventos
   useEffect(() => {
-    setMembers(mockMembers);
-    setEvents(mockEvents);
-  }, []);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    let unsubscribeMembers: (() => void) | undefined;
+    let unsubscribeEvents: (() => void) | undefined;
+
+    try {
+      unsubscribeMembers = firestoreService.getMembers(user.role, (updatedMembers) => {
+        setMembers(updatedMembers);
+      });
+
+      unsubscribeEvents = firestoreService.getEvents(user.role, (updatedEvents) => {
+        setEvents(updatedEvents);
+        setLoading(false);
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+      setLoading(false);
+    }
+
+    return () => {
+      unsubscribeMembers?.();
+      unsubscribeEvents?.();
+    };
+  }, [user]);
 
   /**
    * Calcula a idade a partir da data de nascimento
@@ -152,53 +175,73 @@ export const useMembers = () => {
   }, [members, events]);
 
   /**
-   * Cria um novo membro
+   * Cria um novo membro no Firestore
    */
-  const handleCreateMember = (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newMember: Member = {
-      ...memberData,
-      id: `member-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    setMembers(prev => [...prev, newMember]);
-    
-    // TODO: Integração com Firebase
-    // await addDoc(collection(db, 'members'), newMember);
-    
-    console.log('Membro criado:', newMember);
+  const handleCreateMember = async (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      setError(null);
+      if (!canCreate(user.role, 'member')) {
+        throw new Error('Usuário não tem permissão para criar membros');
+      }
+
+      await firestoreService.createMember(memberData, user.role);
+      console.log('Membro criado com sucesso');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar membro';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   /**
-   * Atualiza um membro existente
+   * Atualiza um membro existente no Firestore
    */
-  const handleUpdateMember = (id: string, memberData: Partial<Member>) => {
-    setMembers(prev => 
-      prev.map(member => 
-        member.id === id 
-          ? { ...member, ...memberData, updatedAt: new Date() }
-          : member
-      )
-    );
-    
-    // TODO: Integração com Firebase
-    // await updateDoc(doc(db, 'members', id), { ...memberData, updatedAt: new Date() });
-    
-    console.log('Membro atualizado:', id, memberData);
+  const handleUpdateMember = async (id: string, memberData: Partial<Member>) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      setError(null);
+      if (!canEdit(user.role, 'member')) {
+        throw new Error('Usuário não tem permissão para editar membros');
+      }
+
+      await firestoreService.updateMember(id, memberData, user.role);
+      console.log('Membro atualizado com sucesso');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar membro';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   /**
-   * Exclui um membro
+   * Exclui um membro do Firestore
    */
-  const handleDeleteMember = (id: string) => {
+  const handleDeleteMember = async (id: string) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
     if (window.confirm('Tem certeza que deseja excluir este membro?')) {
-      setMembers(prev => prev.filter(member => member.id !== id));
-      
-      // TODO: Integração com Firebase
-      // await deleteDoc(doc(db, 'members', id));
-      
-      console.log('Membro excluído:', id);
+      try {
+        setError(null);
+        if (!canDelete(user.role, 'member')) {
+          throw new Error('Usuário não tem permissão para excluir membros');
+        }
+
+        await firestoreService.deleteMember(id, user.role);
+        console.log('Membro excluído com sucesso');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir membro';
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
     }
   };
 
@@ -210,45 +253,47 @@ export const useMembers = () => {
   };
 
   /**
-   * Registra presença de membros em um evento
+   * Registra presença de membros em um evento no Firestore
    */
-  const handleAttendance = (eventId: string, memberIds: string[]) => {
-    setEvents(prev => 
-      prev.map(event => {
-        if (event.id === eventId) {
-          const newAttendance: { [key: string]: AttendanceStatus } = {};
-          
-          // Marca presentes
-          memberIds.forEach(memberId => {
-            newAttendance[memberId] = AttendanceStatus.PRESENT;
-          });
-          
-          // Marca ausentes (membros ativos que não estão na lista)
-          members
-            .filter(m => m.status === MemberStatus.ACTIVE && !memberIds.includes(m.id))
-            .forEach(member => {
-              newAttendance[member.id] = AttendanceStatus.ABSENT;
-            });
-          
-          return {
-            ...event,
-            attendees: memberIds,
-            attendance: newAttendance,
-            updatedAt: new Date(),
-          };
-        }
-        return event;
-      })
-    );
-    
-    // TODO: Integração com Firebase
-    // await updateDoc(doc(db, 'events', eventId), {
-    //   attendees: memberIds,
-    //   attendance: newAttendance,
-    //   updatedAt: new Date()
-    // });
-    
-    console.log('Presença registrada:', eventId, memberIds);
+  const handleAttendance = async (eventId: string, memberIds: string[]) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      setError(null);
+      
+      // Cria objeto de presença
+      const newAttendance: { [key: string]: AttendanceStatus } = {};
+      
+      // Marca presentes
+      memberIds.forEach(memberId => {
+        newAttendance[memberId] = AttendanceStatus.PRESENT;
+      });
+      
+      // Marca ausentes (membros ativos que não estão na lista)
+      members
+        .filter(m => m.status === MemberStatus.ACTIVE && !memberIds.includes(m.id))
+        .forEach(member => {
+          newAttendance[member.id] = AttendanceStatus.ABSENT;
+        });
+      
+      // Atualiza evento no Firestore
+      await firestoreService.updateEvent(
+        eventId,
+        {
+          attendees: memberIds,
+          attendance: newAttendance,
+        },
+        user.role
+      );
+      
+      console.log('Presença registrada com sucesso');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao registrar presença';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   /**
@@ -278,13 +323,23 @@ export const useMembers = () => {
   /**
    * Salva membro (cria ou atualiza)
    */
-  const handleSaveMember = (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveMember = async (memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (selectedMember) {
-      handleUpdateMember(selectedMember.id, memberData);
+      await handleUpdateMember(selectedMember.id, memberData);
     } else {
-      handleCreateMember(memberData);
+      await handleCreateMember(memberData);
     }
   };
+
+  const permissions = useMemo(
+    () => ({
+      canCreateMember: !!user && canCreate(user.role, 'member'),
+      canEditMember: !!user && canEdit(user.role, 'member'),
+      canDeleteMember: !!user && canDelete(user.role, 'member'),
+      canManageAttendance: !!user && canEdit(user.role, 'event'),
+    }),
+    [user]
+  );
 
   return {
     // Dados
@@ -292,6 +347,8 @@ export const useMembers = () => {
     allMembers: members,
     events,
     selectedMember,
+    loading,
+    error,
     
     // Estados dos modais
     isFormOpen,
@@ -301,6 +358,7 @@ export const useMembers = () => {
     // Filtros e estatísticas
     filters,
     stats,
+    permissions,
     
     // Funções CRUD
     handleCreateMember,
@@ -327,4 +385,3 @@ export const useMembers = () => {
   };
 };
 
-// Made with Bob

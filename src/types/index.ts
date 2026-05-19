@@ -1,15 +1,8 @@
-/**
- * Tipos e Interfaces do Sistema de Gestão do Grupo de Jovens
- * Paróquia Santa Terezinha
- */
 
 // ============================================================================
 // ENUMS
 // ============================================================================
 
-/**
- * Tipo de sábado do mês (1º, 2º, 3º ou 4º)
- */
 export enum SaturdayType {
   FIRST = 1,
   SECOND = 2,
@@ -17,26 +10,17 @@ export enum SaturdayType {
   FOURTH = 4,
 }
 
-/**
- * Status de presença em um evento
- */
 export enum AttendanceStatus {
   PRESENT = 'present',
   ABSENT = 'absent',
   JUSTIFIED = 'justified',
 }
 
-/**
- * Tipo de transação financeira
- */
 export enum TransactionType {
   INCOME = 'income',    // Entrada
   EXPENSE = 'expense',  // Saída
 }
 
-/**
- * Categoria de transação financeira
- */
 export enum TransactionCategory {
   MONTHLY_FEE = 'monthly_fee',        // Mensalidade
   DONATION = 'donation',               // Doação
@@ -47,9 +31,6 @@ export enum TransactionCategory {
   OTHER = 'other',                     // Outros
 }
 
-/**
- * Status de um membro
- */
 export enum MemberStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
@@ -60,9 +41,6 @@ export enum MemberStatus {
 // INTERFACES
 // ============================================================================
 
-/**
- * Interface para Membro do Grupo de Jovens
- */
 export interface Member {
   id: string;
   name: string;
@@ -92,9 +70,6 @@ export interface Member {
   updatedAt: Date;
 }
 
-/**
- * Interface para Evento/Encontro
- */
 export interface Event {
   id: string;
   title: string;
@@ -114,9 +89,6 @@ export interface Event {
   updatedAt: Date;
 }
 
-/**
- * Interface para Transação Financeira
- */
 export interface Transaction {
   id: string;
   type: TransactionType;
@@ -133,9 +105,6 @@ export interface Transaction {
   updatedAt: Date;
 }
 
-/**
- * Interface para Resumo Financeiro
- */
 export interface FinancialSummary {
   totalIncome: number;
   totalExpense: number;
@@ -149,9 +118,6 @@ export interface FinancialSummary {
   };
 }
 
-/**
- * Interface para Estatísticas de Presença
- */
 export interface AttendanceStats {
   memberId: string;
   memberName: string;
@@ -162,9 +128,6 @@ export interface AttendanceStats {
   attendanceRate: number; // Percentual de presença
 }
 
-/**
- * Interface para Configurações do Sistema
- */
 export interface SystemSettings {
   parishName: string;
   groupName: string;
@@ -177,23 +140,38 @@ export interface SystemSettings {
   smsNotifications: boolean;
 }
 
-/**
- * Interface para Usuário do Sistema
- */
+export type UserRole = 'admin' | 'coordinator' | 'member';
+
 export interface User {
   id: string;
   email: string;
   displayName: string;
-  role: 'admin' | 'coordinator' | 'member';
+  role: UserRole;
   memberId?: string; // Referência ao membro, se aplicável
   photoUrl?: string;
   createdAt: Date;
   lastLogin?: Date;
 }
 
-/**
- * Interface para Filtros de Busca
- */
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: UserRole;
+  memberId?: string;
+}
+
+export interface AuthContextType {
+  user: AuthUser | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+}
+
 export interface SearchFilters {
   startDate?: Date;
   endDate?: Date;
@@ -203,9 +181,6 @@ export interface SearchFilters {
   eventId?: string;
 }
 
-/**
- * Interface para Estatísticas do Dashboard
- */
 export interface DashboardStats {
   totalMembers: number;
   nextEvent: Event | null;
@@ -213,9 +188,6 @@ export interface DashboardStats {
   attendanceRate: number;
 }
 
-/**
- * Interface para Atividades Recentes
- */
 export interface Activity {
   id: string;
   type: 'attendance' | 'transaction' | 'event' | 'member';
@@ -224,4 +196,3 @@ export interface Activity {
   icon: string;
 }
 
-// Made with Bob

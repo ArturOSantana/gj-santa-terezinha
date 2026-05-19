@@ -32,11 +32,10 @@ interface EventDetailsModalProps {
   onClose: () => void;
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-/**
- * Retorna a cor e o label do tipo de sábado
- */
 const getSaturdayTypeInfo = (type: SaturdayType) => {
   switch (type) {
     case SaturdayType.FIRST:
@@ -52,16 +51,14 @@ const getSaturdayTypeInfo = (type: SaturdayType) => {
   }
 };
 
-/**
- * Modal de detalhes do evento
- * Exibe informações completas do evento selecionado
- */
 const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   event,
   open,
   onClose,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -232,25 +229,29 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       <Divider />
 
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button
-          onClick={handleDelete}
-          color="error"
-          startIcon={<DeleteIcon />}
-          variant="outlined"
-        >
-          Excluir
-        </Button>
+        {canDelete && (
+          <Button
+            onClick={handleDelete}
+            color="error"
+            startIcon={<DeleteIcon />}
+            variant="outlined"
+          >
+            Excluir
+          </Button>
+        )}
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose} color="inherit">
           Fechar
         </Button>
-        <Button
-          onClick={() => onEdit(event)}
-          variant="contained"
-          startIcon={<EditIcon />}
-        >
-          Editar
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={() => onEdit(event)}
+            variant="contained"
+            startIcon={<EditIcon />}
+          >
+            Editar
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -258,4 +259,3 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
 export default EventDetailsModal;
 
-// Made with Bob

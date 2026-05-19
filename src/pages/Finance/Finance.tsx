@@ -36,15 +36,8 @@ import TransactionFormModal from '../../components/common/TransactionFormModal';
 import { TRANSACTION_CATEGORIES, PERIOD_OPTIONS, CATEGORY_LABELS, TRANSACTION_COLORS } from '../../utils/constants';
 import { TransactionType } from '../../types';
 
-/**
- * Cores para o gráfico de pizza
- */
 const CHART_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
 
-/**
- * Página Finance - Controle Financeiro Completo
- * Gerencia todas as transações financeiras do grupo de jovens
- */
 const Finance = () => {
   const {
     transactions,
@@ -68,6 +61,7 @@ const Finance = () => {
     handleFilterChange,
     handlePageChange,
     handleExportCSV,
+    permissions,
   } = useFinance();
 
   /**
@@ -132,13 +126,15 @@ const Finance = () => {
             >
               Exportar
             </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreateForm}
-            >
-              Nova Transação
-            </Button>
+            {permissions.canCreateTransaction && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenCreateForm}
+              >
+                Nova Transação
+              </Button>
+            )}
           </Stack>
         </Box>
 
@@ -342,6 +338,8 @@ const Finance = () => {
                   transaction={transaction}
                   onEdit={handleOpenEditForm}
                   onDelete={handleOpenDeleteDialog}
+                  canEdit={permissions.canEditTransaction}
+                  canDelete={permissions.canDeleteTransaction}
                 />
               ))}
 
@@ -408,25 +406,28 @@ const Finance = () => {
           transaction={selectedTransaction}
           onClose={handleCloseForm}
           onSave={handleSaveTransaction}
+          readOnly={!permissions.canCreateTransaction && !permissions.canEditTransaction}
         />
 
         {/* Dialog de Confirmação de Exclusão */}
-        <Dialog open={isDeleteDialogOpen} onClose={handleCloseDeleteDialog}>
-          <DialogTitle>Confirmar Exclusão</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDeleteDialog} color="inherit">
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmDelete} color="error" variant="contained">
-              Excluir
-            </Button>
-          </DialogActions>
-        </Dialog>
+        {permissions.canDeleteTransaction && (
+          <Dialog open={isDeleteDialogOpen} onClose={handleCloseDeleteDialog}>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDeleteDialog} color="inherit">
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmDelete} color="error" variant="contained">
+                Excluir
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
 
         {/* TODO: Integração com Google Sheets */}
         {/* 
@@ -443,4 +444,3 @@ const Finance = () => {
 
 export default Finance;
 
-// Made with Bob

@@ -1,20 +1,6 @@
-/**
- * Utilitários para o Calendário
- * Sistema de Gestão do Grupo de Jovens - Paróquia Santa Terezinha
- */
 
 import { SaturdayType } from '../types';
 
-/**
- * Identifica automaticamente o tipo de sábado baseado na data
- * 
- * @param date - Data a ser verificada
- * @returns O tipo de sábado (1º, 2º, 3º ou 4º)
- * 
- * @example
- * const date = new Date('2026-05-02'); // Primeiro sábado de maio
- * const type = getSaturdayTypeFromDate(date); // Retorna SaturdayType.FIRST
- */
 export const getSaturdayTypeFromDate = (date: Date): SaturdayType => {
   // Verifica se é sábado
   if (date.getDay() !== 6) {
@@ -50,12 +36,6 @@ export const getSaturdayTypeFromDate = (date: Date): SaturdayType => {
   return SaturdayType.FOURTH;
 };
 
-/**
- * Retorna informações sobre o tipo de sábado
- * 
- * @param type - Tipo de sábado
- * @returns Objeto com cor, label e descrição
- */
 export const getSaturdayTypeInfo = (type: SaturdayType) => {
   switch (type) {
     case SaturdayType.FIRST:
@@ -96,13 +76,6 @@ export const getSaturdayTypeInfo = (type: SaturdayType) => {
   }
 };
 
-/**
- * Retorna todos os sábados de um mês específico
- * 
- * @param year - Ano
- * @param month - Mês (0-11)
- * @returns Array com as datas de todos os sábados do mês
- */
 export const getSaturdaysInMonth = (year: number, month: number): Date[] => {
   const saturdays: Date[] = [];
   const firstDay = new Date(year, month, 1);
@@ -123,22 +96,10 @@ export const getSaturdaysInMonth = (year: number, month: number): Date[] => {
   return saturdays;
 };
 
-/**
- * Verifica se uma data é sábado
- * 
- * @param date - Data a ser verificada
- * @returns true se for sábado, false caso contrário
- */
 export const isSaturday = (date: Date): boolean => {
   return date.getDay() === 6;
 };
 
-/**
- * Retorna o próximo sábado a partir de uma data
- * 
- * @param date - Data de referência
- * @returns Data do próximo sábado
- */
 export const getNextSaturday = (date: Date = new Date()): Date => {
   const nextSaturday = new Date(date);
   const daysUntilSaturday = (6 - date.getDay() + 7) % 7 || 7;
@@ -146,12 +107,6 @@ export const getNextSaturday = (date: Date = new Date()): Date => {
   return nextSaturday;
 };
 
-/**
- * Formata uma data para exibição no formato brasileiro
- * 
- * @param date - Data a ser formatada
- * @returns String formatada (ex: "02/05/2026")
- */
 export const formatDateBR = (date: Date): string => {
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -159,23 +114,10 @@ export const formatDateBR = (date: Date): string => {
   return `${day}/${month}/${year}`;
 };
 
-/**
- * Formata um horário para exibição
- * 
- * @param time - Horário no formato "HH:mm"
- * @returns String formatada (ex: "18:00")
- */
 export const formatTime = (time: string): string => {
   return time;
 };
 
-/**
- * Valida se um horário de término é posterior ao horário de início
- * 
- * @param startTime - Horário de início (formato "HH:mm")
- * @param endTime - Horário de término (formato "HH:mm")
- * @returns true se o horário de término for posterior, false caso contrário
- */
 export const isEndTimeAfterStartTime = (
   startTime: string,
   endTime: string
@@ -189,4 +131,3 @@ export const isEndTimeAfterStartTime = (
   return endMinutes > startMinutes;
 };
 
-// Made with Bob

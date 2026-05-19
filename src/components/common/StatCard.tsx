@@ -1,10 +1,6 @@
 import { Card, CardContent, Box, Typography, useTheme } from '@mui/material';
 import { ReactNode } from 'react';
 
-/**
- * Componente StatCard - Card de Estatística
- * Exibe um card com ícone, título, valor e indicador de tendência opcional
- */
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -120,4 +116,3 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
 
 export default StatCard;
 
-// Made with Bob

@@ -30,10 +30,6 @@ import MemberFormModal from '../../components/common/MemberFormModal';
 import MemberDetailsModal from '../../components/common/MemberDetailsModal';
 import AttendanceDialog from '../../components/common/AttendanceDialog';
 
-/**
- * Página Members - Gestão de membros do grupo
- * Mostra lista de membros, estatísticas de presença e permite gerenciar cadastros
- */
 const Members: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -59,6 +55,7 @@ const Members: React.FC = () => {
     setIsFormOpen,
     setIsDetailsOpen,
     setIsAttendanceOpen,
+    permissions,
   } = useMembers();
 
   // Paginação
@@ -98,24 +95,28 @@ const Members: React.FC = () => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<CheckCircleIcon />}
-              onClick={() => setIsAttendanceOpen(true)}
-              fullWidth={isMobile}
-            >
-              Registrar Presença
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={handleNewMember}
-              fullWidth={isMobile}
-            >
-              Novo Membro
-            </Button>
+            {permissions.canManageAttendance && (
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<CheckCircleIcon />}
+                onClick={() => setIsAttendanceOpen(true)}
+                fullWidth={isMobile}
+              >
+                Registrar Presença
+              </Button>
+            )}
+            {permissions.canCreateMember && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={handleNewMember}
+                fullWidth={isMobile}
+              >
+                Novo Membro
+              </Button>
+            )}
           </Box>
         </Box>
 
@@ -311,16 +312,20 @@ const Members: React.FC = () => {
                 ? 'Tente ajustar os filtros ou fazer uma nova busca'
                 : 'Comece adicionando o primeiro membro do grupo'}
             </Typography>
-            {!filters.search && filters.group === 'all' && filters.status === 'all' && filters.ageRange === 'all' && (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={handleNewMember}
-              >
-                Adicionar Primeiro Membro
-              </Button>
-            )}
+            {!filters.search &&
+              filters.group === 'all' &&
+              filters.status === 'all' &&
+              filters.ageRange === 'all' &&
+              permissions.canCreateMember && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  onClick={handleNewMember}
+                >
+                  Adicionar Primeiro Membro
+                </Button>
+              )}
           </Box>
         ) : (
           <>
@@ -344,6 +349,8 @@ const Members: React.FC = () => {
                   onEdit={handleEditMember}
                   onDelete={handleDeleteMember}
                   onViewDetails={handleViewDetails}
+                  canEdit={permissions.canEditMember}
+                  canDelete={permissions.canDeleteMember}
                 />
               ))}
             </Box>
@@ -373,6 +380,7 @@ const Members: React.FC = () => {
           }}
           onSave={handleSaveMember}
           member={selectedMember}
+          readOnly={!permissions.canCreateMember && !permissions.canEditMember}
         />
 
         <MemberDetailsModal
@@ -380,15 +388,19 @@ const Members: React.FC = () => {
           onClose={() => setIsDetailsOpen(false)}
           onEdit={handleEditMember}
           member={selectedMember}
+          events={events}
+          canEdit={permissions.canEditMember}
         />
 
-        <AttendanceDialog
-          open={isAttendanceOpen}
-          onClose={() => setIsAttendanceOpen(false)}
-          onSave={handleAttendance}
-          members={allMembers}
-          events={events}
-        />
+        {permissions.canManageAttendance && (
+          <AttendanceDialog
+            open={isAttendanceOpen}
+            onClose={() => setIsAttendanceOpen(false)}
+            onSave={handleAttendance}
+            members={allMembers}
+            events={events}
+          />
+        )}
       </Box>
     </Container>
   );
@@ -396,4 +408,3 @@ const Members: React.FC = () => {
 
 export default Members;
 
-// Made with Bob

@@ -23,18 +23,14 @@ import { CATEGORY_LABELS, TRANSACTION_COLORS } from '../../utils/constants';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-/**
- * Props do componente TransactionCard
- */
 interface TransactionCardProps {
   transaction: Transaction;
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-/**
- * Mapeamento de categorias para componentes de ícone
- */
 const CATEGORY_ICON_COMPONENTS: Record<string, React.ElementType> = {
   donation: FavoriteIcon,
   event: EventIcon,
@@ -45,14 +41,12 @@ const CATEGORY_ICON_COMPONENTS: Record<string, React.ElementType> = {
   other: MoreHorizIcon,
 };
 
-/**
- * Componente TransactionCard
- * Exibe uma transação financeira com informações detalhadas
- */
 const TransactionCard: React.FC<TransactionCardProps> = ({
   transaction,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }) => {
   const isIncome = transaction.type === TransactionType.INCOME;
   const colors = isIncome ? TRANSACTION_COLORS.income : TRANSACTION_COLORS.expense;
@@ -124,28 +118,32 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton
-                size="small"
-                onClick={() => onEdit(transaction)}
-                sx={{
-                  color: 'primary.main',
-                  '&:hover': { backgroundColor: 'primary.light' },
-                }}
-                aria-label="Editar transação"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => onDelete(transaction.id)}
-                sx={{
-                  color: 'error.main',
-                  '&:hover': { backgroundColor: 'error.light' },
-                }}
-                aria-label="Excluir transação"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+              {canEdit && (
+                <IconButton
+                  size="small"
+                  onClick={() => onEdit(transaction)}
+                  sx={{
+                    color: 'primary.main',
+                    '&:hover': { backgroundColor: 'primary.light' },
+                  }}
+                  aria-label="Editar transação"
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              )}
+              {canDelete && (
+                <IconButton
+                  size="small"
+                  onClick={() => onDelete(transaction.id)}
+                  sx={{
+                    color: 'error.main',
+                    '&:hover': { backgroundColor: 'error.light' },
+                  }}
+                  aria-label="Excluir transação"
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              )}
             </Box>
           </Box>
 
@@ -218,4 +216,3 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
 
 export default TransactionCard;
 
-// Made with Bob

@@ -1,59 +1,176 @@
-import { useState, useEffect } from 'react';
-import { DashboardStats, Event, Activity } from '../types';
-import { mockStats, mockEvents, mockActivities } from '../utils/mockData';
+import { useState, useEffect, useMemo } from 'react';
+import { DashboardStats, Event, Activity, AttendanceStatus, Member, Transaction, TransactionType } from '../types';
+import { firestoreService } from '../services/firestore.service';
+import { useAuth } from '../contexts/AuthContext';
+import { canView } from '../utils/permissions';
 
-/**
- * Custom Hook para gerenciar dados do Dashboard
- * Simula carregamento de dados e fornece estado para o Dashboard
- */
 export const useDashboard = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    // Simula carregamento de dados da API
-    const loadDashboardData = async () => {
-      setLoading(true);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-      // Simula delay de rede (500ms)
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    setLoading(true);
+    setError(null);
 
-      try {
-        // Carrega estatísticas
-        setStats(mockStats);
+    let unsubscribeEvents: (() => void) | undefined;
+    let unsubscribeMembers: (() => void) | undefined;
+    let unsubscribeTransactions: (() => void) | undefined;
+    let membersLoaded = !canView(user.role, 'member');
+    let eventsLoaded = false;
+    let transactionsLoaded = !canView(user.role, 'finance');
 
-        // Filtra e ordena próximos eventos (apenas eventos futuros)
-        const now = new Date();
-        const futureEvents = mockEvents
-          .filter((event) => event.date >= now)
-          .sort((a, b) => a.date.getTime() - b.date.getTime())
-          .slice(0, 3); // Pega apenas os 3 próximos
-
-        setUpcomingEvents(futureEvents);
-
-        // Carrega atividades recentes (ordenadas por timestamp decrescente)
-        const sortedActivities = [...mockActivities].sort(
-          (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-        );
-        setRecentActivities(sortedActivities.slice(0, 5)); // Pega apenas as 5 mais recentes
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard:', error);
-      } finally {
+    const finishLoadingIfReady = () => {
+      if (membersLoaded && eventsLoaded && transactionsLoaded) {
         setLoading(false);
       }
     };
 
-    loadDashboardData();
-  }, []);
+    try {
+      if (canView(user.role, 'member')) {
+        unsubscribeMembers = firestoreService.getMembers(user.role, (updatedMembers) => {
+          setMembers(updatedMembers);
+          membersLoaded = true;
+          finishLoadingIfReady();
+        });
+      } else {
+        setMembers([]);
+      }
+
+      unsubscribeEvents = firestoreService.getEvents(user.role, (updatedEvents) => {
+        setEvents(updatedEvents);
+        eventsLoaded = true;
+        finishLoadingIfReady();
+      });
+
+      if (canView(user.role, 'finance')) {
+        unsubscribeTransactions = firestoreService.getTransactions(user.role, (updatedTransactions) => {
+          setTransactions(updatedTransactions);
+          transactionsLoaded = true;
+          finishLoadingIfReady();
+        });
+      } else {
+        setTransactions([]);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar dados do dashboard';
+      setError(errorMessage);
+      setLoading(false);
+    }
+
+    return () => {
+      unsubscribeMembers?.();
+      unsubscribeEvents?.();
+      unsubscribeTransactions?.();
+    };
+  }, [user]);
+
+  const stats = useMemo<DashboardStats | null>(() => {
+    if (!user) {
+      return null;
+    }
+
+    const now = new Date();
+    const upcomingEventsSorted = [...events]
+      .filter((event) => event.date >= now)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const nextEvent = upcomingEventsSorted[0] || null;
+
+    const totalMembers = canView(user.role, 'member') ? members.length : 0;
+
+    const balance = canView(user.role, 'finance')
+      ? transactions.reduce((acc, transaction) => {
+          if (transaction.type === TransactionType.INCOME) {
+            return acc + transaction.amount;
+          }
+          return acc - transaction.amount;
+        }, 0)
+      : 0;
+
+    const eventsWithAttendance = events.filter(
+      (event) => event.attendance && Object.keys(event.attendance).length > 0
+    );
+
+    const attendanceRate =
+      eventsWithAttendance.length > 0
+        ? eventsWithAttendance.reduce((acc, event) => {
+            const total = Object.keys(event.attendance).length;
+            const present = Object.values(event.attendance).filter(
+              (status) => status === AttendanceStatus.PRESENT
+            ).length;
+
+            return acc + (total > 0 ? (present / total) * 100 : 0);
+          }, 0) / eventsWithAttendance.length
+        : 0;
+
+    return {
+      totalMembers,
+      nextEvent,
+      balance,
+      attendanceRate: Math.round(attendanceRate * 10) / 10,
+    };
+  }, [user, members, events, transactions]);
+
+  const upcomingEvents = useMemo(
+    () =>
+      [...events]
+        .filter((event) => event.date >= new Date())
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .slice(0, 3),
+    [events]
+  );
+
+  const recentActivities = useMemo<Activity[]>(() => {
+    const recentEventActivities: Activity[] = events
+      .slice(0, 3)
+      .map((event) => ({
+        id: `event-${event.id}`,
+        type: 'event',
+        description: `Evento: ${event.title}`,
+        timestamp: event.updatedAt,
+        icon: 'event',
+      }));
+
+    const recentTransactionActivities: Activity[] = transactions
+      .slice(0, 3)
+      .map((transaction) => ({
+        id: `transaction-${transaction.id}`,
+        type: 'transaction',
+        description: `${transaction.type === TransactionType.INCOME ? 'Entrada' : 'Saída'}: ${transaction.description}`,
+        timestamp: transaction.updatedAt,
+        icon: 'transaction',
+      }));
+
+    const recentMemberActivities: Activity[] = members
+      .slice(0, 3)
+      .map((member) => ({
+        id: `member-${member.id}`,
+        type: 'member',
+        description: `Membro: ${member.name}`,
+        timestamp: member.updatedAt,
+        icon: 'member',
+      }));
+
+    return [...recentEventActivities, ...recentTransactionActivities, ...recentMemberActivities]
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, 5);
+  }, [events, transactions, members]);
 
   return {
     loading,
+    error,
     stats,
     upcomingEvents,
     recentActivities,
   };
 };
 
-// Made with Bob

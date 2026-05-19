@@ -27,12 +27,10 @@ import { useDashboard } from '../../hooks/useDashboard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import StatCard from '../../components/common/StatCard';
 import EventCard from '../../components/common/EventCard';
+import { useAuth } from '../../contexts/AuthContext';
 
-/**
- * Página Dashboard - Visão geral do sistema
- * Exibe estatísticas, próximos eventos, atividades recentes e avisos
- */
 const Dashboard = () => {
+  const { user } = useAuth();
   const { loading, stats, upcomingEvents, recentActivities } = useDashboard();
 
   // Renderiza loading enquanto carrega dados
@@ -60,15 +58,15 @@ const Dashboard = () => {
   // Função para obter ícone da atividade
   const getActivityIcon = (iconName: string) => {
     switch (iconName) {
-      case 'CheckCircle':
+      case 'attendance':
         return <CheckCircleIcon color="success" />;
-      case 'AttachMoney':
+      case 'transaction':
         return <AttachMoneyIcon color="primary" />;
-      case 'Person':
+      case 'member':
         return <PersonIcon color="info" />;
-      case 'Event':
+      case 'event':
         return <EventIcon color="secondary" />;
-      case 'Receipt':
+      case 'receipt':
         return <ReceiptIcon color="warning" />;
       default:
         return <CheckCircleIcon />;
@@ -116,10 +114,9 @@ const Dashboard = () => {
         >
           <StatCard
             title="Total de Membros"
-            value={stats.totalMembers}
+            value={user?.role === 'admin' ? stats.totalMembers : 'Restrito'}
             icon={<PeopleIcon sx={{ fontSize: 32 }} />}
             color="primary"
-            trend={{ value: 12, isPositive: true }}
           />
           <StatCard
             title="Próximo Encontro"
@@ -129,17 +126,15 @@ const Dashboard = () => {
           />
           <StatCard
             title="Saldo do Caixa"
-            value={formatCurrency(stats.balance)}
+            value={user?.role === 'member' ? 'Restrito' : formatCurrency(stats.balance)}
             icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
             color="success"
-            trend={{ value: 8.5, isPositive: true }}
           />
           <StatCard
             title="Taxa de Presença"
             value={`${stats.attendanceRate}%`}
             icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
             color="info"
-            trend={{ value: 3.2, isPositive: true }}
           />
         </Box>
 
@@ -259,4 +254,3 @@ const Dashboard = () => {
 
 export default Dashboard;
 
-// Made with Bob

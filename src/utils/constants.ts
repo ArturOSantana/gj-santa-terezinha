@@ -1,12 +1,4 @@
-/**
- * Constantes do Sistema de Gestão do Grupo de Jovens
- * Paróquia Santa Terezinha
- */
 
-/**
- * Categorias de Transações Financeiras
- * Organizadas por tipo (receita/despesa) com ícones e labels
- */
 export const TRANSACTION_CATEGORIES = {
   income: [
     { value: 'donation', label: 'Doação', icon: 'Favorite' },
@@ -23,9 +15,6 @@ export const TRANSACTION_CATEGORIES = {
   ],
 } as const;
 
-/**
- * Mapeamento de categorias para labels em português
- */
 export const CATEGORY_LABELS: Record<string, string> = {
   donation: 'Doação',
   event: 'Evento',
@@ -36,9 +25,6 @@ export const CATEGORY_LABELS: Record<string, string> = {
   other: 'Outros',
 };
 
-/**
- * Mapeamento de categorias para ícones
- */
 export const CATEGORY_ICONS: Record<string, string> = {
   donation: 'Favorite',
   event: 'Event',
@@ -49,9 +35,6 @@ export const CATEGORY_ICONS: Record<string, string> = {
   other: 'MoreHoriz',
 };
 
-/**
- * Cores para tipos de transação
- */
 export const TRANSACTION_COLORS = {
   income: {
     main: '#4caf50',
@@ -73,9 +56,6 @@ export const TRANSACTION_COLORS = {
   },
 } as const;
 
-/**
- * Métodos de pagamento disponíveis
- */
 export const PAYMENT_METHODS = [
   { value: 'cash', label: 'Dinheiro' },
   { value: 'pix', label: 'Pix' },
@@ -84,9 +64,6 @@ export const PAYMENT_METHODS = [
   { value: 'credit', label: 'Crédito' },
 ] as const;
 
-/**
- * Opções de período para filtros
- */
 export const PERIOD_OPTIONS = [
   { value: 'current-month', label: 'Mês Atual' },
   { value: 'last-month', label: 'Mês Anterior' },
@@ -96,4 +73,3 @@ export const PERIOD_OPTIONS = [
   { value: 'all', label: 'Todo o Período' },
 ] as const;
 
-// Made with Bob

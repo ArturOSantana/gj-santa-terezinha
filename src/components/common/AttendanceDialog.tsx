@@ -36,9 +36,6 @@ import { Member, Event } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-/**
- * Props do componente AttendanceDialog
- */
 interface AttendanceDialogProps {
   open: boolean;
   onClose: () => void;
@@ -47,9 +44,6 @@ interface AttendanceDialogProps {
   events: Event[];
 }
 
-/**
- * Gera as iniciais do nome
- */
 const getInitials = (name: string): string => {
   const parts = name.split(' ');
   if (parts.length >= 2) {
@@ -58,10 +52,6 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase();
 };
 
-/**
- * Componente AttendanceDialog
- * Dialog para registrar presença em um evento
- */
 const AttendanceDialog: React.FC<AttendanceDialogProps> = ({
   open,
   onClose,
@@ -400,4 +390,3 @@ const AttendanceDialog: React.FC<AttendanceDialogProps> = ({
 
 export default AttendanceDialog;
 
-// Made with Bob

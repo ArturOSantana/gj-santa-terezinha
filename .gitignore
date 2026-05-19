@@ -36,6 +36,14 @@ dist-ssr
 .firebaserc
 firebase-debug.log
 firestore-debug.log
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.node.json
+!firebase.json
+!firestore.indexes.json
 
 # Build
 build
@@ -47,14 +55,10 @@ coverage
 # Misc
 .eslintcache
 
-# Made with Bob
-
-# Environment variables
-.env.local
-.env.*.local
-
-# Firebase
-.firebase/
-firebase-debug.log
-firestore-debug.log
+# Vercel
 .vercel
+
+# Scripts
+scripts/
+
+# Made with Bob

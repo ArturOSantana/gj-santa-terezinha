@@ -26,10 +26,6 @@ import EventFormModal from '../../components/common/EventFormModal';
 import { useCalendar } from '../../hooks/useCalendar';
 import { SaturdayType } from '../../types';
 
-/**
- * Página de Calendário
- * Gerencia eventos e encontros do Grupo de Jovens
- */
 const Calendar: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -63,6 +59,7 @@ const Calendar: React.FC = () => {
     handleOpenCreateModal,
     handleNavigateToday,
     handleToggleAllFilters,
+    permissions,
   } = useCalendar();
 
   // Informações dos tipos de sábado
@@ -102,33 +99,57 @@ const Calendar: React.FC = () => {
   };
 
   // Manipula criação de evento com feedback
-  const handleCreateWithFeedback = (eventData: any) => {
-    handleCreateEvent(eventData);
-    setSnackbar({
-      open: true,
-      message: 'Evento criado com sucesso!',
-      severity: 'success',
-    });
+  const handleCreateWithFeedback = async (eventData: any) => {
+    try {
+      await handleCreateEvent(eventData);
+      setSnackbar({
+        open: true,
+        message: 'Evento criado com sucesso!',
+        severity: 'success',
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Erro ao criar evento',
+        severity: 'error',
+      });
+    }
   };
 
   // Manipula atualização de evento com feedback
-  const handleUpdateWithFeedback = (id: string, eventData: any) => {
-    handleUpdateEvent(id, eventData);
-    setSnackbar({
-      open: true,
-      message: 'Evento atualizado com sucesso!',
-      severity: 'success',
-    });
+  const handleUpdateWithFeedback = async (id: string, eventData: any) => {
+    try {
+      await handleUpdateEvent(id, eventData);
+      setSnackbar({
+        open: true,
+        message: 'Evento atualizado com sucesso!',
+        severity: 'success',
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Erro ao atualizar evento',
+        severity: 'error',
+      });
+    }
   };
 
   // Manipula exclusão de evento com feedback
-  const handleDeleteWithFeedback = (id: string) => {
-    handleDeleteEvent(id);
-    setSnackbar({
-      open: true,
-      message: 'Evento excluído com sucesso!',
-      severity: 'success',
-    });
+  const handleDeleteWithFeedback = async (id: string) => {
+    try {
+      await handleDeleteEvent(id);
+      setSnackbar({
+        open: true,
+        message: 'Evento excluído com sucesso!',
+        severity: 'success',
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Erro ao excluir evento',
+        severity: 'error',
+      });
+    }
   };
 
   return (
@@ -172,14 +193,16 @@ const Calendar: React.FC = () => {
               Filtros
             </Button>
           )}
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreateModal}
-            size={isMobile ? 'small' : 'medium'}
-          >
-            Novo Evento
-          </Button>
+          {permissions.canCreateEvent && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreateModal}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              Novo Evento
+            </Button>
+          )}
         </Stack>
       </Box>
 
@@ -326,6 +349,8 @@ const Calendar: React.FC = () => {
         onClose={handleCloseDetailsModal}
         onEdit={handleEditEvent}
         onDelete={handleDeleteWithFeedback}
+        canEdit={permissions.canEditEvent}
+        canDelete={permissions.canDeleteEvent}
       />
 
       {/* Modal de Formulário de Evento */}
@@ -336,6 +361,7 @@ const Calendar: React.FC = () => {
         onSave={handleCreateWithFeedback}
         onUpdate={handleUpdateWithFeedback}
         initialDate={currentDate}
+        readOnly={!permissions.canCreateEvent && !permissions.canEditEvent}
       />
 
       {/* Snackbar de Feedback */}
@@ -360,4 +386,3 @@ const Calendar: React.FC = () => {
 
 export default Calendar;
 
-// Made with Bob

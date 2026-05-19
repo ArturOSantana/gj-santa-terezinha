@@ -5,14 +5,8 @@ import {
 } from '@mui/icons-material';
 import { TRANSACTION_COLORS } from '../../utils/constants';
 
-/**
- * Tipo de card financeiro
- */
 type FinancialCardType = 'income' | 'expense' | 'balance';
 
-/**
- * Props do componente FinancialSummaryCard
- */
 interface FinancialSummaryCardProps {
   title: string;
   value: number;
@@ -24,10 +18,6 @@ interface FinancialSummaryCardProps {
   };
 }
 
-/**
- * Componente FinancialSummaryCard
- * Exibe um card de resumo financeiro com valor, ícone e tendência
- */
 const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
   title,
   value,
@@ -157,4 +147,3 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
 
 export default FinancialSummaryCard;
 
-// Made with Bob

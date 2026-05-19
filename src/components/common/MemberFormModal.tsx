@@ -21,19 +21,14 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ptBR } from 'date-fns/locale';
 import { Member, MemberStatus } from '../../types';
 
-/**
- * Props do componente MemberFormModal
- */
 interface MemberFormModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => void;
   member?: Member | null;
+  readOnly?: boolean;
 }
 
-/**
- * Interface para os dados do formulário
- */
 interface FormData {
   name: string;
   email: string;
@@ -44,9 +39,6 @@ interface FormData {
   notes?: string;
 }
 
-/**
- * Interface para os erros de validação
- */
 interface FormErrors {
   name?: string;
   email?: string;
@@ -55,15 +47,12 @@ interface FormErrors {
   gender?: string;
 }
 
-/**
- * Componente MemberFormModal
- * Modal com formulário para criar ou editar um membro
- */
 const MemberFormModal: React.FC<MemberFormModalProps> = ({
   open,
   onClose,
   onSave,
   member,
+  readOnly = false,
 }) => {
   const isEditing = !!member;
 
@@ -227,6 +216,11 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
    * Manipula o envio do formulário
    */
   const handleSubmit = () => {
+    if (readOnly) {
+      onClose();
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -272,6 +266,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
               label="Nome Completo"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
+              disabled={readOnly}
               error={!!errors.name}
               helperText={errors.name}
               required
@@ -285,6 +280,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
+                disabled={readOnly}
                 error={!!errors.email}
                 helperText={errors.email}
                 required
@@ -295,6 +291,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 label="Telefone"
                 value={formData.phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
+                disabled={readOnly}
                 error={!!errors.phone}
                 helperText={errors.phone || '(XX) XXXXX-XXXX'}
                 required
@@ -309,6 +306,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 label="Data de Nascimento"
                 value={formData.birthDate}
                 onChange={(date) => handleChange('birthDate', date)}
+                disabled={readOnly}
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -325,6 +323,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 <Select
                   value={formData.gender}
                   onChange={(e) => handleChange('gender', e.target.value)}
+                  disabled={readOnly}
                   label="Gênero"
                 >
                   <MenuItem value="male">Rapazes</MenuItem>
@@ -341,6 +340,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
               <Select
                 value={formData.status}
                 onChange={(e) => handleChange('status', e.target.value)}
+                disabled={readOnly}
                 label="Status"
               >
                 <MenuItem value={MemberStatus.ACTIVE}>Ativo</MenuItem>
@@ -357,6 +357,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
               rows={3}
               value={formData.notes}
               onChange={(e) => handleChange('notes', e.target.value)}
+              disabled={readOnly}
               placeholder="Informações adicionais sobre o membro..."
             />
           </Stack>
@@ -367,9 +368,11 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
         <Button onClick={onClose} color="inherit">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          {isEditing ? 'Salvar Alterações' : 'Adicionar Membro'}
-        </Button>
+        {!readOnly && (
+          <Button onClick={handleSubmit} variant="contained" color="primary">
+            {isEditing ? 'Salvar Alterações' : 'Adicionar Membro'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -377,4 +380,3 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
 export default MemberFormModal;
 
-// Made with Bob

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Transaction, TransactionType } from '../types';
-import { mockTransactions } from '../utils/mockData';
+import { firestoreService } from '../services/firestore.service';
+import { useAuth } from '../contexts/AuthContext';
+import { canCreate, canDelete, canEdit, canView } from '../utils/permissions';
 import {
   startOfMonth,
   endOfMonth,
@@ -10,9 +12,6 @@ import {
   isWithinInterval,
 } from 'date-fns';
 
-/**
- * Filtros disponíveis para transações
- */
 interface TransactionFilters {
   type: 'all' | TransactionType;
   category: string;
@@ -20,33 +19,28 @@ interface TransactionFilters {
   searchTerm: string;
 }
 
-/**
- * Resumo financeiro
- */
 interface FinancialSummary {
   totalIncome: number;
   totalExpense: number;
   balance: number;
 }
 
-/**
- * Dados para gráficos
- */
 interface ChartData {
   expensesByCategory: Array<{ name: string; value: number }>;
   monthlyComparison: Array<{ month: string; income: number; expense: number }>;
 }
 
-/**
- * Custom Hook para gerenciar o estado e lógica da página de finanças
- */
 export const useFinance = () => {
+  const { user } = useAuth();
+  
   // Estado das transações
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Estado dos filtros
   const [filters, setFilters] = useState<TransactionFilters>({
@@ -61,11 +55,33 @@ export const useFinance = () => {
   const [rowsPerPage] = useState(10);
 
   /**
-   * Carrega as transações mockadas na inicialização
+   * Configura listener em tempo real para transações do Firestore
    */
   useEffect(() => {
-    setTransactions(mockTransactions);
-  }, []);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    let unsubscribe: (() => void) | undefined;
+
+    try {
+      unsubscribe = firestoreService.getTransactions(user.role, (updatedTransactions) => {
+        setTransactions(updatedTransactions);
+        setLoading(false);
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar transações');
+      setLoading(false);
+    }
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [user]);
 
   /**
    * Obtém o intervalo de datas baseado no período selecionado
@@ -212,45 +228,80 @@ export const useFinance = () => {
   }, [filteredTransactions, page, rowsPerPage]);
 
   /**
-   * Cria uma nova transação
+   * Cria uma nova transação no Firestore
    */
-  const handleCreateTransaction = (
+  const handleCreateTransaction = async (
     transactionData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: `temp-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
 
-    setTransactions((prev) => [newTransaction, ...prev]);
-    setPage(0); // Volta para a primeira página
+    try {
+      setError(null);
+      if (!canCreate(user.role, 'transaction')) {
+        throw new Error('Usuário não tem permissão para criar transações');
+      }
+
+      await firestoreService.createTransaction(transactionData, user.role);
+      setPage(0); // Volta para a primeira página
+      console.log('Transação criada com sucesso');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar transação';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   /**
-   * Atualiza uma transação existente
+   * Atualiza uma transação existente no Firestore
    */
-  const handleUpdateTransaction = (
+  const handleUpdateTransaction = async (
     id: string,
     transactionData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
-    setTransactions((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? { ...transactionData, id, createdAt: t.createdAt, updatedAt: new Date() }
-          : t
-      )
-    );
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      setError(null);
+      if (!canEdit(user.role, 'transaction')) {
+        throw new Error('Usuário não tem permissão para editar transações');
+      }
+
+      await firestoreService.updateTransaction(id, transactionData, user.role);
+      console.log('Transação atualizada com sucesso');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar transação';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   /**
-   * Exclui uma transação
+   * Exclui uma transação do Firestore
    */
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-    setIsDeleteDialogOpen(false);
-    setTransactionToDelete(null);
+  const handleDeleteTransaction = async (id: string) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      setError(null);
+      if (!canDelete(user.role, 'transaction')) {
+        throw new Error('Usuário não tem permissão para excluir transações');
+      }
+
+      await firestoreService.deleteTransaction(id, user.role);
+      setIsDeleteDialogOpen(false);
+      setTransactionToDelete(null);
+      console.log('Transação excluída com sucesso');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir transação';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   /**
@@ -280,13 +331,13 @@ export const useFinance = () => {
   /**
    * Salva a transação (criar ou atualizar)
    */
-  const handleSaveTransaction = (
+  const handleSaveTransaction = async (
     transactionData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
     if (selectedTransaction) {
-      handleUpdateTransaction(selectedTransaction.id, transactionData);
+      await handleUpdateTransaction(selectedTransaction.id, transactionData);
     } else {
-      handleCreateTransaction(transactionData);
+      await handleCreateTransaction(transactionData);
     }
     handleCloseForm();
   };
@@ -310,9 +361,9 @@ export const useFinance = () => {
   /**
    * Confirma a exclusão da transação
    */
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (transactionToDelete) {
-      handleDeleteTransaction(transactionToDelete);
+      await handleDeleteTransaction(transactionToDelete);
     }
   };
 
@@ -340,12 +391,25 @@ export const useFinance = () => {
     alert('Exportação simulada! Em produção, isso geraria um arquivo CSV.');
   };
 
+  const permissions = useMemo(
+    () => ({
+      canViewFinance: !!user && canView(user.role, 'finance'),
+      canCreateTransaction: !!user && canCreate(user.role, 'transaction'),
+      canEditTransaction: !!user && canEdit(user.role, 'transaction'),
+      canDeleteTransaction: !!user && canDelete(user.role, 'transaction'),
+    }),
+    [user]
+  );
+
   return {
     // Dados
     transactions: paginatedTransactions,
     allTransactions: filteredTransactions,
     summary,
     chartData,
+    loading,
+    error,
+    permissions,
 
     // Estado do formulário
     isFormOpen,
@@ -377,4 +441,3 @@ export const useFinance = () => {
   };
 };
 
-// Made with Bob

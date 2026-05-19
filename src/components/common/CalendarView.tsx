@@ -55,10 +55,6 @@ interface CalendarViewProps {
   onNavigate?: (date: Date) => void;
 }
 
-/**
- * Componente de visualização do calendário
- * Usa react-big-calendar com localização em português
- */
 const CalendarView: React.FC<CalendarViewProps> = ({
   events,
   onSelectEvent,
@@ -230,4 +226,3 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
 export default CalendarView;
 
-// Made with Bob

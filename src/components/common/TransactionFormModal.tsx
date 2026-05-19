@@ -23,19 +23,14 @@ import { Transaction, TransactionType, TransactionCategory } from '../../types';
 import { TRANSACTION_CATEGORIES, PAYMENT_METHODS } from '../../utils/constants';
 import { format } from 'date-fns';
 
-/**
- * Props do componente TransactionFormModal
- */
 interface TransactionFormModalProps {
   open: boolean;
   transaction: Transaction | null;
   onClose: () => void;
   onSave: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  readOnly?: boolean;
 }
 
-/**
- * Dados do formulário
- */
 interface FormData {
   type: TransactionType;
   category: TransactionCategory;
@@ -46,15 +41,12 @@ interface FormData {
   notes: string;
 }
 
-/**
- * Componente TransactionFormModal
- * Modal para criar ou editar uma transação financeira
- */
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   open,
   transaction,
   onClose,
   onSave,
+  readOnly = false,
 }) => {
   const isEditing = !!transaction;
 
@@ -142,6 +134,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
    * Submete o formulário
    */
   const handleSubmit = () => {
+    if (readOnly) {
+      handleClose();
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -218,12 +215,12 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               >
                 <FormControlLabel
                   value={TransactionType.INCOME}
-                  control={<Radio />}
+                  control={<Radio disabled={readOnly} />}
                   label="Entrada"
                 />
                 <FormControlLabel
                   value={TransactionType.EXPENSE}
-                  control={<Radio />}
+                  control={<Radio disabled={readOnly} />}
                   label="Saída"
                 />
               </RadioGroup>
@@ -243,6 +240,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                     category: e.target.value as TransactionCategory,
                   }))
                 }
+                disabled={readOnly}
               >
                 {availableCategories.map((cat) => (
                   <MenuItem key={cat.value} value={cat.value}>
@@ -259,6 +257,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, amount: e.target.value }))
               }
+              disabled={readOnly}
               error={!!errors.amount}
               helperText={errors.amount}
               slotProps={{
@@ -284,6 +283,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, description: e.target.value }))
               }
+              disabled={readOnly}
               error={!!errors.description}
               helperText={errors.description}
               placeholder="Ex: Lanches para o encontro"
@@ -303,6 +303,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                   date: parseDateFromInput(e.target.value),
                 }))
               }
+              disabled={readOnly}
               error={!!errors.date}
               helperText={errors.date}
               slotProps={{
@@ -325,6 +326,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                     paymentMethod: e.target.value,
                   }))
                 }
+                disabled={readOnly}
               >
                 {PAYMENT_METHODS.map((method) => (
                   <MenuItem key={method.value} value={method.value}>
@@ -346,6 +348,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, notes: e.target.value }))
               }
+              disabled={readOnly}
               placeholder="Informações adicionais sobre a transação"
             />
           </Box>
@@ -363,9 +366,11 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         <Button onClick={handleClose} color="inherit">
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          {isEditing ? 'Salvar Alterações' : 'Criar Transação'}
-        </Button>
+        {!readOnly && (
+          <Button onClick={handleSubmit} variant="contained" color="primary">
+            {isEditing ? 'Salvar Alterações' : 'Criar Transação'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -373,4 +378,3 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
 
 export default TransactionFormModal;
 
-// Made with Bob

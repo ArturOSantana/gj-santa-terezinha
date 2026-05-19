@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Event, SaturdayType } from '../types';
-import { mockEvents } from '../utils/mockData';
 import { View } from 'react-big-calendar';
+import { firestoreService } from '../services/firestore.service';
+import { useAuth } from '../contexts/AuthContext';
+import { canCreate, canDelete, canEdit } from '../utils/permissions';
 
-/**
- * Hook customizado para gerenciar o estado e lógica do calendário
- */
 export const useCalendar = () => {
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -21,11 +21,35 @@ export const useCalendar = () => {
   ]);
   const [view, setView] = useState<View>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Carrega eventos mockados na inicialização
+  // Configura listener em tempo real para eventos do Firestore
   useEffect(() => {
-    setEvents(mockEvents);
-  }, []);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    let unsubscribe: (() => void) | undefined;
+
+    try {
+      unsubscribe = firestoreService.getEvents(user.role, (updatedEvents) => {
+        setEvents(updatedEvents);
+        setLoading(false);
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar eventos');
+      setLoading(false);
+    }
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [user]);
 
   // Filtra eventos baseado nos filtros selecionados
   useEffect(() => {
@@ -36,53 +60,88 @@ export const useCalendar = () => {
   }, [events, filters]);
 
   /**
-   * Cria um novo evento
+   * Cria um novo evento no Firestore
    */
   const handleCreateEvent = useCallback(
-    (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const newEvent: Event = {
-        ...eventData,
-        id: `event-${Date.now()}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+    async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
 
-      setEvents((prev) => [...prev, newEvent]);
-      setIsFormModalOpen(false);
-      setEditingEvent(null);
-      return newEvent;
+      try {
+        setError(null);
+        if (!canCreate(user.role, 'event')) {
+          throw new Error('Usuário não tem permissão para criar eventos');
+        }
+
+        const eventId = await firestoreService.createEvent(eventData, user.role);
+        setIsFormModalOpen(false);
+        setEditingEvent(null);
+        return { ...eventData, id: eventId, createdAt: new Date(), updatedAt: new Date() };
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao criar evento';
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
     },
-    []
+    [user]
   );
 
   /**
-   * Atualiza um evento existente
+   * Atualiza um evento existente no Firestore
    */
   const handleUpdateEvent = useCallback(
-    (id: string, eventData: Partial<Event>) => {
-      setEvents((prev) =>
-        prev.map((event) =>
-          event.id === id
-            ? { ...event, ...eventData, updatedAt: new Date() }
-            : event
-        )
-      );
-      setIsFormModalOpen(false);
-      setIsDetailsModalOpen(false);
-      setEditingEvent(null);
-      setSelectedEvent(null);
+    async (id: string, eventData: Partial<Event>) => {
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      try {
+        setError(null);
+        if (!canEdit(user.role, 'event')) {
+          throw new Error('Usuário não tem permissão para editar eventos');
+        }
+
+        await firestoreService.updateEvent(id, eventData, user.role);
+        setIsFormModalOpen(false);
+        setIsDetailsModalOpen(false);
+        setEditingEvent(null);
+        setSelectedEvent(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar evento';
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
     },
-    []
+    [user]
   );
 
   /**
-   * Exclui um evento
+   * Exclui um evento do Firestore
    */
-  const handleDeleteEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.filter((event) => event.id !== id));
-    setIsDetailsModalOpen(false);
-    setSelectedEvent(null);
-  }, []);
+  const handleDeleteEvent = useCallback(
+    async (id: string) => {
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      try {
+        setError(null);
+        if (!canDelete(user.role, 'event')) {
+          throw new Error('Usuário não tem permissão para excluir eventos');
+        }
+
+        await firestoreService.deleteEvent(id, user.role);
+        setIsDetailsModalOpen(false);
+        setSelectedEvent(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar evento';
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
+    },
+    [user]
+  );
 
   /**
    * Atualiza os filtros de tipo de sábado
@@ -169,6 +228,15 @@ export const useCalendar = () => {
     }
   }, [filters]);
 
+  const permissions = useMemo(
+    () => ({
+      canCreateEvent: !!user && canCreate(user.role, 'event'),
+      canEditEvent: !!user && canEdit(user.role, 'event'),
+      canDeleteEvent: !!user && canDelete(user.role, 'event'),
+    }),
+    [user]
+  );
+
   return {
     // Estado
     events: filteredEvents,
@@ -180,6 +248,9 @@ export const useCalendar = () => {
     filters,
     view,
     currentDate,
+    loading,
+    error,
+    permissions,
 
     // Ações
     setView,
@@ -199,4 +270,3 @@ export const useCalendar = () => {
   };
 };
 
-// Made with Bob

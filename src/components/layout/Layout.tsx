@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, ReactElement } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -20,28 +20,48 @@ import {
   CalendarMonth as CalendarIcon,
   AttachMoney as MoneyIcon,
   People as PeopleIcon,
+  ManageAccounts as ManageAccountsIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserMenu } from './UserMenu';
+import { UserRole } from '../../types';
+import brasaoGJ from '../../assets/brasao-gj.png';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
-/**
- * Itens do menu de navegação
- */
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
-  { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
-];
+const menuItemsByRole: Record<UserRole, Array<{
+  text: string;
+  icon: ReactElement;
+  path: string;
+}>> = {
+  admin: [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
+    { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
+    { text: 'Usuários', icon: <ManageAccountsIcon />, path: '/users' },
+  ],
+  coordinator: [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
+  ],
+  member: [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
+  ],
+};
 
-/**
- * Componente Layout - Estrutura base da aplicação
- * Inclui AppBar (cabeçalho) e Drawer (menu lateral)
- */
 const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const menuItems = useMemo(() => {
+    if (!user) return [];
+    return menuItemsByRole[user.role] || [];
+  }, [user]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -54,20 +74,70 @@ const Layout = () => {
 
   const drawer = (
     <Box>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          GJ Menu
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          bgcolor: 'primary.main',
+          color: 'white',
+        }}
+      >
+        <img
+          src={brasaoGJ}
+          alt="Brasão GJ"
+          style={{
+            width: '80px',
+            height: '80px',
+            marginBottom: '12px',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+          }}
+        />
+        <Typography variant="h6" sx={{ fontWeight: 600, textAlign: 'center' }}>
+          Grupo de Jovens
         </Typography>
-      </Toolbar>
-      <List>
+        <Typography variant="caption" sx={{ opacity: 0.9 }}>
+          Santa Terezinha
+        </Typography>
+      </Box>
+      <List sx={{ pt: 2 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
+          <ListItem key={item.text} disablePadding sx={{ px: 1 }}>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => handleNavigation(item.path)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+                '&.Mui-selected': {
+                  bgcolor: 'primary.light',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'primary.main',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
+                  },
+                },
+              }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemIcon
+                sx={{
+                  color: location.pathname === item.path ? 'white' : 'primary.main',
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    fontWeight: location.pathname === item.path ? 600 : 400,
+                  },
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
@@ -97,9 +167,10 @@ const Layout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             GJ Santa Terezinha - Sistema de Gestão
           </Typography>
+          <UserMenu />
         </Toolbar>
       </AppBar>
 
@@ -161,4 +232,3 @@ const Layout = () => {
 
 export default Layout;
 
-// Made with Bob
