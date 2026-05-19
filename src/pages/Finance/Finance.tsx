@@ -1,0 +1,446 @@
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Paper,
+  Stack,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Pagination,
+  InputAdornment,
+  Alert,
+  Divider,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  FileDownload as FileDownloadIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  AccountBalance as AccountBalanceIcon,
+} from '@mui/icons-material';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useFinance } from '../../hooks/useFinance';
+import FinancialSummaryCard from '../../components/common/FinancialSummaryCard';
+import TransactionCard from '../../components/common/TransactionCard';
+import TransactionFormModal from '../../components/common/TransactionFormModal';
+import { TRANSACTION_CATEGORIES, PERIOD_OPTIONS, CATEGORY_LABELS, TRANSACTION_COLORS } from '../../utils/constants';
+import { TransactionType } from '../../types';
+
+/**
+ * Cores para o gráfico de pizza
+ */
+const CHART_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+
+/**
+ * Página Finance - Controle Financeiro Completo
+ * Gerencia todas as transações financeiras do grupo de jovens
+ */
+const Finance = () => {
+  const {
+    transactions,
+    allTransactions,
+    summary,
+    chartData,
+    isFormOpen,
+    selectedTransaction,
+    isDeleteDialogOpen,
+    filters,
+    page,
+    rowsPerPage,
+    totalTransactions,
+    handleOpenCreateForm,
+    handleOpenEditForm,
+    handleCloseForm,
+    handleSaveTransaction,
+    handleOpenDeleteDialog,
+    handleCloseDeleteDialog,
+    handleConfirmDelete,
+    handleFilterChange,
+    handlePageChange,
+    handleExportCSV,
+  } = useFinance();
+
+  /**
+   * Formata valor monetário
+   */
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  /**
+   * Renderiza o tooltip customizado do gráfico
+   */
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <Paper sx={{ p: 1.5 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {payload[0].name}
+          </Typography>
+          <Typography variant="body2" color="primary">
+            {formatCurrency(payload[0].value)}
+          </Typography>
+        </Paper>
+      );
+    }
+    return null;
+  };
+
+  /**
+   * Obtém as categorias disponíveis baseado no tipo de filtro
+   */
+  const getAvailableCategories = () => {
+    if (filters.type === TransactionType.INCOME) {
+      return TRANSACTION_CATEGORIES.income;
+    } else if (filters.type === TransactionType.EXPENSE) {
+      return TRANSACTION_CATEGORIES.expense;
+    }
+    return [...TRANSACTION_CATEGORIES.income, ...TRANSACTION_CATEGORIES.expense];
+  };
+
+  return (
+    <Container maxWidth="xl">
+      <Box sx={{ mt: 4, mb: 4 }}>
+        {/* Cabeçalho */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+              Controle Financeiro
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Gerencie as receitas e despesas do grupo de jovens
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExportCSV}
+            >
+              Exportar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreateForm}
+            >
+              Nova Transação
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Cards de Resumo Financeiro */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 4 }}>
+          <FinancialSummaryCard
+            title="Total de Receitas"
+            value={summary.totalIncome}
+            type="income"
+            icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
+          />
+          <FinancialSummaryCard
+            title="Total de Despesas"
+            value={summary.totalExpense}
+            type="expense"
+            icon={<TrendingDownIcon sx={{ fontSize: 32 }} />}
+          />
+          <FinancialSummaryCard
+            title="Saldo Atual"
+            value={summary.balance}
+            type="balance"
+            icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
+          />
+        </Box>
+
+        {/* Gráficos */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 4 }}>
+          {/* Gráfico de Pizza - Despesas por Categoria */}
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Despesas por Categoria
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            {chartData.expensesByCategory.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartData.expensesByCategory}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }: any) =>
+                      `${CATEGORY_LABELS[name as string] || name} (${((percent || 0) * 100).toFixed(0)}%)`
+                    }
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.expensesByCategory.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+                <Typography color="text.secondary">Nenhuma despesa registrada</Typography>
+              </Box>
+            )}
+          </Paper>
+
+          {/* Gráfico de Barras - Receitas vs Despesas */}
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Receitas vs Despesas (Últimos 6 Meses)
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData.monthlyComparison}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="income" name="Receitas" fill={TRANSACTION_COLORS.income.main} />
+                <Bar dataKey="expense" name="Despesas" fill={TRANSACTION_COLORS.expense.main} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Box>
+
+        {/* Filtros */}
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Filtros
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+            {/* Busca */}
+            <TextField
+              fullWidth
+              placeholder="Buscar transação..."
+              value={filters.searchTerm}
+              onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+
+            {/* Tipo */}
+            <FormControl fullWidth>
+              <InputLabel>Tipo</InputLabel>
+              <Select
+                value={filters.type}
+                label="Tipo"
+                onChange={(e) => handleFilterChange({ type: e.target.value as any, category: 'all' })}
+              >
+                <MenuItem value="all">Todos</MenuItem>
+                <MenuItem value={TransactionType.INCOME}>Entradas</MenuItem>
+                <MenuItem value={TransactionType.EXPENSE}>Saídas</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Categoria */}
+            <FormControl fullWidth>
+              <InputLabel>Categoria</InputLabel>
+              <Select
+                value={filters.category}
+                label="Categoria"
+                onChange={(e) => handleFilterChange({ category: e.target.value })}
+              >
+                <MenuItem value="all">Todas</MenuItem>
+                {getAvailableCategories().map((cat) => (
+                  <MenuItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Período */}
+            <FormControl fullWidth>
+              <InputLabel>Período</InputLabel>
+              <Select
+                value={filters.period}
+                label="Período"
+                onChange={(e) => handleFilterChange({ period: e.target.value })}
+              >
+                {PERIOD_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* Indicadores de filtros ativos */}
+          {(filters.type !== 'all' || filters.category !== 'all' || filters.searchTerm) && (
+            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {filters.type !== 'all' && (
+                <Chip
+                  label={`Tipo: ${filters.type === TransactionType.INCOME ? 'Entradas' : 'Saídas'}`}
+                  onDelete={() => handleFilterChange({ type: 'all' })}
+                  size="small"
+                />
+              )}
+              {filters.category !== 'all' && (
+                <Chip
+                  label={`Categoria: ${CATEGORY_LABELS[filters.category] || filters.category}`}
+                  onDelete={() => handleFilterChange({ category: 'all' })}
+                  size="small"
+                />
+              )}
+              {filters.searchTerm && (
+                <Chip
+                  label={`Busca: "${filters.searchTerm}"`}
+                  onDelete={() => handleFilterChange({ searchTerm: '' })}
+                  size="small"
+                />
+              )}
+            </Box>
+          )}
+        </Paper>
+
+        {/* Lista de Transações */}
+        <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Transações
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {totalTransactions} {totalTransactions === 1 ? 'transação' : 'transações'}
+            </Typography>
+          </Box>
+          <Divider sx={{ mb: 3 }} />
+
+          {transactions.length > 0 ? (
+            <>
+              {transactions.map((transaction) => (
+                <TransactionCard
+                  key={transaction.id}
+                  transaction={transaction}
+                  onEdit={handleOpenEditForm}
+                  onDelete={handleOpenDeleteDialog}
+                />
+              ))}
+
+              {/* Paginação */}
+              {totalTransactions > rowsPerPage && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                  <Pagination
+                    count={Math.ceil(totalTransactions / rowsPerPage)}
+                    page={page + 1}
+                    onChange={(_, newPage) => handlePageChange(newPage - 1)}
+                    color="primary"
+                  />
+                </Box>
+              )}
+            </>
+          ) : (
+            <Alert severity="info">
+              Nenhuma transação encontrada com os filtros aplicados.
+            </Alert>
+          )}
+        </Paper>
+
+        {/* Totalizadores */}
+        {allTransactions.length > 0 && (
+          <Paper sx={{ p: 3, mt: 3, backgroundColor: 'grey.50' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 3 }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Total de Entradas
+                </Typography>
+                <Typography variant="h6" sx={{ color: TRANSACTION_COLORS.income.main, fontWeight: 700 }}>
+                  {formatCurrency(summary.totalIncome)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Total de Saídas
+                </Typography>
+                <Typography variant="h6" sx={{ color: TRANSACTION_COLORS.expense.main, fontWeight: 700 }}>
+                  {formatCurrency(summary.totalExpense)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Saldo do Período
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: summary.balance >= 0 ? TRANSACTION_COLORS.income.main : TRANSACTION_COLORS.expense.main,
+                    fontWeight: 700,
+                  }}
+                >
+                  {formatCurrency(summary.balance)}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        )}
+
+        {/* Modal de Formulário */}
+        <TransactionFormModal
+          open={isFormOpen}
+          transaction={selectedTransaction}
+          onClose={handleCloseForm}
+          onSave={handleSaveTransaction}
+        />
+
+        {/* Dialog de Confirmação de Exclusão */}
+        <Dialog open={isDeleteDialogOpen} onClose={handleCloseDeleteDialog}>
+          <DialogTitle>Confirmar Exclusão</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteDialog} color="inherit">
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmDelete} color="error" variant="contained">
+              Excluir
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* TODO: Integração com Google Sheets */}
+        {/* 
+          Próximos passos:
+          1. Implementar sincronização com Google Sheets API
+          2. Adicionar autenticação OAuth2
+          3. Criar funções de sync bidirecional
+          4. Implementar tratamento de conflitos
+        */}
+      </Box>
+    </Container>
+  );
+};
+
+export default Finance;
+
+// Made with Bob
