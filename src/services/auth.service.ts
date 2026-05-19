@@ -18,7 +18,6 @@ import { auth, db } from '../config/firebase';
 import { User, UserRole, AuthUser } from '../types';
 
 const localRoles = new Map<string, UserRole>();
-let firstUserIsAdmin = true;
 
 const isFirestoreAvailable = async (): Promise<boolean> => {
   try {
@@ -141,11 +140,8 @@ export const signUp = async (
 
     const user = userCredential.user;
     
-    let finalRole = role;
-    if (firstUserIsAdmin) {
-      finalRole = 'admin';
-      firstUserIsAdmin = false;
-    }
+    // Todos os novos usuários entram como 'member'
+    const finalRole = role;
 
     setUserRoleLocally(user.uid, finalRole);
 
