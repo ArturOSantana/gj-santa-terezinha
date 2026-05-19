@@ -8,12 +8,12 @@ export default defineConfig({
     fs: {
       // Permite que o Vite sirva arquivos fora do root
       strict: false,
+      // Nega acesso à pasta api
+      deny: ['**/api/**'],
     },
   },
-  build: {
-    // Exclui a pasta api do build
-    rollupOptions: {
-      external: [/^\/api\//],
-    },
+  optimizeDeps: {
+    // Exclui a pasta api da otimização de dependências
+    exclude: ['api'],
   },
 })
