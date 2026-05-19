@@ -15,8 +15,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { Event, EventCategory } from '../../types';
-import { EVENT_CATEGORY_OPTIONS } from '../../utils/constants';
+import { Event, EventCategory, ActivityType } from '../../types';
+import { EVENT_CATEGORY_OPTIONS, ACTIVITY_TYPE_OPTIONS } from '../../utils/constants';
 import { format } from 'date-fns';
 
 interface EventFormModalProps {
@@ -52,6 +52,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
     endTime: '21:15',
     location: 'Paróquia Santa Terezinha',
     category: EventCategory.SATURDAY,
+    activityType: undefined as ActivityType | undefined,
     notes: '',
   });
 
@@ -68,6 +69,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         endTime: event.endTime,
         location: event.location,
         category: event.category,
+        activityType: event.activityType,
         notes: event.notes || '',
       });
     } else if (initialDate) {
@@ -145,6 +147,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       endTime: formData.endTime,
       location: formData.location.trim(),
       category: formData.category,
+      activityType: formData.activityType,
       notes: formData.notes.trim(),
     };
 
@@ -167,6 +170,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       endTime: '21:15',
       location: 'Paróquia Santa Terezinha',
       category: EventCategory.SATURDAY,
+      activityType: undefined,
       notes: '',
     });
     setErrors({});
@@ -312,6 +316,28 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
               </MenuItem>
             ))}
           </TextField>
+
+          {/* Tipo de Atividade (apenas para Sábados) */}
+          {formData.category === EventCategory.SATURDAY && (
+            <TextField
+              label="Tipo de Atividade"
+              select
+              value={formData.activityType || ''}
+              onChange={(e) => setFormData({ ...formData, activityType: e.target.value as ActivityType })}
+              disabled={readOnly}
+              fullWidth
+              helperText="Selecione o tipo de atividade para este sábado"
+            >
+              <MenuItem value="">
+                <em>Nenhum</em>
+              </MenuItem>
+              {ACTIVITY_TYPE_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
 
           {/* Observações */}
           <TextField

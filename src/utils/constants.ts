@@ -92,3 +92,17 @@ export const EVENT_CATEGORY_OPTIONS = [
   { value: 'parish_event', label: 'Evento Paroquial' },
   { value: 'novena', label: 'Novena' },
 ] as const;
+
+export const ACTIVITY_TYPES = {
+  spirituality: { label: 'Espiritualidade', icon: 'Church' },
+  fellowship: { label: 'Convivência', icon: 'Groups' },
+  formation: { label: 'Formação', icon: 'School' },
+  deepening: { label: 'Aprofundamento', icon: 'MenuBook' },
+} as const;
+
+export const ACTIVITY_TYPE_OPTIONS = [
+  { value: 'spirituality', label: 'Espiritualidade' },
+  { value: 'fellowship', label: 'Convivência' },
+  { value: 'formation', label: 'Formação' },
+  { value: 'deepening', label: 'Aprofundamento' },
+] as const;

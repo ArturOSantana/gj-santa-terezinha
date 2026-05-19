@@ -12,6 +12,13 @@ export enum EventCategory {
   NOVENA = 'novena',
 }
 
+export enum ActivityType {
+  SPIRITUALITY = 'spirituality',
+  FELLOWSHIP = 'fellowship',
+  FORMATION = 'formation',
+  DEEPENING = 'deepening',
+}
+
 export enum TransactionType {
   INCOME = 'income',    // Entrada
   EXPENSE = 'expense',  // Saída
@@ -75,6 +82,7 @@ export interface Event {
   endTime: string;
   location: string;
   category: EventCategory;
+  activityType?: ActivityType;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

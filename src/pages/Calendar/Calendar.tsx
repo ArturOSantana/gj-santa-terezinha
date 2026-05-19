@@ -24,8 +24,8 @@ import CalendarView from '../../components/common/CalendarView';
 import EventDetailsModal from '../../components/common/EventDetailsModal';
 import EventFormModal from '../../components/common/EventFormModal';
 import { useCalendar } from '../../hooks/useCalendar';
-import { EventCategory } from '../../types';
-import { EVENT_CATEGORIES } from '../../utils/constants';
+import { EventCategory, ActivityType } from '../../types';
+import { EVENT_CATEGORIES, ACTIVITY_TYPES } from '../../utils/constants';
 
 const Calendar: React.FC = () => {
   const theme = useTheme();
@@ -70,13 +70,54 @@ const Calendar: React.FC = () => {
     color: value.color,
   }));
 
-  // Manipula mudança de filtros
+  // Informações dos tipos de atividade
+  const activityTypes = Object.entries(ACTIVITY_TYPES).map(([key, value]) => ({
+    type: key as ActivityType,
+    label: value.label,
+  }));
+
+  // Estado para filtros de tipo de atividade
+  const [activityFilters, setActivityFilters] = React.useState<ActivityType[]>(
+    Object.keys(ACTIVITY_TYPES) as ActivityType[]
+  );
+
+  // Manipula mudança de filtros de categoria
   const handleFilterToggle = (type: EventCategory) => {
     const newFilters = filters.includes(type)
       ? filters.filter((f) => f !== type)
       : [...filters, type];
     handleFilterChange(newFilters);
   };
+
+  // Manipula mudança de filtros de tipo de atividade
+  const handleActivityFilterToggle = (type: ActivityType) => {
+    const newFilters = activityFilters.includes(type)
+      ? activityFilters.filter((f) => f !== type)
+      : [...activityFilters, type];
+    setActivityFilters(newFilters);
+  };
+
+  // Toggle todos os filtros de atividade
+  const handleToggleAllActivityFilters = () => {
+    if (activityFilters.length === activityTypes.length) {
+      setActivityFilters([]);
+    } else {
+      setActivityFilters(Object.keys(ACTIVITY_TYPES) as ActivityType[]);
+    }
+  };
+
+  // Filtra eventos por categoria e tipo de atividade
+  const filteredEvents = events.filter((event) => {
+    const categoryMatch = filters.includes(event.category);
+    if (!categoryMatch) return false;
+    
+    // Se for sábado e tiver tipo de atividade, aplica filtro
+    if (event.category === EventCategory.SATURDAY && event.activityType) {
+      return activityFilters.includes(event.activityType);
+    }
+    
+    return true;
+  });
 
   // Manipula criação de evento com feedback
   const handleCreateWithFeedback = async (eventData: any) => {
@@ -252,6 +293,56 @@ const Calendar: React.FC = () => {
               </CardContent>
             </Card>
 
+            {/* Card de Filtros de Tipo de Atividade */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Tipo de Atividade
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={handleToggleAllActivityFilters}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {activityFilters.length === activityTypes.length ? 'Limpar' : 'Todos'}
+                  </Button>
+                </Box>
+
+                <FormGroup>
+                  {activityTypes.map((activity) => (
+                    <FormControlLabel
+                      key={activity.type}
+                      control={
+                        <Checkbox
+                          checked={activityFilters.includes(activity.type)}
+                          onChange={() => handleActivityFilterToggle(activity.type)}
+                          sx={{
+                            color: '#2c5f2d',
+                            '&.Mui-checked': {
+                              color: '#2c5f2d',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2">
+                          {activity.label}
+                        </Typography>
+                      }
+                    />
+                  ))}
+                </FormGroup>
+              </CardContent>
+            </Card>
+
             {/* Card de Legenda */}
             <Card>
               <CardContent>
@@ -304,7 +395,7 @@ const Calendar: React.FC = () => {
           }}
         >
           <CalendarView
-            events={events}
+            events={filteredEvents}
             onSelectEvent={handleSelectEvent}
             onSelectSlot={handleSelectSlot}
             view={view}
