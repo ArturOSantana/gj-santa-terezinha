@@ -5,14 +5,13 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  root: path.resolve(__dirname, '.'),
-  publicDir: 'public',
   server: {
     fs: {
       strict: true,
       allow: [
-        path.resolve(__dirname, 'src'),
-        path.resolve(__dirname, 'public'),
+        // Permite acesso ao diretório raiz do projeto
+        path.resolve(__dirname),
+        // Permite acesso aos node_modules
         path.resolve(__dirname, 'node_modules'),
       ],
     },
