@@ -9,6 +9,7 @@ interface UseUsersReturn {
   loading: boolean;
   error: string | null;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
   searchUsers: (query: string) => User[];
   filterByRole: (role: UserRole | 'all') => User[];
   refreshUsers: () => void;
@@ -60,6 +61,30 @@ export const useUsers = (): UseUsersReturn => {
         await UsersService.updateUserRole(userId, newRole, currentUser.role);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar role';
+        setError(errorMessage);
+        throw err;
+      }
+    },
+    [currentUser]
+  );
+
+  /**
+   * Deletar usuário
+   */
+  const deleteUser = useCallback(
+    async (userId: string): Promise<void> => {
+      if (!currentUser || currentUser.role !== 'admin') {
+        throw new Error('Apenas administradores podem deletar usuários');
+      }
+
+      if (userId === currentUser.uid) {
+        throw new Error('Você não pode deletar sua própria conta');
+      }
+
+      try {
+        await UsersService.delete(userId, currentUser.role, currentUser.uid);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar usuário';
         setError(errorMessage);
         throw err;
       }
@@ -125,6 +150,7 @@ export const useUsers = (): UseUsersReturn => {
     loading,
     error,
     updateUserRole,
+    deleteUser,
     searchUsers,
     filterByRole,
     refreshUsers,

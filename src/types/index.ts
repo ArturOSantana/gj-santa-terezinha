@@ -40,6 +40,12 @@ export enum MemberStatus {
   SUSPENDED = 'suspended',
 }
 
+export enum Gender {
+  MALE = 'male',      // Rapazes
+  FEMALE = 'female',  // Moças
+  MIXED = 'mixed',    // Misto (ambos)
+}
+
 // ============================================================================
 // INTERFACES
 // ============================================================================
@@ -83,6 +89,8 @@ export interface Event {
   location: string;
   category: EventCategory;
   activityType?: ActivityType;
+  targetGender?: Gender; // Para filtrar eventos de moças/rapazes
+  googleCalendarId?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

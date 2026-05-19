@@ -58,8 +58,17 @@ coverage
 # Vercel
 .vercel
 
-# Scripts
-scripts/
+# Scripts temporários
+setup-env.sh
+clear-firestore.js
+
+# Documentação temporária
+PROXIMOS_PASSOS.md
+CONFIGURAR_VERCEL.md
+
+# Service Account (NUNCA COMMITAR!)
+*service-account*.json
+*credentials*.json
 
 # Made with Bob
 .env*.local

@@ -24,7 +24,7 @@ import CalendarView from '../../components/common/CalendarView';
 import EventDetailsModal from '../../components/common/EventDetailsModal';
 import EventFormModal from '../../components/common/EventFormModal';
 import { useCalendar } from '../../hooks/useCalendar';
-import { EventCategory, ActivityType } from '../../types';
+import { EventCategory, ActivityType, Gender } from '../../types';
 import { EVENT_CATEGORIES, ACTIVITY_TYPES } from '../../utils/constants';
 
 const Calendar: React.FC = () => {
@@ -81,6 +81,13 @@ const Calendar: React.FC = () => {
     Object.keys(ACTIVITY_TYPES) as ActivityType[]
   );
 
+  // Estado para filtros de gênero
+  const [genderFilters, setGenderFilters] = React.useState<Gender[]>([
+    Gender.MALE,
+    Gender.FEMALE,
+    Gender.MIXED,
+  ]);
+
   // Manipula mudança de filtros de categoria
   const handleFilterToggle = (type: EventCategory) => {
     const newFilters = filters.includes(type)
@@ -106,17 +113,40 @@ const Calendar: React.FC = () => {
     }
   };
 
-  // Filtra eventos por categoria e tipo de atividade
+  // Manipula mudança de filtros de gênero
+  const handleGenderFilterToggle = (gender: Gender) => {
+    const newFilters = genderFilters.includes(gender)
+      ? genderFilters.filter((f) => f !== gender)
+      : [...genderFilters, gender];
+    setGenderFilters(newFilters);
+  };
+
+  // Toggle todos os filtros de gênero
+  const handleToggleAllGenderFilters = () => {
+    if (genderFilters.length === 3) {
+      setGenderFilters([]);
+    } else {
+      setGenderFilters([Gender.MALE, Gender.FEMALE, Gender.MIXED]);
+    }
+  };
+
+  // Filtra eventos por categoria, tipo de atividade e gênero
   const filteredEvents = events.filter((event) => {
     const categoryMatch = filters.includes(event.category);
     if (!categoryMatch) return false;
     
     // Se for sábado e tiver tipo de atividade, aplica filtro
     if (event.category === EventCategory.SATURDAY && event.activityType) {
-      return activityFilters.includes(event.activityType);
+      if (!activityFilters.includes(event.activityType)) return false;
     }
     
-    return true;
+    // Aplica filtro de gênero
+    if (event.targetGender) {
+      return genderFilters.includes(event.targetGender);
+    }
+    
+    // Se não tem gênero definido, considera como misto
+    return genderFilters.includes(Gender.MIXED);
   });
 
   // Manipula criação de evento com feedback
@@ -379,6 +409,91 @@ const Calendar: React.FC = () => {
                     </Box>
                   ))}
                 </Stack>
+              </CardContent>
+            </Card>
+
+            {/* Card de Filtros de Gênero */}
+            <Card>
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Filtrar por Gênero
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={handleToggleAllGenderFilters}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {genderFilters.length === 3 ? 'Limpar' : 'Todos'}
+                  </Button>
+                </Box>
+
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={genderFilters.includes(Gender.MALE)}
+                        onChange={() => handleGenderFilterToggle(Gender.MALE)}
+                        sx={{
+                          color: '#2c5f2d',
+                          '&.Mui-checked': {
+                            color: '#2c5f2d',
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2">
+                        👨 Rapazes
+                      </Typography>
+                    }
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={genderFilters.includes(Gender.FEMALE)}
+                        onChange={() => handleGenderFilterToggle(Gender.FEMALE)}
+                        sx={{
+                          color: '#2c5f2d',
+                          '&.Mui-checked': {
+                            color: '#2c5f2d',
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2">
+                        👩 Moças
+                      </Typography>
+                    }
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={genderFilters.includes(Gender.MIXED)}
+                        onChange={() => handleGenderFilterToggle(Gender.MIXED)}
+                        sx={{
+                          color: '#2c5f2d',
+                          '&.Mui-checked': {
+                            color: '#2c5f2d',
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2">
+                        👥 Misto
+                      </Typography>
+                    }
+                  />
+                </FormGroup>
               </CardContent>
             </Card>
           </Box>

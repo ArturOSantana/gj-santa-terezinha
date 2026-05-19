@@ -1,23 +1,13 @@
-import { useState } from 'react';
 import {
   Box,
   Container,
   Typography,
   Paper,
-  Card,
-  CardContent,
-  Button,
-  TextField,
-  InputAdornment,
   Alert,
-  Divider,
-  Chip,
 } from '@mui/material';
 import {
-  ContentCopy as CopyIcon,
-  QrCode2 as QrCodeIcon,
+  Construction as ConstructionIcon,
   Favorite as FavoriteIcon,
-  CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 
 const PIX_KEY = 'gjsantaterezinha@exemplo.com';

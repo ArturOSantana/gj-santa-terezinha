@@ -9,7 +9,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { Edit as EditIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { User, UserRole } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 interface UserCardProps {
   user: User;
   onEditRole?: (user: User) => void;
+  onDelete?: (user: User) => void;
   canEdit?: boolean;
   isCurrentUser?: boolean;
 }
@@ -38,6 +39,7 @@ const getInitials = (name: string): string => {
 export const UserCard: React.FC<UserCardProps> = ({
   user,
   onEditRole,
+  onDelete,
   canEdit = false,
   isCurrentUser = false,
 }) => {
@@ -47,6 +49,12 @@ export const UserCard: React.FC<UserCardProps> = ({
   const handleEditClick = () => {
     if (onEditRole && canEdit) {
       onEditRole(user);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (onDelete && canEdit) {
+      onDelete(user);
     }
   };
 
@@ -122,23 +130,40 @@ export const UserCard: React.FC<UserCardProps> = ({
             </Typography>
           </Box>
 
-          {/* Botão Editar Role */}
+          {/* Botões de Ação */}
           {canEdit && !isCurrentUser && (
-            <Tooltip title="Editar Role">
-              <IconButton
-                size="small"
-                onClick={handleEditClick}
-                sx={{
-                  color: 'primary.main',
-                  '&:hover': {
-                    bgcolor: 'primary.light',
-                    color: 'primary.dark',
-                  },
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Tooltip title="Editar Role">
+                <IconButton
+                  size="small"
+                  onClick={handleEditClick}
+                  sx={{
+                    color: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'primary.light',
+                      color: 'primary.dark',
+                    },
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Deletar Usuário">
+                <IconButton
+                  size="small"
+                  onClick={handleDeleteClick}
+                  sx={{
+                    color: 'error.main',
+                    '&:hover': {
+                      bgcolor: 'error.light',
+                      color: 'error.dark',
+                    },
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
           )}
         </Box>
 

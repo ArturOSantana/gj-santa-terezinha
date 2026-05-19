@@ -15,7 +15,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { Event, EventCategory, ActivityType } from '../../types';
+import { Event, EventCategory, ActivityType, Gender } from '../../types';
 import { EVENT_CATEGORY_OPTIONS, ACTIVITY_TYPE_OPTIONS } from '../../utils/constants';
 import { format } from 'date-fns';
 
@@ -53,6 +53,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
     location: 'Paróquia Santa Terezinha',
     category: EventCategory.SATURDAY,
     activityType: undefined as ActivityType | undefined,
+    targetGender: Gender.MIXED as Gender | undefined,
     notes: '',
   });
 
@@ -70,6 +71,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         location: event.location,
         category: event.category,
         activityType: event.activityType,
+        targetGender: event.targetGender || Gender.MIXED,
         notes: event.notes || '',
       });
     } else if (initialDate) {
@@ -148,6 +150,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       location: formData.location.trim(),
       category: formData.category,
       activityType: formData.activityType,
+      targetGender: formData.targetGender,
       notes: formData.notes.trim(),
     };
 
@@ -171,6 +174,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       location: 'Paróquia Santa Terezinha',
       category: EventCategory.SATURDAY,
       activityType: undefined,
+      targetGender: Gender.MIXED,
       notes: '',
     });
     setErrors({});
@@ -338,6 +342,27 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
               ))}
             </TextField>
           )}
+
+          {/* Público-Alvo (Gênero) */}
+          <TextField
+            label="Público-Alvo"
+            select
+            value={formData.targetGender || Gender.MIXED}
+            onChange={(e) => setFormData({ ...formData, targetGender: e.target.value as Gender })}
+            disabled={readOnly}
+            fullWidth
+            helperText="Selecione o público-alvo deste evento"
+          >
+            <MenuItem value={Gender.MIXED}>
+              👥 Misto (Todos)
+            </MenuItem>
+            <MenuItem value={Gender.MALE}>
+              👨 Rapazes
+            </MenuItem>
+            <MenuItem value={Gender.FEMALE}>
+              👩 Moças
+            </MenuItem>
+          </TextField>
 
           {/* Observações */}
           <TextField

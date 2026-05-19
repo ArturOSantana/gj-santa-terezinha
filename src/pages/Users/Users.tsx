@@ -11,6 +11,12 @@ import {
   Alert,
   Skeleton,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -24,12 +30,14 @@ import { User, UserRole } from '../../types';
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { users, loading, error, updateUserRole, searchUsers, filterByRole } = useUsers();
+  const { users, loading, error, updateUserRole, deleteUser, searchUsers, filterByRole } = useUsers();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   // Filtrar usuários por busca e role
   const filteredUsers = useMemo(() => {
@@ -76,6 +84,28 @@ const Users: React.FC = () => {
 
   const handleSaveRole = async (userId: string, newRole: UserRole) => {
     await updateUserRole(userId, newRole);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await deleteUser(userToDelete.id);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
   };
 
   // Verificar se usuário é admin
@@ -204,6 +234,7 @@ const Users: React.FC = () => {
               key={user.id}
               user={user}
               onEditRole={handleEditRole}
+              onDelete={handleDeleteUser}
               canEdit={true}
               isCurrentUser={user.id === currentUser.uid}
             />
@@ -218,6 +249,33 @@ const Users: React.FC = () => {
         onClose={handleModalClose}
         onSave={handleSaveRole}
       />
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Confirmar Exclusão
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Tem certeza que deseja deletar o usuário <strong>{userToDelete?.displayName}</strong>?
+            <br />
+            Esta ação não pode ser desfeita.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="inherit">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+            Deletar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

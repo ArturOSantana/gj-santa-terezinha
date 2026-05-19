@@ -689,6 +689,22 @@ export const UsersService = {
   },
 
   /**
+   * Deletar usuário (apenas admin)
+   */
+  async deleteUser(userId: string, currentUserRole: UserRole, currentUserId: string): Promise<void> {
+    if (currentUserRole !== 'admin') {
+      throw new Error('Apenas administradores podem deletar usuários');
+    }
+
+    if (userId === currentUserId) {
+      throw new Error('Você não pode deletar sua própria conta');
+    }
+
+    const userRef = doc(db, 'users', userId);
+    await deleteDoc(userRef);
+  },
+
+  /**
    * Compatibilidade com API anterior
    */
   async getById(id: string): Promise<User | null> {
@@ -708,6 +724,10 @@ export const UsersService = {
     await this.updateUser(id, { lastLogin: new Date() });
   },
 
+
+  async delete(id: string, adminRole: UserRole, adminId: string): Promise<void> {
+    await this.deleteUser(id, adminRole, adminId);
+  },
   async updateRole(id: string, role: UserRole, adminRole: UserRole): Promise<void> {
     await this.updateUserRole(id, role, adminRole);
   },
