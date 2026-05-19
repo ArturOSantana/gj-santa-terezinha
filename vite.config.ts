@@ -1,19 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  root: path.resolve(__dirname, '.'),
+  publicDir: 'public',
   server: {
     fs: {
-      // Permite que o Vite sirva arquivos fora do root
-      strict: false,
-      // Nega acesso à pasta api
-      deny: ['**/api/**'],
+      strict: true,
+      allow: [
+        path.resolve(__dirname, 'src'),
+        path.resolve(__dirname, 'public'),
+        path.resolve(__dirname, 'node_modules'),
+      ],
     },
   },
-  optimizeDeps: {
-    // Exclui a pasta api da otimização de dependências
-    exclude: ['api'],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
   },
 })
