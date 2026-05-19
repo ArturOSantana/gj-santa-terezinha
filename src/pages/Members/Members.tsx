@@ -37,7 +37,6 @@ import AttendanceDialog from '../../components/common/AttendanceDialog';
 const Members: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   // Hook customizado para gerenciar membros
   const {

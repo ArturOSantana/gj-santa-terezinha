@@ -187,7 +187,7 @@ const Finance = () => {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {chartData.expensesByCategory.map((entry, index) => (
+                    {chartData.expensesByCategory.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
