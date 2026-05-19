@@ -1,4 +1,3 @@
-
 import { UserRole } from '../types';
 
 const ROLE_HIERARCHY: Record<UserRole, number> = {
@@ -20,14 +19,11 @@ export const canEdit = (
 ): boolean => {
   switch (resourceType) {
     case 'member':
-      // Apenas admin pode editar membros
-      return userRole === 'admin';
+      return hasPermission(userRole, 'coordinator');
     case 'event':
-      // Admin e coordinator podem editar eventos
       return hasPermission(userRole, 'coordinator');
     case 'transaction':
-      // Apenas admin pode editar transações
-      return userRole === 'admin';
+      return hasPermission(userRole, 'coordinator');
     default:
       return false;
   }
@@ -39,14 +35,11 @@ export const canDelete = (
 ): boolean => {
   switch (resourceType) {
     case 'member':
-      // Apenas admin pode deletar membros
-      return userRole === 'admin';
+      return hasPermission(userRole, 'coordinator');
     case 'event':
-      // Apenas admin pode deletar eventos
-      return userRole === 'admin';
+      return hasPermission(userRole, 'coordinator');
     case 'transaction':
-      // Apenas admin pode deletar transações
-      return userRole === 'admin';
+      return hasPermission(userRole, 'coordinator');
     default:
       return false;
   }
@@ -58,14 +51,11 @@ export const canCreate = (
 ): boolean => {
   switch (resourceType) {
     case 'member':
-      // Apenas admin pode criar membros
       return userRole === 'admin';
     case 'event':
-      // Admin e coordinator podem criar eventos
       return hasPermission(userRole, 'coordinator');
     case 'transaction':
-      // Apenas admin pode criar transações
-      return userRole === 'admin';
+      return hasPermission(userRole, 'coordinator');
     default:
       return false;
   }
@@ -73,66 +63,73 @@ export const canCreate = (
 
 export const canView = (
   userRole: UserRole,
-  resourceType: 'member' | 'event' | 'transaction' | 'dashboard' | 'finance'
+  resourceType: 'member' | 'event' | 'transaction' | 'dashboard' | 'finance' | 'contributions'
 ): boolean => {
   switch (resourceType) {
     case 'member':
-      // Apenas admin pode visualizar lista completa de membros
       return userRole === 'admin';
     case 'event':
-      // Todos podem visualizar eventos
       return true;
     case 'transaction':
     case 'finance':
-      // Admin e coordinator podem visualizar finanças
       return hasPermission(userRole, 'coordinator');
+    case 'contributions':
+      return true;
     case 'dashboard':
-      // Todos podem visualizar dashboard
       return true;
     default:
       return false;
   }
 };
 
-export const canManageAttendance = (userRole: UserRole): boolean => {
-  return hasPermission(userRole, 'coordinator');
-};
-
 export const canManageUsers = (userRole: UserRole): boolean => {
   return userRole === 'admin';
 };
 
-export const canManageSettings = (userRole: UserRole): boolean => {
-  return userRole === 'admin';
+export const canPromoteUser = (userRole: UserRole, targetRole: UserRole): boolean => {
+  if (userRole === 'admin') return true;
+  if (userRole === 'coordinator' && targetRole !== 'admin') return true;
+  return false;
+};
+
+export const canDemoteUser = (userRole: UserRole, targetRole: UserRole): boolean => {
+  if (userRole === 'admin') return true;
+  if (userRole === 'coordinator' && targetRole !== 'admin') return true;
+  return false;
+};
+
+export const canRemoveUser = (userRole: UserRole, targetRole: UserRole): boolean => {
+  if (userRole === 'admin') return true;
+  if (userRole === 'coordinator' && targetRole !== 'admin') return true;
+  return false;
+};
+
+export const canDownloadReports = (userRole: UserRole): boolean => {
+  return hasPermission(userRole, 'coordinator');
 };
 
 export const getRolePermissions = (userRole: UserRole) => {
   return {
-    // Visualização
     canViewDashboard: canView(userRole, 'dashboard'),
     canViewEvents: canView(userRole, 'event'),
     canViewMembers: canView(userRole, 'member'),
     canViewFinance: canView(userRole, 'finance'),
+    canViewContributions: canView(userRole, 'contributions'),
     
-    // Criação
     canCreateEvents: canCreate(userRole, 'event'),
     canCreateMembers: canCreate(userRole, 'member'),
     canCreateTransactions: canCreate(userRole, 'transaction'),
     
-    // Edição
     canEditEvents: canEdit(userRole, 'event'),
     canEditMembers: canEdit(userRole, 'member'),
     canEditTransactions: canEdit(userRole, 'transaction'),
     
-    // Exclusão
     canDeleteEvents: canDelete(userRole, 'event'),
     canDeleteMembers: canDelete(userRole, 'member'),
     canDeleteTransactions: canDelete(userRole, 'transaction'),
     
-    // Gerenciamento
-    canManageAttendance: canManageAttendance(userRole),
     canManageUsers: canManageUsers(userRole),
-    canManageSettings: canManageSettings(userRole),
+    canDownloadReports: canDownloadReports(userRole),
   };
 };
 
@@ -149,3 +146,4 @@ export const hasAnyRole = (
   return allowedRoles.includes(userRole);
 };
 
+// Made with Bob

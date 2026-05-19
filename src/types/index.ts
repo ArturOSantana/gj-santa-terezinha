@@ -3,17 +3,13 @@
 // ENUMS
 // ============================================================================
 
-export enum SaturdayType {
-  FIRST = 1,
-  SECOND = 2,
-  THIRD = 3,
-  FOURTH = 4,
-}
-
-export enum AttendanceStatus {
-  PRESENT = 'present',
-  ABSENT = 'absent',
-  JUSTIFIED = 'justified',
+export enum EventCategory {
+  SATURDAY = 'saturday',
+  SOLEMNITY = 'solemnity',
+  SAINT_DAY = 'saint_day',
+  BIRTHDAY = 'birthday',
+  PARISH_EVENT = 'parish_event',
+  NOVENA = 'novena',
 }
 
 export enum TransactionType {
@@ -78,12 +74,7 @@ export interface Event {
   startTime: string;
   endTime: string;
   location: string;
-  saturdayType: SaturdayType;
-  isSpecialEvent: boolean; // Evento especial (fora do calendário regular)
-  attendees: string[]; // IDs dos membros presentes
-  attendance: {
-    [memberId: string]: AttendanceStatus;
-  };
+  category: EventCategory;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -118,15 +109,6 @@ export interface FinancialSummary {
   };
 }
 
-export interface AttendanceStats {
-  memberId: string;
-  memberName: string;
-  totalEvents: number;
-  presentCount: number;
-  absentCount: number;
-  justifiedCount: number;
-  attendanceRate: number; // Percentual de presença
-}
 
 export interface SystemSettings {
   parishName: string;
@@ -175,7 +157,7 @@ export interface AuthContextType {
 export interface SearchFilters {
   startDate?: Date;
   endDate?: Date;
-  status?: MemberStatus | AttendanceStatus;
+  status?: MemberStatus;
   category?: TransactionCategory;
   memberId?: string;
   eventId?: string;
@@ -185,12 +167,11 @@ export interface DashboardStats {
   totalMembers: number;
   nextEvent: Event | null;
   balance: number;
-  attendanceRate: number;
 }
 
 export interface Activity {
   id: string;
-  type: 'attendance' | 'transaction' | 'event' | 'member';
+  type: 'transaction' | 'event' | 'member';
   description: string;
   timestamp: Date;
   icon: string;

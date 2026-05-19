@@ -21,6 +21,7 @@ import {
   AttachMoney as MoneyIcon,
   People as PeopleIcon,
   ManageAccounts as ManageAccountsIcon,
+  Favorite as FavoriteIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserMenu } from './UserMenu';
@@ -39,16 +40,19 @@ const menuItemsByRole: Record<UserRole, Array<{
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
     { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
+    { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
     { text: 'Usuários', icon: <ManageAccountsIcon />, path: '/users' },
   ],
   coordinator: [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
+    { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
   ],
   member: [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
   ],
 };
 

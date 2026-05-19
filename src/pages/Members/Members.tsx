@@ -19,16 +19,13 @@ import {
 import {
   Add as AddIcon,
   Search as SearchIcon,
-  CheckCircle as CheckCircleIcon,
   People as PeopleIcon,
-  TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { useMembers } from '../../hooks/useMembers';
 import StatCard from '../../components/common/StatCard';
 import MemberCard from '../../components/common/MemberCard';
 import MemberFormModal from '../../components/common/MemberFormModal';
 import MemberDetailsModal from '../../components/common/MemberDetailsModal';
-import AttendanceDialog from '../../components/common/AttendanceDialog';
 
 const Members: React.FC = () => {
   const theme = useTheme();
@@ -42,7 +39,6 @@ const Members: React.FC = () => {
     selectedMember,
     isFormOpen,
     isDetailsOpen,
-    isAttendanceOpen,
     filters,
     stats,
     handleNewMember,
@@ -51,10 +47,8 @@ const Members: React.FC = () => {
     handleDeleteMember,
     handleSaveMember,
     handleFilterChange,
-    handleAttendance,
     setIsFormOpen,
     setIsDetailsOpen,
-    setIsAttendanceOpen,
     permissions,
   } = useMembers();
 
@@ -91,33 +85,20 @@ const Members: React.FC = () => {
               Gestão de Membros
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Gerencie os membros do grupo, visualize estatísticas e registre presenças
+              Gerencie os membros do grupo e visualize estatísticas
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {permissions.canManageAttendance && (
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<CheckCircleIcon />}
-                onClick={() => setIsAttendanceOpen(true)}
-                fullWidth={isMobile}
-              >
-                Registrar Presença
-              </Button>
-            )}
-            {permissions.canCreateMember && (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={handleNewMember}
-                fullWidth={isMobile}
-              >
-                Novo Membro
-              </Button>
-            )}
-          </Box>
+          {permissions.canCreateMember && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleNewMember}
+              fullWidth={isMobile}
+            >
+              Novo Membro
+            </Button>
+          )}
         </Box>
 
         {/* Cards de Estatísticas */}
@@ -142,14 +123,8 @@ const Members: React.FC = () => {
           <StatCard
             title="Membros Ativos"
             value={stats.active}
-            icon={<CheckCircleIcon />}
+            icon={<PeopleIcon />}
             color="success"
-          />
-          <StatCard
-            title="Taxa Média de Presença"
-            value={`${stats.averageAttendance}%`}
-            icon={<TrendingUpIcon />}
-            color="warning"
           />
         </Box>
 
@@ -391,16 +366,6 @@ const Members: React.FC = () => {
           events={events}
           canEdit={permissions.canEditMember}
         />
-
-        {permissions.canManageAttendance && (
-          <AttendanceDialog
-            open={isAttendanceOpen}
-            onClose={() => setIsAttendanceOpen(false)}
-            onSave={handleAttendance}
-            members={allMembers}
-            events={events}
-          />
-        )}
       </Box>
     </Container>
   );

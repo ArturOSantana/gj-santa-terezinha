@@ -73,3 +73,22 @@ export const PERIOD_OPTIONS = [
   { value: 'all', label: 'Todo o Período' },
 ] as const;
 
+
+
+export const EVENT_CATEGORIES = {
+  saturday: { label: 'Sábado', color: '#2c5f2d' },
+  solemnity: { label: 'Solenidade', color: '#d4af37' },
+  saint_day: { label: 'Dia de Santo', color: '#9c27b0' },
+  birthday: { label: 'Aniversário', color: '#ff9800' },
+  parish_event: { label: 'Evento Paroquial', color: '#2196f3' },
+  novena: { label: 'Novena', color: '#e91e63' },
+} as const;
+
+export const EVENT_CATEGORY_OPTIONS = [
+  { value: 'saturday', label: 'Sábado' },
+  { value: 'solemnity', label: 'Solenidade' },
+  { value: 'saint_day', label: 'Dia de Santo' },
+  { value: 'birthday', label: 'Aniversário' },
+  { value: 'parish_event', label: 'Evento Paroquial' },
+  { value: 'novena', label: 'Novena' },
+] as const;
