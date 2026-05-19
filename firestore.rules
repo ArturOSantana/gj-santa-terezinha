@@ -28,8 +28,11 @@
       
       // Coleção: users
       match /users/{userId} {
-        // Leitura: próprio usuário ou admin
-        allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        // Leitura individual: próprio usuário ou admin
+        allow get: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        
+        // Leitura de lista: apenas admin
+        allow list: if isAdmin();
         
         // Criação: próprio usuário (durante registro) ou admin
         allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
