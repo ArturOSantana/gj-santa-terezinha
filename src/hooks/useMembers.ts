@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Member, MemberStatus, Event, AttendanceStatus } from '../types';
+import { Member, MemberStatus, Event } from '../types';
 import { firestoreService } from '../services/firestore.service';
 import { useAuth } from '../contexts/AuthContext';
 import { canCreate, canDelete, canEdit } from '../utils/permissions';
@@ -91,19 +91,10 @@ export const useMembers = () => {
 
   /**
    * Calcula a taxa de presença de um membro
+   * NOTA: Funcionalidade de presença foi removida
    */
   const getMemberAttendanceRate = (memberId: string): number => {
-    const memberEvents = events.filter(event => 
-      event.attendance && event.attendance[memberId]
-    );
-    
-    if (memberEvents.length === 0) return 0;
-    
-    const presentCount = memberEvents.filter(event => 
-      event.attendance[memberId] === AttendanceStatus.PRESENT
-    ).length;
-    
-    return (presentCount / memberEvents.length) * 100;
+    return 0; // Funcionalidade removida
   };
 
   /**
@@ -254,46 +245,11 @@ export const useMembers = () => {
 
   /**
    * Registra presença de membros em um evento no Firestore
+   * NOTA: Funcionalidade de presença foi removida
    */
   const handleAttendance = async (eventId: string, memberIds: string[]) => {
-    if (!user) {
-      throw new Error('Usuário não autenticado');
-    }
-
-    try {
-      setError(null);
-      
-      // Cria objeto de presença
-      const newAttendance: { [key: string]: AttendanceStatus } = {};
-      
-      // Marca presentes
-      memberIds.forEach(memberId => {
-        newAttendance[memberId] = AttendanceStatus.PRESENT;
-      });
-      
-      // Marca ausentes (membros ativos que não estão na lista)
-      members
-        .filter(m => m.status === MemberStatus.ACTIVE && !memberIds.includes(m.id))
-        .forEach(member => {
-          newAttendance[member.id] = AttendanceStatus.ABSENT;
-        });
-      
-      // Atualiza evento no Firestore
-      await firestoreService.updateEvent(
-        eventId,
-        {
-          attendees: memberIds,
-          attendance: newAttendance,
-        },
-        user.role
-      );
-      
-      console.log('Presença registrada com sucesso');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao registrar presença';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
+    console.warn('Funcionalidade de presença foi removida');
+    return;
   };
 
   /**
