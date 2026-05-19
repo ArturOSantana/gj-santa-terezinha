@@ -106,30 +106,41 @@ const Dashboard = () => {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              md: 'repeat(4, 1fr)',
+              md: user?.role === 'member' ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
             },
             gap: 3,
             mb: 4,
           }}
         >
-          <StatCard
-            title="Total de Membros"
-            value={user?.role === 'admin' ? stats.totalMembers : 'Restrito'}
-            icon={<PeopleIcon sx={{ fontSize: 32 }} />}
-            color="primary"
-          />
+          {/* Total de Membros - Apenas para Admin e Coordinator */}
+          {user?.role !== 'member' && (
+            <StatCard
+              title="Total de Membros"
+              value={stats.totalMembers}
+              icon={<PeopleIcon sx={{ fontSize: 32 }} />}
+              color="primary"
+            />
+          )}
+          
+          {/* Próximo Encontro - Para todos */}
           <StatCard
             title="Próximo Encontro"
             value={nextEventDate}
             icon={<EventIcon sx={{ fontSize: 32 }} />}
             color="secondary"
           />
-          <StatCard
-            title="Saldo do Caixa"
-            value={user?.role === 'member' ? 'Restrito' : formatCurrency(stats.balance)}
-            icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
-            color="success"
-          />
+          
+          {/* Saldo do Caixa - Apenas para Admin e Coordinator */}
+          {user?.role !== 'member' && (
+            <StatCard
+              title="Saldo do Caixa"
+              value={formatCurrency(stats.balance)}
+              icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
+              color="success"
+            />
+          )}
+          
+          {/* Taxa de Presença - Para todos */}
           <StatCard
             title="Taxa de Presença"
             value={`${stats.attendanceRate}%`}

@@ -6,26 +6,20 @@ service cloud.firestore {
     // FUNÇÕES AUXILIARES
     // ============================================================================
     
-    // Verifica se o usuário está autenticado
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Verifica se o usuário é o dono do documento
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
     
-    // Verifica se o usuário é coordenador ou admin
-    function isCoordinator() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coordinator', 'admin'];
-    }
-    
-    // Verifica se o usuário é admin
     function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isCoordinator() {
+      return isAuthenticated() && getUserRole() in ['admin', 'coordinator'];
     }
     
     // ============================================================================
@@ -33,51 +27,53 @@ service cloud.firestore {
     // ============================================================================
     
     // Coleção: users
-    // Usuários podem ler seus próprios dados
-    // Coordenadores podem ler todos os usuários
-    // Apenas o próprio usuário ou admin pode atualizar
     match /users/{userId} {
-      // Qualquer usuário autenticado pode ler QUALQUER documento de usuário
-      // Isso é necessário para que o sistema possa carregar o role do usuário
-      allow read: if isAuthenticated();
+      // Leitura: próprio usuário ou admin
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       
-      // Apenas o próprio usuário pode criar seu documento
-      allow create: if isAuthenticated() && isOwner(userId);
+      // Criação: próprio usuário (durante registro) ou admin
+      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       
-      // Apenas o próprio usuário OU admin pode atualizar
-      // Admin pode atualizar qualquer usuário (para mudar roles)
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Atualização: admin pode tudo, usuário só pode atualizar lastLogin
+      allow update: if isAdmin() || 
+                       (request.auth.uid == userId && 
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']));
       
-      // Apenas admin pode deletar
+      // Deleção: apenas admin
       allow delete: if isAdmin();
     }
     
     // Coleção: members
-    // Apenas admin pode visualizar lista completa de membros
-    // Apenas admin pode criar/editar/deletar membros
     match /members/{memberId} {
-      allow read: if isAdmin();
+      // Leitura: todos autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: apenas admin
       allow create, update, delete: if isAdmin();
     }
     
     // Coleção: events
-    // Todos autenticados podem ler
-    // Apenas coordenadores podem criar/editar/deletar
     match /events/{eventId} {
+      // Leitura: todos autenticados
       allow read: if isAuthenticated();
-      allow create, update, delete: if isCoordinator();
+      
+      // Criação e atualização: coordenadores e admins
+      allow create, update: if isCoordinator();
+      
+      // Deleção: apenas admin
+      allow delete: if isAdmin();
     }
     
     // Coleção: transactions
-    // Apenas coordenadores podem ler e escrever
     match /transactions/{transactionId} {
-      allow read, write: if isCoordinator();
+      // Leitura: coordenadores e admins
+      allow read: if isCoordinator();
+      
+      // Escrita: apenas admin
+      allow create, update, delete: if isAdmin();
     }
     
-    // Coleção: attendance
-    // Todos autenticados podem ler
-    // Membros podem criar/atualizar sua própria presença
-    // Coordenadores podem fazer tudo
+    // Coleção: attendance (se existir no futuro)
     match /attendance/{attendanceId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
@@ -86,9 +82,7 @@ service cloud.firestore {
       allow delete: if isCoordinator();
     }
     
-    // Coleção: settings
-    // Todos autenticados podem ler
-    // Apenas admins podem escrever
+    // Coleção: settings (se existir no futuro)
     match /settings/{document=**} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
