@@ -26,7 +26,7 @@ import {
   isValidName,
 } from '../../utils/validation';
 import brasaoGJ from '../../assets/brasao-gj.png';
-
+//MDS!
 export const Register: React.FC = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
