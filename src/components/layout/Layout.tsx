@@ -80,11 +80,12 @@ const Layout = () => {
     <Box>
       <Box
         sx={{
-          p: 2,
+          p: 2.5,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
           bgcolor: 'primary.main',
           color: 'white',
         }}
@@ -93,53 +94,40 @@ const Layout = () => {
           src={brasaoGJ}
           alt="Brasão GJ"
           style={{
-            width: '80px',
-            height: '80px',
-            marginBottom: '12px',
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+            width: '70px',
+            height: '70px',
+            marginBottom: '8px',
           }}
         />
-        <Typography variant="h6" sx={{ fontWeight: 600, textAlign: 'center' }}>
-          Grupo de Jovens
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.9 }}>
-          Santa Terezinha
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          GJ Santa Terezinha
         </Typography>
       </Box>
-      <List sx={{ pt: 2 }}>
+      <List sx={{ pt: 1, px: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ px: 1 }}>
+          <ListItem key={item.text} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => handleNavigation(item.path)}
               sx={{
-                borderRadius: 2,
+                borderRadius: 1,
                 mb: 0.5,
                 '&.Mui-selected': {
-                  bgcolor: 'primary.light',
-                  color: 'white',
+                  bgcolor: 'rgba(44, 95, 45, 0.08)',
                   '&:hover': {
-                    bgcolor: 'primary.main',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'white',
+                    bgcolor: 'rgba(44, 95, 45, 0.12)',
                   },
                 },
               }}
             >
-              <ListItemIcon
-                sx={{
-                  color: location.pathname === item.path ? 'white' : 'primary.main',
-                }}
-              >
+              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
-                sx={{
-                  '& .MuiListItemText-primary': {
-                    fontWeight: location.pathname === item.path ? 600 : 400,
-                  },
+                primaryTypographyProps={{
+                  fontSize: '0.95rem',
+                  fontWeight: location.pathname === item.path ? 600 : 400,
                 }}
               />
             </ListItemButton>
@@ -171,8 +159,8 @@ const Layout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            GJ Santa Terezinha - Sistema de Gestão
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+            GJ Santa Terezinha
           </Typography>
           <UserMenu />
         </Toolbar>
