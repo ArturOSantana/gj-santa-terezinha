@@ -23,6 +23,9 @@ import {
   isValidPassword,
   getPasswordErrorMessage,
   isValidName,
+  isValidPhone,
+  formatPhone,
+  isValidBirthDate,
 } from '../../utils/validation';
 import brasaoGJ from '../../assets/brasao-gj.png';
 
@@ -33,6 +36,8 @@ export const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
+    birthDate: '',
     password: '',
     confirmPassword: '',
   });
@@ -53,7 +58,7 @@ export const Register: React.FC = () => {
     setError('');
 
     // Validações
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.birthDate || !formData.password || !formData.confirmPassword) {
       setError('Por favor, preencha todos os campos');
       return;
     }
@@ -65,6 +70,16 @@ export const Register: React.FC = () => {
 
     if (!isValidEmail(formData.email)) {
       setError('Email inválido');
+      return;
+    }
+
+    if (!isValidPhone(formData.phone)) {
+      setError('Telefone inválido. Use o formato: (11) 99999-9999');
+      return;
+    }
+
+    if (!isValidBirthDate(formData.birthDate)) {
+      setError('Data de nascimento inválida. Idade mínima: 12 anos');
       return;
     }
 
@@ -81,7 +96,7 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await signUp(formData.email, formData.password, formData.name);
+      await signUp(formData.email, formData.password, formData.name, formData.phone, new Date(formData.birthDate));
       navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta');
@@ -182,6 +197,40 @@ export const Register: React.FC = () => {
               value={formData.email}
               onChange={handleChange}
               disabled={loading}
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="phone"
+              label="Telefone"
+              name="phone"
+              placeholder="(11) 99999-9999"
+              autoComplete="tel"
+              value={formData.phone}
+              onChange={handleChange}
+              disabled={loading}
+              helperText="Formato: (11) 99999-9999"
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="birthDate"
+              label="Data de Nascimento"
+              name="birthDate"
+              type="date"
+              value={formData.birthDate}
+              onChange={handleChange}
+              disabled={loading}
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
+              }}
+              helperText="Idade mínima: 12 anos"
             />
 
             <TextField

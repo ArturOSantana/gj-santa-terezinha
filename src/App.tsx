@@ -27,6 +27,7 @@ import Finance from './pages/Finance';
 import Members from './pages/Members';
 import Users from './pages/Users';
 import Contributions from './pages/Contributions';
+import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
@@ -111,6 +112,16 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
                     <Contributions />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Perfil - Todos os usuários autenticados */}
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />

@@ -73,10 +73,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (
     email: string,
     password: string,
-    displayName: string
+    displayName: string,
+    phone: string,
+    birthDate: Date
   ): Promise<void> => {
     try {
-      const authUser = await authService.signUp(email, password, displayName);
+      const authUser = await authService.signUp(email, password, displayName, phone, birthDate);
       setUser(authUser);
     } catch (error) {
       throw error;

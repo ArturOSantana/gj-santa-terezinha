@@ -102,3 +102,34 @@ export const formatCEP = (cep: string): string => {
   return cep;
 };
 
+export const isValidBirthDate = (dateString: string): boolean => {
+  if (!dateString) return false;
+  
+  const date = new Date(dateString);
+  const today = new Date();
+  
+  // Verifica se é uma data válida
+  if (isNaN(date.getTime())) return false;
+  
+  // Verifica se não é uma data futura
+  if (date > today) return false;
+  
+  // Calcula a idade
+  let age = today.getFullYear() - date.getFullYear();
+  const monthDiff = today.getMonth() - date.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+    age--;
+  }
+  
+  // Idade mínima de 12 anos e máxima de 120 anos
+  return age >= 12 && age <= 120;
+};
+
+export const formatBirthDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+

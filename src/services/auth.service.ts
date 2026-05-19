@@ -125,6 +125,8 @@ export const signUp = async (
   email: string,
   password: string,
   displayName: string,
+  phone: string,
+  birthDate: Date,
   role: UserRole = 'member'
 ): Promise<AuthUser> => {
   try {
@@ -151,6 +153,8 @@ export const signUp = async (
           id: user.uid,
           email: email,
           displayName: displayName,
+          phone: phone,
+          birthDate: birthDate,
           role: finalRole,
           photoUrl: undefined,
           createdAt: new Date(),

@@ -1,91 +1,92 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // ============================================================================
-    // FUNÇÕES AUXILIARES
-    // ============================================================================
-    
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'admin';
-    }
-    
-    function isCoordinator() {
-      return isAuthenticated() && getUserRole() in ['admin', 'coordinator'];
-    }
-    
-    // ============================================================================
-    // REGRAS POR COLEÇÃO
-    // ============================================================================
-    
-    // Coleção: users
-    match /users/{userId} {
-      // Leitura: próprio usuário ou admin
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
       
-      // Criação: próprio usuário (durante registro) ou admin
-      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // ============================================================================
+      // FUNÇÕES AUXILIARES
+      // ============================================================================
       
-      // Atualização: admin pode tudo, usuário só pode atualizar lastLogin
-      allow update: if isAdmin() || 
-                       (request.auth.uid == userId && 
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']));
+      function isAuthenticated() {
+        return request.auth != null;
+      }
       
-      // Deleção: apenas admin
-      allow delete: if isAdmin();
-    }
-    
-    // Coleção: members
-    match /members/{memberId} {
-      // Leitura: todos autenticados
-      allow read: if isAuthenticated();
+      function getUserRole() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      }
       
-      // Escrita: apenas admin
-      allow create, update, delete: if isAdmin();
-    }
-    
-    // Coleção: events
-    match /events/{eventId} {
-      // Leitura: todos autenticados
-      allow read: if isAuthenticated();
+      function isAdmin() {
+        return isAuthenticated() && getUserRole() == 'admin';
+      }
       
-      // Criação e atualização: coordenadores e admins
-      allow create, update: if isCoordinator();
+      function isCoordinator() {
+        return isAuthenticated() && getUserRole() in ['admin', 'coordinator'];
+      }
       
-      // Deleção: apenas admin
-      allow delete: if isAdmin();
-    }
-    
-    // Coleção: transactions
-    match /transactions/{transactionId} {
-      // Leitura: coordenadores e admins
-      allow read: if isCoordinator();
+      // ============================================================================
+      // REGRAS POR COLEÇÃO
+      // ============================================================================
       
-      // Escrita: apenas admin
-      allow create, update, delete: if isAdmin();
-    }
-    
-    // Coleção: attendance (se existir no futuro)
-    match /attendance/{attendanceId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && 
-        (resource.data.userId == request.auth.uid || isCoordinator());
-      allow delete: if isCoordinator();
-    }
-    
-    // Coleção: settings (se existir no futuro)
-    match /settings/{document=**} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      // Coleção: users
+      match /users/{userId} {
+        // Leitura: próprio usuário ou admin
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        
+        // Criação: próprio usuário (durante registro) ou admin
+        allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        
+        // Atualização: admin pode tudo, usuário pode atualizar seus próprios dados de perfil
+        allow update: if isAdmin() ||
+                        (request.auth.uid == userId &&
+                          request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['lastLogin', 'displayName', 'email', 'phone', 'birthDate', 'photoUrl']));
+        
+        // Deleção: apenas admin
+        allow delete: if isAdmin();
+      }
+      
+      // Coleção: members
+      match /members/{memberId} {
+        // Leitura: todos autenticados
+        allow read: if isAuthenticated();
+        
+        // Escrita: apenas admin
+        allow create, update, delete: if isAdmin();
+      }
+      
+      // Coleção: events
+      match /events/{eventId} {
+        // Leitura: todos autenticados
+        allow read: if isAuthenticated();
+        
+        // Criação e atualização: coordenadores e admins
+        allow create, update: if isCoordinator();
+        
+        // Deleção: apenas admin
+        allow delete: if isAdmin();
+      }
+      
+      // Coleção: transactions
+      match /transactions/{transactionId} {
+        // Leitura: coordenadores e admins
+        allow read: if isCoordinator();
+        
+        // Escrita: apenas admin
+        allow create, update, delete: if isAdmin();
+      }
+      
+      // Coleção: attendance (se existir no futuro)
+      match /attendance/{attendanceId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated() && 
+          (resource.data.userId == request.auth.uid || isCoordinator());
+        allow delete: if isCoordinator();
+      }
+      
+      // Coleção: settings (se existir no futuro)
+      match /settings/{document=**} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
     }
   }
-}

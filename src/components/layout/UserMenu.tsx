@@ -34,6 +34,11 @@ export const UserMenu: React.FC = () => {
     setAnchorEl(null);
   };
 
+  const handleProfile = () => {
+    navigate('/profile');
+    handleClose();
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -127,7 +132,7 @@ export const UserMenu: React.FC = () => {
         
         <Divider />
         
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleProfile}>
           <ListItemIcon>
             <AccountCircle fontSize="small" />
           </ListItemIcon>

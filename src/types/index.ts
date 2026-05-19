@@ -144,6 +144,8 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
+  phone: string;
+  birthDate: Date;
   role: UserRole;
   memberId?: string; // Referência ao membro, se aplicável
   photoUrl?: string;
@@ -164,7 +166,7 @@ export interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, phone: string, birthDate: Date) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
