@@ -11,5 +11,6 @@ export { default as MemberCard } from './MemberCard';
 export { default as MemberFormModal } from './MemberFormModal';
 export { default as MemberDetailsModal } from './MemberDetailsModal';
 export { UserCard } from './UserCard';
+export { default as FirebaseConfigWarning } from './FirebaseConfigWarning';
 export { UserRoleModal } from './UserRoleModal';
 

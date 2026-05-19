@@ -8,11 +8,17 @@ import theme from './theme/theme';
 // Context
 import { AuthProvider } from './contexts/AuthContext';
 
+// Config
+import { isFirebaseConfigured } from './config/firebase';
+
 // Layout
 import Layout from './components/layout/Layout';
 
 // Auth Components
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
+// Components
+import FirebaseConfigWarning from './components/common/FirebaseConfigWarning';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -29,6 +35,16 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { PERMISSIONS } from './utils/permissions';
 
 function App() {
+  // Se o Firebase não estiver configurado, mostrar aviso
+  if (!isFirebaseConfigured) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <FirebaseConfigWarning />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

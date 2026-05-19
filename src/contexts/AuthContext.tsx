@@ -16,15 +16,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
-      const demoUser: AuthUser = {
-        uid: 'demo-user-123',
-        email: 'demo@example.com',
-        displayName: 'Usuário Demo',
-        photoURL: null,
-        role: 'admin',
-      };
-      
-      setUser(demoUser);
+      console.error(
+        '❌ FIREBASE NÃO CONFIGURADO!\n' +
+        'O sistema não pode funcionar sem Firebase configurado.\n' +
+        'Por favor, siga as instruções em SOLUCAO_ERRO_API_KEY.md'
+      );
+      setUser(null);
       setLoading(false);
       return;
     }
