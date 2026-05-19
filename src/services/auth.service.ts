@@ -162,9 +162,20 @@ export const signUp = async (
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
         });
+        
+        console.log('✅ Usuário criado no Firestore com sucesso:', user.uid);
       } catch (error) {
-        console.warn('Firestore indisponível, usando apenas armazenamento local');
+        console.error('❌ ERRO ao salvar usuário no Firestore:', error);
+        console.error('Detalhes do erro:', {
+          code: (error as any)?.code,
+          message: (error as any)?.message,
+          userId: user.uid,
+          email: email
+        });
+        // Não bloqueia o registro, mas loga o erro completo
       }
+    } else {
+      console.warn('⚠️ Firestore não está disponível. Usuário criado apenas no Authentication.');
     }
 
     return {
