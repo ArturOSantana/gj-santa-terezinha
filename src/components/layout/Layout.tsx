@@ -47,6 +47,7 @@ const menuItemsByRole: Record<UserRole, Array<{
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
+    { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
     { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
   ],
   member: [
