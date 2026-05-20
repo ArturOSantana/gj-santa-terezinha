@@ -70,11 +70,9 @@ const MemberCard: React.FC<MemberCardProps> = ({
   const safePhone = typeof member.phone === 'string' && member.phone.trim() ? member.phone : 'Telefone não informado';
   const initials = getInitials(member.name);
 
-  // Cores por gênero
-  const genderColor = member.gender === 'male' ? '#2196f3' : member.gender === 'female' ? '#e91e63' : '#757575';
+  const genderColor = member.gender === 'male' ? '#1f4d3a' : member.gender === 'female' ? '#8c6b2f' : '#757575';
   const genderLabel = member.gender === 'male' ? 'Cavalheiros' : member.gender === 'female' ? 'Santa Joana' : 'Não informado';
 
-  // Cores por status
   const statusConfig = {
     [MemberStatus.ACTIVE]: { color: 'success', label: 'Ativo' },
     [MemberStatus.INACTIVE]: { color: 'default', label: 'Inativo' },
@@ -89,15 +87,14 @@ const MemberCard: React.FC<MemberCardProps> = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        border: '2px solid #1e1e1e',
+        transition: 'background-color 0.2s ease',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 4,
+          backgroundColor: '#efe8da',
         },
       }}
     >
       <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-        {/* Avatar e Nome */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Avatar
             src={member.photoUrl}
@@ -105,10 +102,12 @@ const MemberCard: React.FC<MemberCardProps> = ({
             sx={{
               width: 56,
               height: 56,
-              bgcolor: genderColor,
+              bgcolor: '#f7f2e8',
               fontSize: '1.25rem',
               fontWeight: 'bold',
               mr: 2,
+              color: genderColor,
+              border: `2px solid ${genderColor}`,
             }}
           >
             {!member.photoUrl && initials}
@@ -147,7 +146,6 @@ const MemberCard: React.FC<MemberCardProps> = ({
           </Box>
         </Box>
 
-        {/* Informações */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CakeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -180,8 +178,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
         </Box>
       </CardContent>
 
-      {/* Ações */}
-      <CardActions sx={{ justifyContent: 'flex-end', pt: 0, px: 2, pb: 2 }}>
+      <CardActions sx={{ justifyContent: 'flex-end', pt: 0, px: 2, pb: 2, borderTop: '1px solid #1e1e1e' }}>
         <Tooltip title="Ver Detalhes" arrow>
           <IconButton
             size="small"
@@ -192,7 +189,6 @@ const MemberCard: React.FC<MemberCardProps> = ({
             <VisibilityIcon />
           </IconButton>
         </Tooltip>
-        {/* Botões de editar e deletar removidos - apenas visualização */}
         {false && canEdit && (
           <Tooltip title="Editar" arrow>
             <IconButton

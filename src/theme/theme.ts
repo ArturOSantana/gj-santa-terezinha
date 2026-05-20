@@ -3,24 +3,24 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2f5d50',
-      light: '#4f7d70',
-      dark: '#1f4036',
+      main: '#1f4d3a',
+      light: '#356854',
+      dark: '#16372a',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#b88a44',
-      light: '#cda567',
-      dark: '#8d6930',
+      main: '#8c6b2f',
+      light: '#a48344',
+      dark: '#654b1f',
       contrastText: '#ffffff',
     },
     background: {
-      default: '#f7f4ef',
-      paper: '#ffffff',
+      default: '#ece7dc',
+      paper: '#f7f2e8',
     },
     text: {
-      primary: '#1f2933',
-      secondary: '#5b6572',
+      primary: '#1e1e1e',
+      secondary: '#4d4d4d',
     },
   },
   typography: {
@@ -52,31 +52,33 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 14,
+    borderRadius: 0,
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#f7f4ef',
+          backgroundColor: '#ece7dc',
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          padding: '9px 18px',
+          borderRadius: 0,
+          padding: '10px 18px',
           boxShadow: 'none',
+          border: '1px solid transparent',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 18,
-          boxShadow: '0 10px 30px rgba(31, 41, 51, 0.06)',
+          borderRadius: 0,
+          boxShadow: 'none',
           backgroundImage: 'none',
+          border: '1px solid rgba(30, 30, 30, 0.14)',
         },
       },
     },
@@ -86,7 +88,7 @@ const theme = createTheme({
           backgroundImage: 'none',
         },
         rounded: {
-          borderRadius: 18,
+          borderRadius: 0,
         },
       },
     },

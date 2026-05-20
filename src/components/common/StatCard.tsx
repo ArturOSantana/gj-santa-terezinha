@@ -15,7 +15,6 @@ interface StatCardProps {
 const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProps) => {
   const theme = useTheme();
 
-  // Obtém a cor do tema baseada na prop color
   const getColor = () => {
     switch (color) {
       case 'primary':
@@ -41,12 +40,10 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
     <Card
       sx={{
         height: '100%',
-        border: '1px solid',
-        borderColor: 'rgba(31, 41, 51, 0.06)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        border: '2px solid #1e1e1e',
+        transition: 'background-color 0.2s ease',
         '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 14px 28px rgba(31, 41, 51, 0.10)',
+          backgroundColor: '#efe8da',
         },
       }}
     >
@@ -57,7 +54,7 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
               variant="body2"
               color="text.secondary"
               gutterBottom
-              sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.06em' }}
+              sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.08em' }}
             >
               {title}
             </Typography>
@@ -106,8 +103,8 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
               justifyContent: 'center',
               width: { xs: 48, sm: 56 },
               height: { xs: 48, sm: 56 },
-              borderRadius: 3,
-              backgroundColor: `${cardColor}14`,
+              border: `2px solid ${cardColor}`,
+              backgroundColor: 'transparent',
               color: cardColor,
               flexShrink: 0,
             }}

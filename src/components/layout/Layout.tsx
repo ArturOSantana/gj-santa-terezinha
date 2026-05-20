@@ -28,7 +28,7 @@ import { UserMenu } from './UserMenu';
 import { UserRole } from '../../types';
 import brasaoGJ from '../../assets/brasao-gj.png';
 
-const drawerWidth = 272;
+const drawerWidth = 264;
 
 const menuItemsByRole: Record<UserRole, Array<{
   text: string;
@@ -88,29 +88,28 @@ const Layout = () => {
     >
       <Box
         sx={{
-          px: 2.5,
-          pt: 3,
-          pb: 2.5,
+          px: 2,
+          pt: 2,
+          pb: 2,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          background: 'linear-gradient(180deg, #2c5f2d 0%, #234a24 100%)',
+          alignItems: 'flex-start',
+          borderBottom: '2px solid',
+          borderColor: '#1e1e1e',
+          backgroundColor: '#1f4d3a',
           color: 'white',
         }}
       >
         <Box
           sx={{
-            width: 82,
-            height: 82,
-            mb: 1.5,
-            borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.12)',
+            width: 72,
+            height: 72,
+            mb: 1.25,
+            bgcolor: '#f7f2e8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid rgba(255,255,255,0.18)',
+            border: '2px solid #1e1e1e',
           }}
         >
           <img
@@ -123,38 +122,37 @@ const Layout = () => {
             }}
           />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'left' }}>
           GJ Santa Terezinha
-        </Typography>
-        <Typography variant="body2" sx={{ opacity: 0.82, textAlign: 'center', mt: 0.5 }}>
-          Gestão interna do grupo
         </Typography>
       </Box>
 
-      <List sx={{ pt: 1.5, px: 1.5 }}>
+      <List sx={{ pt: 1, px: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.75 }}>
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => handleNavigation(item.path)}
               sx={{
-                minHeight: 48,
-                borderRadius: 2.5,
-                px: 1.5,
+                minHeight: 46,
+                px: 1.25,
+                border: '1px solid transparent',
                 '&:hover': {
-                  bgcolor: 'rgba(44, 95, 45, 0.06)',
+                  bgcolor: '#e4ddcf',
+                  borderColor: '#1e1e1e',
                 },
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(44, 95, 45, 0.10)',
-                  color: 'primary.main',
+                  bgcolor: '#d8cfbe',
+                  color: '#1e1e1e',
+                  borderColor: '#1e1e1e',
                   '& .MuiListItemIcon-root': {
-                    color: 'primary.main',
+                    color: '#1e1e1e',
                   },
                   '& .MuiListItemText-primary': {
                     fontWeight: 700,
                   },
                   '&:hover': {
-                    bgcolor: 'rgba(44, 95, 45, 0.14)',
+                    bgcolor: '#d8cfbe',
                   },
                 },
               }}
@@ -187,10 +185,9 @@ const Layout = () => {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'rgba(250, 247, 242, 0.88)',
-          backdropFilter: 'blur(12px)',
+          borderBottom: '2px solid',
+          borderColor: '#1e1e1e',
+          bgcolor: '#ece7dc',
         }}
       >
         <Toolbar
@@ -208,8 +205,7 @@ const Layout = () => {
               mr: 1.5,
               display: { sm: 'none' },
               border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
+              borderColor: '#1e1e1e',
             }}
           >
             <MenuIcon />

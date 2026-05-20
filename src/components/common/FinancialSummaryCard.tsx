@@ -27,9 +27,6 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
 }) => {
   const colors = TRANSACTION_COLORS[type];
 
-  /**
-   * Formata o valor monetário em Real brasileiro
-   */
   const formatCurrency = (val: number): string => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -41,13 +38,11 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
     <Card
       sx={{
         height: '100%',
-        background: `linear-gradient(135deg, ${colors.light}14 0%, ${colors.main}08 100%)`,
-        border: '1px solid',
-        borderColor: `${colors.main}22`,
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        backgroundColor: '#f7f2e8',
+        border: `2px solid ${colors.main}`,
+        transition: 'background-color 0.2s ease',
         '&:hover': {
-          boxShadow: '0 14px 28px rgba(31, 41, 51, 0.10)',
-          transform: 'translateY(-2px)',
+          backgroundColor: '#efe8da',
         },
       }}
     >
@@ -65,7 +60,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ fontWeight: 600, mb: 0.75, letterSpacing: '0.02em' }}
+                sx={{ fontWeight: 700, mb: 0.75, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.72rem' }}
               >
                 {title}
               </Typography>
@@ -86,8 +81,8 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
 
             <Box
               sx={{
-                backgroundColor: colors.bg,
-                borderRadius: 3,
+                backgroundColor: 'transparent',
+                border: `2px solid ${colors.main}`,
                 width: { xs: 48, sm: 56 },
                 height: { xs: 48, sm: 56 },
                 display: 'flex',
@@ -108,7 +103,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
                 alignItems: 'center',
                 gap: 0.75,
                 pt: 1,
-                borderTop: `1px solid ${colors.light}30`,
+                borderTop: `1px solid ${colors.main}`,
                 flexWrap: 'wrap',
               }}
             >

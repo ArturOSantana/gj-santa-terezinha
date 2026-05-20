@@ -31,7 +31,6 @@ const Members: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Hook customizado para gerenciar membros
   const {
     members,
     allMembers,
@@ -52,7 +51,6 @@ const Members: React.FC = () => {
     permissions,
   } = useMembers();
 
-  // Paginação
   const [page, setPage] = useState(1);
   const itemsPerPage = 12;
   const totalPages = Math.ceil(members.length / itemsPerPage);
@@ -61,7 +59,6 @@ const Members: React.FC = () => {
     page * itemsPerPage
   );
 
-  // Reseta a página quando os filtros mudam
   React.useEffect(() => {
     setPage(1);
   }, [filters]);
@@ -72,10 +69,8 @@ const Members: React.FC = () => {
         <Box
           sx={{
             p: { xs: 2.5, sm: 3.5 },
-            borderRadius: 4,
-            background: 'linear-gradient(135deg, rgba(47,93,80,0.10) 0%, rgba(184,138,68,0.08) 100%)',
-            border: '1px solid',
-            borderColor: 'rgba(47,93,80,0.10)',
+            backgroundColor: '#d8cfbe',
+            border: '2px solid #1e1e1e',
           }}
         >
           <Typography variant="h4" component="h1" gutterBottom>
@@ -86,7 +81,6 @@ const Members: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Cards de Estatísticas */}
         <Box
           sx={{
             display: 'grid',
@@ -113,16 +107,12 @@ const Members: React.FC = () => {
           />
         </Box>
 
-        {/* Filtros e Controles */}
         <Box
           sx={{
             bgcolor: 'background.paper',
             p: { xs: 2, sm: 3 },
-            borderRadius: 4,
-            boxShadow: '0 10px 30px rgba(31, 41, 51, 0.06)',
             mb: 0,
-            border: '1px solid',
-            borderColor: 'rgba(31, 41, 51, 0.06)',
+            border: '2px solid #1e1e1e',
           }}
         >
           <Typography variant="h6" gutterBottom>
@@ -130,7 +120,6 @@ const Members: React.FC = () => {
           </Typography>
           
           <Stack spacing={2}>
-            {/* Busca */}
             <TextField
               fullWidth
               placeholder="Buscar por nome ou email..."
@@ -147,7 +136,6 @@ const Members: React.FC = () => {
               }}
             />
 
-            {/* Filtros em linha */}
             <Box
               sx={{
                 display: 'grid',
@@ -159,7 +147,6 @@ const Members: React.FC = () => {
                 gap: 2,
               }}
             >
-              {/* Filtro de Grupo */}
               <FormControl fullWidth>
                 <InputLabel>Grupo</InputLabel>
                 <Select
@@ -173,7 +160,6 @@ const Members: React.FC = () => {
                 </Select>
               </FormControl>
 
-              {/* Filtro de Status */}
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -187,7 +173,6 @@ const Members: React.FC = () => {
                 </Select>
               </FormControl>
 
-              {/* Filtro de Faixa Etária */}
               <FormControl fullWidth>
                 <InputLabel>Faixa Etária</InputLabel>
                 <Select
@@ -203,7 +188,6 @@ const Members: React.FC = () => {
               </FormControl>
             </Box>
 
-            {/* Chips de filtros ativos */}
             {(filters.search || filters.group !== 'all' || filters.status !== 'all' || filters.ageRange !== 'all') && (
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
@@ -242,7 +226,6 @@ const Members: React.FC = () => {
           </Stack>
         </Box>
 
-        {/* Contador de Resultados */}
         <Box
           sx={{
             display: 'flex',
@@ -262,17 +245,13 @@ const Members: React.FC = () => {
           )}
         </Box>
 
-        {/* Lista de Membros */}
         {paginatedMembers.length === 0 ? (
           <Box
             sx={{
               textAlign: 'center',
               py: 8,
               bgcolor: 'background.paper',
-              borderRadius: 4,
-              boxShadow: '0 10px 30px rgba(31, 41, 51, 0.06)',
-              border: '1px solid',
-              borderColor: 'rgba(31, 41, 51, 0.06)',
+              border: '2px solid #1e1e1e',
             }}
           >
             <PeopleIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -327,7 +306,6 @@ const Members: React.FC = () => {
               ))}
             </Box>
 
-            {/* Paginação */}
             {totalPages > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                 <Pagination
@@ -344,7 +322,6 @@ const Members: React.FC = () => {
           </>
         )}
 
-        {/* Modais */}
         <MemberFormModal
           open={isFormOpen}
           onClose={() => {

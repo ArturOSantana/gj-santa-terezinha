@@ -64,9 +64,6 @@ const Finance = () => {
     permissions,
   } = useFinance();
 
-  /**
-   * Formata valor monetário
-   */
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -74,13 +71,10 @@ const Finance = () => {
     }).format(value);
   };
 
-  /**
-   * Renderiza o tooltip customizado do gráfico
-   */
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <Paper sx={{ p: 1.5 }}>
+        <Paper sx={{ p: 1.5, border: '2px solid #1e1e1e' }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {payload[0].name}
           </Typography>
@@ -93,9 +87,6 @@ const Finance = () => {
     return null;
   };
 
-  /**
-   * Obtém as categorias disponíveis baseado no tipo de filtro
-   */
   const getAvailableCategories = () => {
     if (filters.type === TransactionType.INCOME) {
       return TRANSACTION_CATEGORIES.income;
@@ -106,10 +97,9 @@ const Finance = () => {
   };
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        {/* Cabeçalho */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+    <Container maxWidth="xl" disableGutters>
+      <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0, p: { xs: 2.5, sm: 3.5 }, backgroundColor: '#d8cfbe', border: '2px solid #1e1e1e', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
           <Box>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
               Controle Financeiro
@@ -138,8 +128,7 @@ const Finance = () => {
           </Stack>
         </Box>
 
-        {/* Cards de Resumo Financeiro */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 0 }}>
           <FinancialSummaryCard
             title="Total de Receitas"
             value={summary.totalIncome}
@@ -160,10 +149,8 @@ const Finance = () => {
           />
         </Box>
 
-        {/* Gráficos */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 4 }}>
-          {/* Gráfico de Pizza - Despesas por Categoria */}
-          <Paper sx={{ p: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 0 }}>
+          <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Despesas por Categoria
             </Typography>
@@ -198,8 +185,7 @@ const Finance = () => {
             )}
           </Paper>
 
-          {/* Gráfico de Barras - Receitas vs Despesas */}
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Receitas vs Despesas (Últimos 6 Meses)
             </Typography>
@@ -218,14 +204,12 @@ const Finance = () => {
           </Paper>
         </Box>
 
-        {/* Filtros */}
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper sx={{ p: 3, mb: 0, border: '2px solid #1e1e1e' }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
             Filtros
           </Typography>
           <Divider sx={{ mb: 2 }} />
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-            {/* Busca */}
             <TextField
               fullWidth
               placeholder="Buscar transação..."
@@ -242,7 +226,6 @@ const Finance = () => {
               }}
             />
 
-            {/* Tipo */}
             <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>
               <Select
@@ -256,7 +239,6 @@ const Finance = () => {
               </Select>
             </FormControl>
 
-            {/* Categoria */}
             <FormControl fullWidth>
               <InputLabel>Categoria</InputLabel>
               <Select
@@ -273,7 +255,6 @@ const Finance = () => {
               </Select>
             </FormControl>
 
-            {/* Período */}
             <FormControl fullWidth>
               <InputLabel>Período</InputLabel>
               <Select
@@ -290,7 +271,6 @@ const Finance = () => {
             </FormControl>
           </Box>
 
-          {/* Indicadores de filtros ativos */}
           {(filters.type !== 'all' || filters.category !== 'all' || filters.searchTerm) && (
             <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {filters.type !== 'all' && (
@@ -318,8 +298,7 @@ const Finance = () => {
           )}
         </Paper>
 
-        {/* Lista de Transações */}
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Transações
@@ -343,7 +322,6 @@ const Finance = () => {
                 />
               ))}
 
-              {/* Paginação */}
               {totalTransactions > rowsPerPage && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                   <Pagination
@@ -362,9 +340,8 @@ const Finance = () => {
           )}
         </Paper>
 
-        {/* Totalizadores */}
         {allTransactions.length > 0 && (
-          <Paper sx={{ p: 3, mt: 3, backgroundColor: 'grey.50' }}>
+          <Paper sx={{ p: 3, mt: 0, backgroundColor: '#efe8da', border: '2px solid #1e1e1e' }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 3 }}>
               <Box>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -400,7 +377,6 @@ const Finance = () => {
           </Paper>
         )}
 
-        {/* Modal de Formulário */}
         <TransactionFormModal
           open={isFormOpen}
           transaction={selectedTransaction}
@@ -409,7 +385,6 @@ const Finance = () => {
           readOnly={!permissions.canCreateTransaction && !permissions.canEditTransaction}
         />
 
-        {/* Dialog de Confirmação de Exclusão */}
         {permissions.canDeleteTransaction && (
           <Dialog open={isDeleteDialogOpen} onClose={handleCloseDeleteDialog}>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
@@ -429,14 +404,6 @@ const Finance = () => {
           </Dialog>
         )}
 
-        {/* TODO: Integração com Google Sheets */}
-        {/* 
-          Próximos passos:
-          1. Implementar sincronização com Google Sheets API
-          2. Adicionar autenticação OAuth2
-          3. Criar funções de sync bidirecional
-          4. Implementar tratamento de conflitos
-        */}
       </Box>
     </Container>
   );

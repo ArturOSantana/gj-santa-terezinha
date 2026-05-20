@@ -21,7 +21,7 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';  
 import { db } from '../../config/firebase';
 import {
   isValidName,
@@ -73,7 +73,6 @@ export const Profile: React.FC = () => {
     setError('');
     setSuccess('');
 
-    // Validações
     if (!formData.displayName || !formData.email || !formData.phone || !formData.birthDate) {
       setError('Por favor, preencha todos os campos');
       return;
@@ -99,7 +98,6 @@ export const Profile: React.FC = () => {
       return;
     }
 
-    // Se o email mudou, pedir confirmação com senha
     if (formData.email !== originalData.email) {
       setConfirmDialogOpen(true);
       return;
@@ -140,8 +138,6 @@ export const Profile: React.FC = () => {
       return;
     }
 
-    // Aqui você deveria reautenticar o usuário com a senha
-    // Por simplicidade, vamos apenas salvar
     await saveChanges();
   };
 
@@ -160,8 +156,7 @@ export const Profile: React.FC = () => {
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4, mb: 4 }}>
-        {/* Cabeçalho */}
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2, p: 3, border: '2px solid #1e1e1e', backgroundColor: '#d8cfbe' }}>
           <Avatar sx={{ width: 64, height: 64, bgcolor: 'primary.main' }}>
             <PersonIcon sx={{ fontSize: 40 }} />
           </Avatar>
@@ -175,7 +170,6 @@ export const Profile: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Alertas */}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
             {error}
@@ -188,8 +182,7 @@ export const Profile: React.FC = () => {
           </Alert>
         )}
 
-        {/* Formulário */}
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
           <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               fullWidth
@@ -239,7 +232,6 @@ export const Profile: React.FC = () => {
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Botões */}
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               {!editing ? (
                 <Button
@@ -273,7 +265,6 @@ export const Profile: React.FC = () => {
           </Box>
         </Paper>
 
-        {/* Dialog de Confirmação para Mudança de Email */}
         <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
           <DialogTitle>Confirmar Alteração de Email</DialogTitle>
           <DialogContent>
@@ -303,4 +294,3 @@ export const Profile: React.FC = () => {
   );
 };
 
-// Made with Bob

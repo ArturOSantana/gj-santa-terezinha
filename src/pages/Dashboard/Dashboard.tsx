@@ -32,7 +32,6 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { loading, stats, upcomingEvents, recentActivities } = useDashboard();
 
-  // Renderiza loading enquanto carrega dados
   if (loading) {
     return (
       <Container maxWidth="lg">
@@ -41,7 +40,6 @@ const Dashboard = () => {
     );
   }
 
-  // Renderiza erro se não houver stats
   if (!stats) {
     return (
       <Container maxWidth="lg">
@@ -54,7 +52,6 @@ const Dashboard = () => {
     );
   }
 
-  // Função para obter ícone da atividade
   const getActivityIcon = (iconName: string) => {
     switch (iconName) {
       case 'transaction':
@@ -70,7 +67,6 @@ const Dashboard = () => {
     }
   };
 
-  // Formata o valor do saldo
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -78,7 +74,6 @@ const Dashboard = () => {
     }).format(value);
   };
 
-  // Formata a data do próximo evento
   const nextEventDate = stats.nextEvent
     ? format(stats.nextEvent.date, "dd/MM/yyyy", { locale: ptBR })
     : 'Nenhum evento agendado';
@@ -89,9 +84,8 @@ const Dashboard = () => {
         <Paper
           sx={{
             p: { xs: 2.5, sm: 3.5 },
-            background: 'linear-gradient(135deg, rgba(47,93,80,0.10) 0%, rgba(184,138,68,0.08) 100%)',
-            border: '1px solid',
-            borderColor: 'rgba(47,93,80,0.10)',
+            backgroundColor: '#d8cfbe',
+            border: '2px solid #1e1e1e',
           }}
         >
           <Typography variant="h4" component="h1" gutterBottom>
@@ -102,7 +96,6 @@ const Dashboard = () => {
           </Typography>
         </Paper>
 
-        {/* Seção de Estatísticas */}
         <Box
           sx={{
             display: 'grid',
@@ -115,7 +108,6 @@ const Dashboard = () => {
             mb: 1,
           }}
         >
-          {/* Total de Membros - Apenas para Admin e Coordinator */}
           {user?.role !== 'member' && (
             <StatCard
               title="Total de Membros"
@@ -125,7 +117,6 @@ const Dashboard = () => {
             />
           )}
           
-          {/* Próximo Encontro - Para todos */}
           <StatCard
             title="Próximo Encontro"
             value={nextEventDate}
@@ -133,7 +124,6 @@ const Dashboard = () => {
             color="secondary"
           />
           
-          {/* Saldo do Caixa - Apenas para Admin e Coordinator */}
           {user?.role !== 'member' && (
             <StatCard
               title="Saldo do Caixa"
@@ -145,10 +135,9 @@ const Dashboard = () => {
           
         </Box>
 
-        {/* Avisos Importantes */}
         {stats.nextEvent && (
           <Box>
-            <Alert severity="info" sx={{ borderRadius: 3, py: 1 }}>
+            <Alert severity="info" sx={{ py: 1, border: '2px solid #1e1e1e' }}>
               <Typography variant="body1" sx={{ fontWeight: 500 }}>
                 Próximo encontro: {stats.nextEvent.title}
               </Typography>
@@ -160,7 +149,6 @@ const Dashboard = () => {
           </Box>
         )}
 
-        {/* Grid com Próximos Encontros e Atividades Recentes */}
         <Box
           sx={{
             display: 'grid',
@@ -171,8 +159,7 @@ const Dashboard = () => {
             gap: { xs: 2, md: 3 },
           }}
         >
-          {/* Próximos Encontros */}
-          <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%', border: '2px solid #1e1e1e' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
               Próximos Encontros
             </Typography>
@@ -198,9 +185,8 @@ const Dashboard = () => {
             )}
           </Paper>
 
-          {/* Atividades Recentes */}
           <Box>
-            <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%', border: '2px solid #1e1e1e' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
                 Atividades Recentes
               </Typography>

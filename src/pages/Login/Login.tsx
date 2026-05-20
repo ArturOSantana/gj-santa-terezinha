@@ -31,14 +31,12 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Pegar a rota de onde o usuário veio
   const from = (location.state as any)?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validações
     if (!email || !password) {
       setError('Por favor, preencha todos os campos');
       return;
@@ -67,28 +65,21 @@ export const Login: React.FC = () => {
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
-        background: 'linear-gradient(135deg, #2c5f2d 0%, #1b3a1c 50%, #d4af37 100%)',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(44, 95, 45, 0.1) 0%, transparent 50%)',
-          pointerEvents: 'none',
-        },
+        backgroundColor: '#d9d1bf',
+        backgroundImage: 'linear-gradient(to right, rgba(30,30,30,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(30,30,30,0.08) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
       }}
     >
       <Container maxWidth="sm">
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
-            p: 4,
+            p: { xs: 3, sm: 4 },
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            border: '2px solid #1e1e1e',
+            bgcolor: '#f7f2e8',
           }}
         >
           <Box
@@ -112,13 +103,12 @@ export const Login: React.FC = () => {
             />
           </Box>
           
-          <Typography component="h1" variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
-            Bem-vindo
+          <Typography component="h1" variant="h4" gutterBottom sx={{ fontWeight: 700, textAlign: 'center' }}>
+            GJ Santa Terezinha
           </Typography>
-          
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
-            Grupo de Jovens<br />
-            Paróquia Santa Terezinha
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Acesso ao sistema
           </Typography>
 
           {error && (
@@ -175,7 +165,7 @@ export const Login: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ mt: 3, mb: 2, py: 1.4 }}
               disabled={loading}
             >
               {loading ? 'Entrando...' : 'Entrar'}
