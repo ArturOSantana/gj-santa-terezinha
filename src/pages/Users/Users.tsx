@@ -129,9 +129,6 @@ const Users: React.FC = () => {
             Gerenciamento de Usuários
           </Typography>
         </Box>
-        <Typography variant="body1" color="text.secondary">
-          Gerencie os níveis de acesso dos usuários do sistema
-        </Typography>
       </Box>
 
       {/* Mensagem de Erro */}

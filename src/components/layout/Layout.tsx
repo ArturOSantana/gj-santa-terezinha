@@ -225,7 +225,6 @@ const Layout = () => {
               noWrap
               sx={{ display: { xs: 'none', sm: 'block' }, color: 'text.secondary' }}
             >
-              Administração e acompanhamento do grupo
             </Typography>
           </Box>
 

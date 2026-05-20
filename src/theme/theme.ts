@@ -57,6 +57,11 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        '*, *::before, *::after': {
+          transition: 'none !important',
+          animation: 'none !important',
+          scrollBehavior: 'auto !important',
+        },
         body: {
           backgroundColor: '#ece7dc',
         },
@@ -69,6 +74,7 @@ const theme = createTheme({
           padding: '10px 18px',
           boxShadow: 'none',
           border: '1px solid transparent',
+          transition: 'none',
         },
       },
     },
@@ -79,6 +85,7 @@ const theme = createTheme({
           boxShadow: 'none',
           backgroundImage: 'none',
           border: '1px solid rgba(30, 30, 30, 0.14)',
+          transition: 'none',
         },
       },
     },

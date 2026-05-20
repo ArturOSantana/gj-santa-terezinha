@@ -104,9 +104,6 @@ const Finance = () => {
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
               Controle Financeiro
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Gerencie as receitas e despesas do grupo de jovens
-            </Typography>
           </Box>
           <Stack direction="row" spacing={2}>
             <Button

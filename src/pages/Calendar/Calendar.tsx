@@ -220,9 +220,6 @@ const Calendar: React.FC = () => {
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 600 }}>
             Calendário
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gerencie os eventos e encontros do Grupo de Jovens
-          </Typography>
         </Box>
 
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
