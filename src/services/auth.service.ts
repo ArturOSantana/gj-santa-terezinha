@@ -28,7 +28,7 @@ const isFirestoreAvailable = async (): Promise<boolean> => {
   }
 };
 
-const getUserRole = async (uid: string): Promise<UserRole> => {
+const getUserRole = async (uid: string): Promise<UserRole | null> => {
   try {
     const memberDoc = await getDoc(doc(db, 'members', uid));
     
@@ -38,13 +38,13 @@ const getUserRole = async (uid: string): Promise<UserRole> => {
       return role;
     }
     
-    // Se o documento não existe, retorna 'member' como padrão
-    console.warn(`⚠️ Documento não encontrado para ${uid}, usando role padrão: member`);
-    return 'member';
+    // Se o documento não existe, retorna null para indicar que não há role definido
+    console.warn(`⚠️ Documento não encontrado para ${uid}, role não definido`);
+    return null;
   } catch (error) {
     console.error('❌ Erro ao obter role do Firestore:', error);
-    // Em caso de erro, retorna 'member' como padrão seguro
-    return 'member';
+    // Em caso de erro, retorna null para indicar falha
+    return null;
   }
 };
 
@@ -60,7 +60,7 @@ export const signIn = async (
     );
 
     const user = userCredential.user;
-    let role: UserRole = 'member';
+    let role: UserRole | null = null;
     let gender: 'male' | 'female' | undefined;
 
     if (await isFirestoreAvailable()) {
@@ -69,19 +69,30 @@ export const signIn = async (
         
         if (memberDoc.exists()) {
           const memberData = memberDoc.data() as Member;
-          role = memberData.role; // Mantém role (admin/coordinator/member) para permissões
+          role = memberData.role;
           gender = memberData.gender;
           
           await updateDoc(doc(db, 'members', user.uid), {
             lastLogin: serverTimestamp(),
           });
+        } else {
+          console.error('❌ Documento do membro não encontrado no login:', user.uid);
+          throw new Error('Usuário não encontrado no sistema. Entre em contato com o administrador.');
         }
       } catch (error) {
         console.error('Erro ao buscar Firestore:', error);
-        role = await getUserRole(user.uid);
+        throw error;
       }
     } else {
-      role = await getUserRole(user.uid);
+      const fetchedRole = await getUserRole(user.uid);
+      if (!fetchedRole) {
+        throw new Error('Não foi possível obter as permissões do usuário.');
+      }
+      role = fetchedRole;
+    }
+
+    if (!role) {
+      throw new Error('Role do usuário não definido.');
     }
 
     return {
@@ -89,7 +100,7 @@ export const signIn = async (
       email: user.email,
       displayName: user.displayName || email.split('@')[0],
       photoURL: user.photoURL,
-      role: role, // Role define permissões (coordinator tem mais que member)
+      role: role,
       gender: gender,
     };
   } catch (error: any) {
@@ -232,7 +243,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
       return null;
     }
 
-    let role: UserRole = 'member';
+    let role: UserRole | null = null;
     let gender: 'male' | 'female' | undefined;
 
     if (await isFirestoreAvailable()) {
@@ -244,14 +255,24 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
           role = memberData.role;
           gender = memberData.gender;
         } else {
-          role = await getUserRole(user.uid);
+          console.warn('⚠️ Documento do membro não encontrado:', user.uid);
+          return null;
         }
       } catch (error) {
         console.error('Erro ao buscar Firestore:', error);
-        role = await getUserRole(user.uid);
+        return null;
       }
     } else {
-      role = await getUserRole(user.uid);
+      const fetchedRole = await getUserRole(user.uid);
+      if (!fetchedRole) {
+        return null;
+      }
+      role = fetchedRole;
+    }
+
+    if (!role) {
+      console.warn('⚠️ Role não definido para usuário:', user.uid);
+      return null;
     }
 
     return {

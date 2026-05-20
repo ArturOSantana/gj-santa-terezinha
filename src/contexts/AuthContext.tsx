@@ -23,23 +23,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (authUser) {
             setUser(authUser);
           } else {
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuário',
-              photoURL: firebaseUser.photoURL,
-              role: 'member',
-            });
+            // Se getCurrentUser retorna null, significa que o documento não existe
+            // Não definir role automaticamente - deixar o sistema criar o documento primeiro
+            console.warn('⚠️ Documento do usuário não encontrado no Firestore:', firebaseUser.uid);
+            setUser(null);
           }
         } catch (error) {
-          console.error('Erro ao carregar dados do usuário:', error);
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuário',
-            photoURL: firebaseUser.photoURL,
-            role: 'member',
-          });
+          console.error('❌ Erro ao carregar dados do usuário:', error);
+          // Em caso de erro, não assumir role - deixar null para forçar recriação
+          setUser(null);
         }
       } else {
         setUser(null);

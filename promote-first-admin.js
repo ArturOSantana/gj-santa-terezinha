@@ -30,37 +30,37 @@ const db = getFirestore(app);
 
 async function promoteFirstUserToAdmin() {
   try {
-    console.log('🔍 Buscando usuários...');
+    console.log('🔍 Buscando membros...');
     
-    // Buscar o primeiro usuário (ordenado por data de criação)
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, orderBy('createdAt', 'asc'), limit(1));
+    // Buscar o primeiro membro (ordenado por data de criação)
+    const membersRef = collection(db, 'members');
+    const q = query(membersRef, orderBy('createdAt', 'asc'), limit(1));
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
-      console.log('❌ Nenhum usuário encontrado no Firestore.');
+      console.log('❌ Nenhum membro encontrado no Firestore.');
       console.log('📝 Registre um usuário primeiro no sistema.');
       return;
     }
     
-    const firstUser = querySnapshot.docs[0];
-    const userData = firstUser.data();
+    const firstMember = querySnapshot.docs[0];
+    const memberData = firstMember.data();
     
-    console.log('\n👤 Primeiro usuário encontrado:');
-    console.log(`   ID: ${firstUser.id}`);
-    console.log(`   Nome: ${userData.displayName}`);
-    console.log(`   Email: ${userData.email}`);
-    console.log(`   Role atual: ${userData.role}`);
+    console.log('\n👤 Primeiro membro encontrado:');
+    console.log(`   ID: ${firstMember.id}`);
+    console.log(`   Nome: ${memberData.name}`);
+    console.log(`   Email: ${memberData.email}`);
+    console.log(`   Role atual: ${memberData.role}`);
     
-    if (userData.role === 'admin') {
-      console.log('\n✅ Este usuário já é admin!');
+    if (memberData.role === 'admin') {
+      console.log('\n✅ Este membro já é admin!');
       return;
     }
     
     // Promover a admin
-    console.log('\n🔄 Promovendo usuário a admin...');
-    const userDocRef = doc(db, 'users', firstUser.id);
-    await updateDoc(userDocRef, {
+    console.log('\n🔄 Promovendo membro a admin...');
+    const memberDocRef = doc(db, 'members', firstMember.id);
+    await updateDoc(memberDocRef, {
       role: 'admin'
     });
     
