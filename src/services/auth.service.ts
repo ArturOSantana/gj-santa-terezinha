@@ -17,6 +17,54 @@ import {
 import { auth, db } from '../config/firebase';
 import { User, Member, UserRole, AuthUser, MemberStatus } from '../types';
 
+const MAIN_ADMIN_EMAIL = 'admin@gj.com';
+
+const getDefaultRoleByEmail = (email: string | null | undefined): UserRole => {
+  return email?.toLowerCase() === MAIN_ADMIN_EMAIL ? 'admin' : 'member';
+};
+
+const ensureMemberDocument = async (user: {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL?: string | null;
+}): Promise<{ role: UserRole; gender?: 'male' | 'female' }> => {
+  const memberRef = doc(db, 'members', user.uid);
+  const memberDoc = await getDoc(memberRef);
+
+  if (memberDoc.exists()) {
+    const memberData = memberDoc.data() as Member;
+    return {
+      role: memberData.role,
+      gender: memberData.gender,
+    };
+  }
+
+  const fallbackRole = getDefaultRoleByEmail(user.email);
+  const now = serverTimestamp();
+
+  await setDoc(memberRef, {
+    id: user.uid,
+    name: user.displayName || user.email?.split('@')[0] || 'Usuário',
+    email: user.email,
+    phone: '',
+    birthDate: null,
+    gender: null,
+    joinDate: now,
+    status: MemberStatus.ACTIVE,
+    role: fallbackRole,
+    photoUrl: user.photoURL || null,
+    createdAt: now,
+    updatedAt: now,
+    lastLogin: now,
+  });
+
+  return {
+    role: fallbackRole,
+    gender: undefined,
+  };
+};
+
 const isFirestoreAvailable = async (): Promise<boolean> => {
   try {
     if (!db) return false;
@@ -65,20 +113,20 @@ export const signIn = async (
 
     if (await isFirestoreAvailable()) {
       try {
-        const memberDoc = await getDoc(doc(db, 'members', user.uid));
-        
-        if (memberDoc.exists()) {
-          const memberData = memberDoc.data() as Member;
-          role = memberData.role;
-          gender = memberData.gender;
-          
-          await updateDoc(doc(db, 'members', user.uid), {
-            lastLogin: serverTimestamp(),
-          });
-        } else {
-          console.error('❌ Documento do membro não encontrado no login:', user.uid);
-          throw new Error('Usuário não encontrado no sistema. Entre em contato com o administrador.');
-        }
+        const ensuredMember = await ensureMemberDocument({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        });
+
+        role = ensuredMember.role;
+        gender = ensuredMember.gender;
+
+        await updateDoc(doc(db, 'members', user.uid), {
+          lastLogin: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       } catch (error) {
         console.error('Erro ao buscar Firestore:', error);
         throw error;
@@ -248,16 +296,15 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 
     if (await isFirestoreAvailable()) {
       try {
-        const memberDoc = await getDoc(doc(db, 'members', user.uid));
+        const ensuredMember = await ensureMemberDocument({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        });
 
-        if (memberDoc.exists()) {
-          const memberData = memberDoc.data() as Member;
-          role = memberData.role;
-          gender = memberData.gender;
-        } else {
-          console.warn('⚠️ Documento do membro não encontrado:', user.uid);
-          return null;
-        }
+        role = ensuredMember.role;
+        gender = ensuredMember.gender;
       } catch (error) {
         console.error('Erro ao buscar Firestore:', error);
         return null;
