@@ -67,9 +67,7 @@ const ensureMemberDocument = async (user: {
 
 const isFirestoreAvailable = async (): Promise<boolean> => {
   try {
-    if (!db) return false;
-    await getDoc(doc(db, '_health_check_', 'test'));
-    return true;
+    return !!db;
   } catch (error: any) {
     console.warn('Firestore não disponível:', error.message);
     return false;
