@@ -80,11 +80,11 @@ function App() {
                 }
               />
 
-              {/* Membros - Apenas Admin */}
+              {/* Membros - Admin e Coordinator podem visualizar */}
               <Route
                 path="members"
                 element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.ADMIN_ONLY}>
+                  <ProtectedRoute allowedRoles={PERMISSIONS.COORDINATOR_AND_ABOVE}>
                     <Members />
                   </ProtectedRoute>
                 }

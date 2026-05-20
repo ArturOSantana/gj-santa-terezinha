@@ -57,8 +57,11 @@ interface FirestoreTransaction extends Omit<Transaction, 'date' | 'createdAt' | 
   updatedAt: FirestoreDate;
 }
 
-interface FirestoreUser extends Omit<User, 'createdAt' | 'lastLogin'> {
+interface FirestoreUser extends Omit<User, 'birthDate' | 'joinDate' | 'createdAt' | 'updatedAt' | 'lastLogin'> {
+  birthDate: FirestoreDate;
+  joinDate: FirestoreDate;
   createdAt: FirestoreDate;
+  updatedAt: FirestoreDate;
   lastLogin?: FirestoreDate;
 }
 
@@ -105,7 +108,10 @@ const convertFirestoreTransaction = (data: FirestoreTransaction): Transaction =>
 
 const convertFirestoreUser = (data: FirestoreUser): User => ({
   ...data,
+  birthDate: timestampToDate(data.birthDate),
+  joinDate: timestampToDate(data.joinDate),
   createdAt: timestampToDate(data.createdAt),
+  updatedAt: timestampToDate(data.updatedAt),
   lastLogin: data.lastLogin ? timestampToDate(data.lastLogin) : undefined,
 });
 
@@ -588,7 +594,8 @@ export const TransactionsService = {
 
 export const UsersService = {
   /**
-   * Buscar todos os usuários
+   * Buscar todos os usuários (membros)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   async getAllUsers(currentUserRole: UserRole): Promise<User[]> {
     // Validação: apenas admin pode listar todos os usuários
@@ -598,13 +605,13 @@ export const UsersService = {
     }
     
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('displayName', 'asc'));
+      const membersRef = collection(db, 'members');
+      const q = query(membersRef, orderBy('name', 'asc'));
       const snapshot = await getDocs(q);
       
       return snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreUser;
-        return convertFirestoreUser({ ...data, id: doc.id });
+        const data = doc.data() as FirestoreMember;
+        return convertFirestoreMember({ ...data, id: doc.id });
       });
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
@@ -613,7 +620,8 @@ export const UsersService = {
   },
 
   /**
-   * Listener em tempo real para usuários
+   * Listener em tempo real para usuários (membros)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   onSnapshot(currentUserRole: UserRole, callback: (users: User[]) => void): () => void {
     // Validação: apenas admin pode observar mudanças em usuários
@@ -622,71 +630,104 @@ export const UsersService = {
       throw new Error('Apenas administradores podem observar mudanças em usuários');
     }
     
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, orderBy('displayName', 'asc'));
+    const membersRef = collection(db, 'members');
+    const q = query(membersRef, orderBy('name', 'asc'));
     
     return onSnapshot(q, (snapshot) => {
       const users = snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreUser;
-        return convertFirestoreUser({ ...data, id: doc.id });
+        const data = doc.data() as FirestoreMember;
+        return convertFirestoreMember({ ...data, id: doc.id });
       });
       callback(users);
     });
   },
 
   /**
-   * Criar documento de usuário
+   * Criar documento de usuário (membro)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
-  async createUser(userId: string, userData: Omit<User, 'id' | 'createdAt' | 'lastLogin'> & Partial<Pick<User, 'lastLogin'>>): Promise<void> {
+  async createUser(userId: string, userData: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'lastLogin'> & Partial<Pick<User, 'lastLogin'>>): Promise<void> {
     const now = Timestamp.now();
-    const data: FirestoreUser = {
+    const data = {
       id: userId,
-      ...userData,
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      birthDate: dateToTimestamp(userData.birthDate),
+      gender: userData.gender,
+      joinDate: dateToTimestamp(userData.joinDate),
+      status: userData.status,
+      role: userData.role,
+      photoUrl: userData.photoUrl,
+      address: userData.address,
+      emergencyContact: userData.emergencyContact,
+      notes: userData.notes,
       createdAt: now,
+      updatedAt: now,
       lastLogin: userData.lastLogin ? dateToTimestamp(userData.lastLogin) : now,
     };
 
-    const userRef = doc(db, 'users', userId);
-    await setDoc(userRef, data as DocumentData);
+    const memberRef = doc(db, 'members', userId);
+    await setDoc(memberRef, data as DocumentData);
   },
 
   /**
-   * Buscar usuário
+   * Buscar usuário (membro)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   async getUser(userId: string): Promise<User | null> {
-    const userRef = doc(db, 'users', userId);
-    const snapshot = await getDoc(userRef);
+    const memberRef = doc(db, 'members', userId);
+    const snapshot = await getDoc(memberRef);
 
     if (!snapshot.exists()) {
       return null;
     }
 
-    const data = snapshot.data() as FirestoreUser;
-    return convertFirestoreUser({ ...data, id: snapshot.id });
+    const data = snapshot.data() as FirestoreMember;
+    return convertFirestoreMember({ ...data, id: snapshot.id });
   },
 
   /**
-   * Atualizar usuário
+   * Atualizar usuário (membro)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   async updateUser(userId: string, userData: Partial<User>): Promise<void> {
-    const userRef = doc(db, 'users', userId);
-    const updateData: Partial<FirestoreUser> = {
-      ...userData,
+    const memberRef = doc(db, 'members', userId);
+    const updateData: any = {
+      updatedAt: Timestamp.now(),
     };
 
-    if (userData.createdAt) {
-      updateData.createdAt = dateToTimestamp(userData.createdAt);
+    // Copiar campos simples
+    if (userData.name !== undefined) updateData.name = userData.name;
+    if (userData.email !== undefined) updateData.email = userData.email;
+    if (userData.phone !== undefined) updateData.phone = userData.phone;
+    if (userData.gender !== undefined) updateData.gender = userData.gender;
+    if (userData.status !== undefined) updateData.status = userData.status;
+    if (userData.role !== undefined) updateData.role = userData.role;
+    if (userData.photoUrl !== undefined) updateData.photoUrl = userData.photoUrl;
+    if (userData.address !== undefined) updateData.address = userData.address;
+    if (userData.emergencyContact !== undefined) updateData.emergencyContact = userData.emergencyContact;
+    if (userData.notes !== undefined) updateData.notes = userData.notes;
+
+    // Converter datas
+    if (userData.birthDate) {
+      updateData.birthDate = dateToTimestamp(userData.birthDate);
+    }
+
+    if (userData.joinDate) {
+      updateData.joinDate = dateToTimestamp(userData.joinDate);
     }
 
     if (userData.lastLogin) {
       updateData.lastLogin = dateToTimestamp(userData.lastLogin);
     }
 
-    await updateDoc(userRef, updateData as DocumentData);
+    await updateDoc(memberRef, updateData as DocumentData);
   },
 
   /**
-   * Buscar role do usuário
+   * Buscar role do usuário (membro)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   async getUserRole(userId: string): Promise<UserRole | null> {
     const user = await this.getUser(userId);
@@ -695,18 +736,23 @@ export const UsersService = {
 
   /**
    * Atualizar role do usuário (apenas admin)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   async updateUserRole(userId: string, role: UserRole, currentUserRole: UserRole): Promise<void> {
     if (currentUserRole !== 'admin') {
       throw new Error('Apenas administradores podem alterar roles');
     }
 
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, { role });
+    const memberRef = doc(db, 'members', userId);
+    await updateDoc(memberRef, {
+      role,
+      updatedAt: Timestamp.now(),
+    });
   },
 
   /**
    * Deletar usuário (apenas admin)
+   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
    */
   async deleteUser(userId: string, currentUserRole: UserRole, currentUserId: string): Promise<void> {
     if (currentUserRole !== 'admin') {
@@ -717,8 +763,8 @@ export const UsersService = {
       throw new Error('Você não pode deletar sua própria conta');
     }
 
-    const userRef = doc(db, 'users', userId);
-    await deleteDoc(userRef);
+    const memberRef = doc(db, 'members', userId);
+    await deleteDoc(memberRef);
   },
 
   /**
@@ -741,10 +787,10 @@ export const UsersService = {
     await this.updateUser(id, { lastLogin: new Date() });
   },
 
-
   async delete(id: string, adminRole: UserRole, adminId: string): Promise<void> {
     await this.deleteUser(id, adminRole, adminId);
   },
+  
   async updateRole(id: string, role: UserRole, adminRole: UserRole): Promise<void> {
     await this.updateUserRole(id, role, adminRole);
   },

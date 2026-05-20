@@ -63,6 +63,7 @@ export interface Member {
   gender: 'male' | 'female'; // Gênero do membro (rapazes/moças)
   joinDate: Date;
   status: MemberStatus;
+  role: UserRole; // Role de autenticação (admin/coordinator/member)
   photoUrl?: string;
   address?: {
     street: string;
@@ -81,6 +82,7 @@ export interface Member {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  lastLogin?: Date;
 }
 
 export interface Event {
@@ -144,18 +146,8 @@ export interface SystemSettings {
 
 export type UserRole = 'admin' | 'coordinator' | 'member';
 
-export interface User {
-  id: string;
-  email: string;
-  displayName: string;
-  phone: string;
-  birthDate: Date;
-  role: UserRole;
-  memberId?: string; // Referência ao membro, se aplicável
-  photoUrl?: string;
-  createdAt: Date;
-  lastLogin?: Date;
-}
+// User agora é um alias para Member - unificação completa
+export type User = Member;
 
 export interface AuthUser {
   uid: string;
@@ -163,14 +155,14 @@ export interface AuthUser {
   displayName: string | null;
   photoURL: string | null;
   role: UserRole;
-  memberId?: string;
+  gender?: 'male' | 'female';
 }
 
 export interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string, phone: string, birthDate: Date) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, phone: string, birthDate: Date, gender: 'male' | 'female') => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;

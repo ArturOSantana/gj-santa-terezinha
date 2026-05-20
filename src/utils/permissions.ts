@@ -19,7 +19,7 @@ export const canEdit = (
 ): boolean => {
   if (userRole === 'admin') return true;
   
-  // Coordinator pode editar apenas events
+  // Coordinator pode editar events (não pode editar members)
   if (userRole === 'coordinator') {
     return resourceType === 'event';
   }
@@ -33,7 +33,7 @@ export const canDelete = (
 ): boolean => {
   if (userRole === 'admin') return true;
   
-  // Coordinator pode deletar apenas events
+  // Coordinator pode deletar apenas events (não pode deletar members)
   if (userRole === 'coordinator') {
     return resourceType === 'event';
   }
@@ -47,9 +47,9 @@ export const canCreate = (
 ): boolean => {
   if (userRole === 'admin') return true;
   
-  // Coordinator pode criar apenas events e members
+  // Coordinator pode criar apenas events (não pode criar members - apenas auto-cadastro)
   if (userRole === 'coordinator') {
-    return resourceType === 'event' || resourceType === 'member';
+    return resourceType === 'event';
   }
   
   return false;

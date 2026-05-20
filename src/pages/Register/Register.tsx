@@ -42,6 +42,7 @@ export const Register: React.FC = () => {
     email: '',
     phone: '',
     birthDate: '',
+    gender: '' as 'male' | 'female' | '',
     password: '',
     confirmPassword: '',
   });
@@ -62,7 +63,7 @@ export const Register: React.FC = () => {
     setError('');
 
     // Validações
-    if (!formData.name || !formData.email || !formData.phone || !formData.birthDate || !formData.password || !formData.confirmPassword) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.birthDate || !formData.gender || !formData.password || !formData.confirmPassword) {
       setError('Por favor, preencha todos os campos');
       return;
     }
@@ -87,6 +88,11 @@ export const Register: React.FC = () => {
       return;
     }
 
+    if (!formData.gender) {
+      setError('Por favor, selecione o gênero');
+      return;
+    }
+
     if (!isValidPassword(formData.password)) {
       setError(getPasswordErrorMessage(formData.password));
       return;
@@ -100,7 +106,7 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await signUp(formData.email, formData.password, formData.name, formData.phone, new Date(formData.birthDate));
+      await signUp(formData.email, formData.password, formData.name, formData.phone, new Date(formData.birthDate), formData.gender);
       navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta');
@@ -236,6 +242,22 @@ export const Register: React.FC = () => {
               }}
               helperText="Idade mínima: 12 anos"
             />
+
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="gender-label">Gênero</InputLabel>
+              <Select
+                labelId="gender-label"
+                id="gender"
+                name="gender"
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' })}
+                disabled={loading}
+                label="Gênero"
+              >
+                <MenuItem value="male">Masculino</MenuItem>
+                <MenuItem value="female">Feminino</MenuItem>
+              </Select>
+            </FormControl>
 
             <TextField
               margin="normal"

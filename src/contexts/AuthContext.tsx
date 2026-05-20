@@ -64,10 +64,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string,
     displayName: string,
     phone: string,
-    birthDate: Date
+    birthDate: Date,
+    gender: 'male' | 'female'
   ): Promise<void> => {
     try {
-      const authUser = await authService.signUp(email, password, displayName, phone, birthDate);
+      const authUser = await authService.signUp(email, password, displayName, phone, birthDate, gender);
       setUser(authUser);
     } catch (error) {
       throw error;

@@ -15,7 +15,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
-import { User, UserRole, AuthUser } from '../types';
+import { User, Member, UserRole, AuthUser, MemberStatus } from '../types';
 
 const isFirestoreAvailable = async (): Promise<boolean> => {
   try {
@@ -30,10 +30,10 @@ const isFirestoreAvailable = async (): Promise<boolean> => {
 
 const getUserRole = async (uid: string): Promise<UserRole> => {
   try {
-    const userDoc = await getDoc(doc(db, 'users', uid));
+    const memberDoc = await getDoc(doc(db, 'members', uid));
     
-    if (userDoc.exists()) {
-      const role = userDoc.data().role as UserRole;
+    if (memberDoc.exists()) {
+      const role = memberDoc.data().role as UserRole;
       console.log(`✅ Role obtido do Firestore para ${uid}:`, role);
       return role;
     }
@@ -61,18 +61,18 @@ export const signIn = async (
 
     const user = userCredential.user;
     let role: UserRole = 'member';
-    let memberId: string | undefined;
+    let gender: 'male' | 'female' | undefined;
 
     if (await isFirestoreAvailable()) {
       try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const memberDoc = await getDoc(doc(db, 'members', user.uid));
         
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          role = userData.role;
-          memberId = userData.memberId;
+        if (memberDoc.exists()) {
+          const memberData = memberDoc.data() as Member;
+          role = memberData.role; // Mantém role (admin/coordinator/member) para permissões
+          gender = memberData.gender;
           
-          await updateDoc(doc(db, 'users', user.uid), {
+          await updateDoc(doc(db, 'members', user.uid), {
             lastLogin: serverTimestamp(),
           });
         }
@@ -89,8 +89,8 @@ export const signIn = async (
       email: user.email,
       displayName: user.displayName || email.split('@')[0],
       photoURL: user.photoURL,
-      role: role,
-      memberId: memberId,
+      role: role, // Role define permissões (coordinator tem mais que member)
+      gender: gender,
     };
   } catch (error: any) {
     console.error('Erro ao fazer login:', error);
@@ -104,6 +104,7 @@ export const signUp = async (
   displayName: string,
   phone: string,
   birthDate: Date,
+  gender: 'male' | 'female',
   role: UserRole = 'member'
 ): Promise<AuthUser> => {
   try {
@@ -119,29 +120,35 @@ export const signUp = async (
 
     const user = userCredential.user;
     
-    // Todos os novos usuários entram como 'member'
+    // Todos os novos usuários entram como 'member' por padrão
     const finalRole = role;
 
     if (await isFirestoreAvailable()) {
       try {
         // Converter birthDate para Timestamp do Firestore
         const birthDateTimestamp = Timestamp.fromDate(birthDate);
+        const now = serverTimestamp();
         
-        await setDoc(doc(db, 'users', user.uid), {
+        // Criar documento na coleção 'members' (não 'users')
+        await setDoc(doc(db, 'members', user.uid), {
           id: user.uid,
+          name: displayName,
           email: email,
-          displayName: displayName,
           phone: phone,
           birthDate: birthDateTimestamp,
-          role: finalRole,
+          gender: gender,
+          joinDate: now,
+          status: MemberStatus.ACTIVE,
+          role: finalRole, // Role define permissões (admin/coordinator/member)
           photoUrl: null,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
+          createdAt: now,
+          updatedAt: now,
+          lastLogin: now,
         });
         
-        console.log('✅ Usuário criado no Firestore com sucesso:', user.uid);
+        console.log('✅ Membro criado no Firestore com sucesso:', user.uid);
       } catch (error) {
-        console.error('❌ ERRO ao salvar usuário no Firestore:', error);
+        console.error('❌ ERRO ao salvar membro no Firestore:', error);
         console.error('Detalhes do erro:', {
           code: (error as any)?.code,
           message: (error as any)?.message,
@@ -160,6 +167,7 @@ export const signUp = async (
       displayName: displayName,
       photoURL: null,
       role: finalRole,
+      gender: gender,
     };
   } catch (error: any) {
     console.error('Erro ao registrar usuário:', error);
@@ -202,8 +210,8 @@ export const updateUserProfile = async (
 
     if (await isFirestoreAvailable()) {
       try {
-        await updateDoc(doc(db, 'users', user.uid), {
-          displayName,
+        await updateDoc(doc(db, 'members', user.uid), {
+          name: displayName,
           photoUrl: photoURL || null,
           updatedAt: serverTimestamp(),
         });
@@ -225,16 +233,16 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     }
 
     let role: UserRole = 'member';
-    let memberId: string | undefined;
+    let gender: 'male' | 'female' | undefined;
 
     if (await isFirestoreAvailable()) {
       try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const memberDoc = await getDoc(doc(db, 'members', user.uid));
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          role = userData.role;
-          memberId = userData.memberId;
+        if (memberDoc.exists()) {
+          const memberData = memberDoc.data() as Member;
+          role = memberData.role;
+          gender = memberData.gender;
         } else {
           role = await getUserRole(user.uid);
         }
@@ -252,7 +260,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
       displayName: user.displayName || user.email?.split('@')[0] || 'Usuário',
       photoURL: user.photoURL,
       role: role,
-      memberId: memberId,
+      gender: gender,
     };
   } catch (error: any) {
     console.error('Erro ao obter usuário atual:', error);
@@ -262,13 +270,13 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 
 export const getUserData = async (uid: string): Promise<User | null> => {
   try {
-    const userDoc = await getDoc(doc(db, 'users', uid));
+    const memberDoc = await getDoc(doc(db, 'members', uid));
 
-    if (!userDoc.exists()) {
+    if (!memberDoc.exists()) {
       return null;
     }
 
-    return userDoc.data() as User;
+    return memberDoc.data() as User;
   } catch (error: any) {
     console.error('Erro ao obter dados do usuário:', error);
     return null;
@@ -280,7 +288,7 @@ export const updateUserRole = async (
   role: UserRole
 ): Promise<void> => {
   try {
-    await updateDoc(doc(db, 'users', uid), {
+    await updateDoc(doc(db, 'members', uid), {
       role,
       updatedAt: serverTimestamp(),
     });
