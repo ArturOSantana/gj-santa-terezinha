@@ -81,20 +81,11 @@ const Dashboard = () => {
   return (
     <Container maxWidth="xl" disableGutters>
       <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
-        <Paper
-          sx={{
-            p: { xs: 2.5, sm: 3.5 },
-            backgroundColor: '#d8cfbe',
-            border: '2px solid #1e1e1e',
-          }}
-        >
+        <Box sx={{ pb: 2, borderBottom: '2px solid #1e1e1e' }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Visão Geral
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Visão geral do Grupo de Jovens e dos próximos acompanhamentos da comunidade.
-          </Typography>
-        </Paper>
+        </Box>
 
         <Box
           sx={{
@@ -159,7 +150,7 @@ const Dashboard = () => {
             gap: { xs: 2, md: 3 },
           }}
         >
-          <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%', border: '2px solid #1e1e1e' }}>
+          <Box>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
               Próximos Encontros
             </Typography>
@@ -174,8 +165,7 @@ const Dashboard = () => {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 200,
+                  minHeight: 120,
                 }}
               >
                 <Typography variant="body1" color="text.secondary">
@@ -183,61 +173,58 @@ const Dashboard = () => {
                 </Typography>
               </Box>
             )}
-          </Paper>
+          </Box>
 
           <Box>
-            <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%', border: '2px solid #1e1e1e' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-                Atividades Recentes
-              </Typography>
-              {recentActivities.length > 0 ? (
-                <List sx={{ py: 0 }}>
-                  {recentActivities.map((activity, index) => (
-                    <Box key={activity.id}>
-                      <ListItem
-                        sx={{
-                          px: 0,
-                          py: 2,
-                          alignItems: 'flex-start',
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
-                          {getActivityIcon(activity.icon)}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {activity.description}
-                            </Typography>
-                          }
-                          secondary={
-                            <Typography variant="caption" color="text.secondary">
-                              {format(activity.timestamp, "dd/MM/yyyy 'às' HH:mm", {
-                                locale: ptBR,
-                              })}
-                            </Typography>
-                          }
-                        />
-                      </ListItem>
-                      {index < recentActivities.length - 1 && <Divider />}
-                    </Box>
-                  ))}
-                </List>
-              ) : (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: 200,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Nenhuma atividade recente
-                  </Typography>
-                </Box>
-              )}
-            </Paper>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+              Atividades Recentes
+            </Typography>
+            {recentActivities.length > 0 ? (
+              <List sx={{ py: 0 }}>
+                {recentActivities.map((activity, index) => (
+                  <Box key={activity.id}>
+                    <ListItem
+                      sx={{
+                        px: 0,
+                        py: 2,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
+                        {getActivityIcon(activity.icon)}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {activity.description}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography variant="caption" color="text.secondary">
+                            {format(activity.timestamp, "dd/MM/yyyy 'às' HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                    {index < recentActivities.length - 1 && <Divider />}
+                  </Box>
+                ))}
+              </List>
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  minHeight: 120,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Nenhuma atividade recente
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

@@ -99,7 +99,7 @@ const Finance = () => {
   return (
     <Container maxWidth="xl" disableGutters>
       <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0, p: { xs: 2.5, sm: 3.5 }, backgroundColor: '#d8cfbe', border: '2px solid #1e1e1e', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0, pb: 2, borderBottom: '2px solid #1e1e1e', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
           <Box>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
               Controle Financeiro
@@ -147,7 +147,7 @@ const Finance = () => {
         </Box>
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 0 }}>
-          <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
+          <Box>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Despesas por Categoria
             </Typography>
@@ -180,9 +180,9 @@ const Finance = () => {
                 <Typography color="text.secondary">Nenhuma despesa registrada</Typography>
               </Box>
             )}
-          </Paper>
+          </Box>
 
-          <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
+          <Box>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Receitas vs Despesas (Últimos 6 Meses)
             </Typography>
@@ -198,10 +198,10 @@ const Finance = () => {
                 <Bar dataKey="expense" name="Despesas" fill={TRANSACTION_COLORS.expense.main} />
               </BarChart>
             </ResponsiveContainer>
-          </Paper>
+          </Box>
         </Box>
 
-        <Paper sx={{ p: 3, mb: 0, border: '2px solid #1e1e1e' }}>
+        <Box>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
             Filtros
           </Typography>
@@ -293,9 +293,9 @@ const Finance = () => {
               )}
             </Box>
           )}
-        </Paper>
+        </Box>
 
-        <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
+        <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Transações
@@ -335,10 +335,10 @@ const Finance = () => {
               Nenhuma transação encontrada com os filtros aplicados.
             </Alert>
           )}
-        </Paper>
+        </Box>
 
         {allTransactions.length > 0 && (
-          <Paper sx={{ p: 3, mt: 0, backgroundColor: '#efe8da', border: '2px solid #1e1e1e' }}>
+          <Box sx={{ p: 3, mt: 0, backgroundColor: '#efe8da', borderTop: '2px solid #1e1e1e' }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 3 }}>
               <Box>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -371,7 +371,7 @@ const Finance = () => {
                 </Typography>
               </Box>
             </Box>
-          </Paper>
+          </Box>
         )}
 
         <TransactionFormModal

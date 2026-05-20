@@ -66,18 +66,9 @@ const Members: React.FC = () => {
   return (
     <Container maxWidth="xl" disableGutters>
       <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
-        <Box
-          sx={{
-            p: { xs: 2.5, sm: 3.5 },
-            backgroundColor: '#d8cfbe',
-            border: '2px solid #1e1e1e',
-          }}
-        >
+        <Box sx={{ pb: 2, borderBottom: '2px solid #1e1e1e' }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Membros do Grupo
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Acompanhe membros e coordenadores cadastrados, com filtros rápidos e visualização organizada.
           </Typography>
         </Box>
 
@@ -107,14 +98,7 @@ const Members: React.FC = () => {
           />
         </Box>
 
-        <Box
-          sx={{
-            bgcolor: 'background.paper',
-            p: { xs: 2, sm: 3 },
-            mb: 0,
-            border: '2px solid #1e1e1e',
-          }}
-        >
+        <Box>
           <Typography variant="h6" gutterBottom>
             Filtros
           </Typography>
@@ -250,8 +234,6 @@ const Members: React.FC = () => {
             sx={{
               textAlign: 'center',
               py: 8,
-              bgcolor: 'background.paper',
-              border: '2px solid #1e1e1e',
             }}
           >
             <PeopleIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />

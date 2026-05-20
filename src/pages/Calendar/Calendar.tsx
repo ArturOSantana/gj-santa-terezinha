@@ -205,7 +205,6 @@ const Calendar: React.FC = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
-      {/* Cabeçalho */}
       <Box
         sx={{
           display: 'flex',
@@ -214,6 +213,8 @@ const Calendar: React.FC = () => {
           flexDirection: { xs: 'column', md: 'row' },
           gap: 2,
           mb: 3,
+          pb: 2,
+          borderBottom: '2px solid #1e1e1e',
         }}
       >
         <Box>
@@ -254,190 +255,86 @@ const Calendar: React.FC = () => {
         </Stack>
       </Box>
 
-      {/* Layout Principal */}
       <Box
         sx={{
-          display: 'flex',
+          display: 'grid',
           gap: 3,
-          flexDirection: { xs: 'column', md: 'row' },
         }}
       >
-        {/* Sidebar com Filtros e Legenda */}
         {showFilters && (
-          <Box
-            sx={{
-              width: { xs: '100%', md: 280 },
-              flexShrink: 0,
-            }}
-          >
-            {/* Card de Filtros */}
-            <Card sx={{ mb: 2 }}>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Filtros
-                  </Typography>
-                  <Button
-                    size="small"
-                    onClick={handleToggleAllFilters}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {filters.length === eventCategories.length ? 'Limpar' : 'Todos'}
-                  </Button>
-                </Box>
-
-                <FormGroup>
-                  {eventCategories.map((category) => (
-                    <FormControlLabel
-                      key={category.type}
-                      control={
-                        <Checkbox
-                          checked={filters.includes(category.type)}
-                          onChange={() => handleFilterToggle(category.type)}
-                          sx={{
-                            color: category.color,
-                            '&.Mui-checked': {
-                              color: category.color,
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2">
-                          {category.label}
-                        </Typography>
-                      }
-                    />
-                  ))}
-                </FormGroup>
-              </CardContent>
-            </Card>
-
-            {/* Card de Filtros de Tipo de Atividade */}
-            <Card sx={{ mb: 2 }}>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Tipo de Atividade
-                  </Typography>
-                  <Button
-                    size="small"
-                    onClick={handleToggleAllActivityFilters}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {activityFilters.length === activityTypes.length ? 'Limpar' : 'Todos'}
-                  </Button>
-                </Box>
-
-                <FormGroup>
-                  {activityTypes.map((activity) => (
-                    <FormControlLabel
-                      key={activity.type}
-                      control={
-                        <Checkbox
-                          checked={activityFilters.includes(activity.type)}
-                          onChange={() => handleActivityFilterToggle(activity.type)}
-                          sx={{
-                            color: '#2c5f2d',
-                            '&.Mui-checked': {
-                              color: '#2c5f2d',
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2">
-                          {activity.label}
-                        </Typography>
-                      }
-                    />
-                  ))}
-                </FormGroup>
-              </CardContent>
-            </Card>
-
-            {/* Card de Legenda */}
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                  Legenda
+          <Box sx={{ display: 'grid', gap: 3 }}>
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Filtros
                 </Typography>
-                <Stack spacing={1.5}>
-                  {eventCategories.map((category) => (
-                    <Box
-                      key={category.type}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: 1,
-                          backgroundColor: category.color,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, lineHeight: 1.2 }}
-                        >
-                          {category.label}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-
-            {/* Card de Filtros de Gênero */}
-            <Card>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
+                <Button
+                  size="small"
+                  onClick={handleToggleAllFilters}
+                  sx={{ textTransform: 'none' }}
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Filtrar por Gênero
-                  </Typography>
-                  <Button
-                    size="small"
-                    onClick={handleToggleAllGenderFilters}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {genderFilters.length === 3 ? 'Limpar' : 'Todos'}
-                  </Button>
-                </Box>
+                  {filters.length === eventCategories.length ? 'Limpar' : 'Todos'}
+                </Button>
+              </Box>
 
-                <FormGroup>
+              <FormGroup>
+                {eventCategories.map((category) => (
                   <FormControlLabel
+                    key={category.type}
                     control={
                       <Checkbox
-                        checked={genderFilters.includes(Gender.MALE)}
-                        onChange={() => handleGenderFilterToggle(Gender.MALE)}
+                        checked={filters.includes(category.type)}
+                        onChange={() => handleFilterToggle(category.type)}
+                        sx={{
+                          color: category.color,
+                          '&.Mui-checked': {
+                            color: category.color,
+                          },
+                        }}
+                      />
+                    }
+                    label={<Typography variant="body2">{category.label}</Typography>}
+                  />
+                ))}
+              </FormGroup>
+            </Box>
+
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Tipo de Atividade
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={handleToggleAllActivityFilters}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {activityFilters.length === activityTypes.length ? 'Limpar' : 'Todos'}
+                </Button>
+              </Box>
+
+              <FormGroup>
+                {activityTypes.map((activity) => (
+                  <FormControlLabel
+                    key={activity.type}
+                    control={
+                      <Checkbox
+                        checked={activityFilters.includes(activity.type)}
+                        onChange={() => handleActivityFilterToggle(activity.type)}
                         sx={{
                           color: '#2c5f2d',
                           '&.Mui-checked': {
@@ -446,64 +343,124 @@ const Calendar: React.FC = () => {
                         }}
                       />
                     }
-                    label={
-                      <Typography variant="body2">
-                        👨 Rapazes
-                      </Typography>
-                    }
+                    label={<Typography variant="body2">{activity.label}</Typography>}
                   />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={genderFilters.includes(Gender.FEMALE)}
-                        onChange={() => handleGenderFilterToggle(Gender.FEMALE)}
-                        sx={{
+                ))}
+              </FormGroup>
+            </Box>
+
+            <Box>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                Legenda
+              </Typography>
+              <Stack spacing={1.5}>
+                {eventCategories.map((category) => (
+                  <Box
+                    key={category.type}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        backgroundColor: category.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, lineHeight: 1.2 }}
+                    >
+                      {category.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Filtrar por Gênero
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={handleToggleAllGenderFilters}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {genderFilters.length === 3 ? 'Limpar' : 'Todos'}
+                </Button>
+              </Box>
+
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={genderFilters.includes(Gender.MALE)}
+                      onChange={() => handleGenderFilterToggle(Gender.MALE)}
+                      sx={{
+                        color: '#2c5f2d',
+                        '&.Mui-checked': {
                           color: '#2c5f2d',
-                          '&.Mui-checked': {
-                            color: '#2c5f2d',
-                          },
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2">
-                        👩 Moças
-                      </Typography>
-                    }
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={genderFilters.includes(Gender.MIXED)}
-                        onChange={() => handleGenderFilterToggle(Gender.MIXED)}
-                        sx={{
+                        },
+                      }}
+                    />
+                  }
+                  label={<Typography variant="body2">Cavalheiros</Typography>}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={genderFilters.includes(Gender.FEMALE)}
+                      onChange={() => handleGenderFilterToggle(Gender.FEMALE)}
+                      sx={{
+                        color: '#2c5f2d',
+                        '&.Mui-checked': {
                           color: '#2c5f2d',
-                          '&.Mui-checked': {
-                            color: '#2c5f2d',
-                          },
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2">
-                        👥 Misto
-                      </Typography>
-                    }
-                  />
-                </FormGroup>
-              </CardContent>
-            </Card>
+                        },
+                      }}
+                    />
+                  }
+                  label={<Typography variant="body2">Santa Joana</Typography>}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={genderFilters.includes(Gender.MIXED)}
+                      onChange={() => handleGenderFilterToggle(Gender.MIXED)}
+                      sx={{
+                        color: '#2c5f2d',
+                        '&.Mui-checked': {
+                          color: '#2c5f2d',
+                        },
+                      }}
+                    />
+                  }
+                  label={<Typography variant="body2">Misto</Typography>}
+                />
+              </FormGroup>
+            </Box>
           </Box>
         )}
 
-        {/* Calendário */}
-        <Paper
+        <Box
           sx={{
-            flex: 1,
-            p: { xs: 1, md: 2 },
             minHeight: { xs: 500, md: 600 },
             display: 'flex',
             flexDirection: 'column',
+            borderTop: '2px solid #1e1e1e',
+            pt: 2,
           }}
         >
           <CalendarView
@@ -515,7 +472,7 @@ const Calendar: React.FC = () => {
             date={currentDate}
             onNavigate={setCurrentDate}
           />
-        </Paper>
+        </Box>
       </Box>
 
       {/* Modal de Detalhes do Evento */}

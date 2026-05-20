@@ -156,16 +156,13 @@ export const Profile: React.FC = () => {
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2, p: 3, border: '2px solid #1e1e1e', backgroundColor: '#d8cfbe' }}>
+        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2, pb: 2, borderBottom: '2px solid #1e1e1e' }}>
           <Avatar sx={{ width: 64, height: 64, bgcolor: 'primary.main' }}>
             <PersonIcon sx={{ fontSize: 40 }} />
           </Avatar>
           <Box>
             <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
               Meu Perfil
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Gerencie suas informações pessoais
             </Typography>
           </Box>
         </Box>
@@ -182,8 +179,7 @@ export const Profile: React.FC = () => {
           </Alert>
         )}
 
-        <Paper sx={{ p: 3, border: '2px solid #1e1e1e' }}>
-          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               fullWidth
               label="Nome Completo"
@@ -263,7 +259,6 @@ export const Profile: React.FC = () => {
               )}
             </Box>
           </Box>
-        </Paper>
 
         <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
           <DialogTitle>Confirmar Alteração de Email</DialogTitle>
