@@ -1,26 +1,36 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
 
-// Configuração da Service Account
-const getGoogleAuth = () => {
+const parseServiceAccountCredentials = () => {
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!raw) return null;
+
   try {
-    const credentials = JSON.parse(
-      process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}'
-    );
-
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/calendar'],
-    });
-
-    return auth;
+    const credentials = JSON.parse(raw);
+    if (!credentials.client_email || !credentials.private_key) {
+      return null;
+    }
+    return credentials;
   } catch (error) {
-    console.error('Erro ao configurar autenticação Google:', error);
-    throw new Error('Credenciais do Google não configuradas');
+    console.error('Erro ao fazer parse da service account:', error);
+    return null;
   }
 };
 
+const getGoogleAuth = () => {
+  const credentials = parseServiceAccountCredentials();
+  if (!credentials) {
+    throw new Error('Credenciais da service account não configuradas');
+  }
+
+  return new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/calendar'],
+  });
+};
+
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || process.env.VITE_GOOGLE_CALENDAR_ID;
+const GOOGLE_API_KEY = process.env.GOOGLE_CALENDAR_API_KEY || process.env.VITE_GOOGLE_CALENDAR_API_KEY;
 
 export default async function handler(
   req: VercelRequest,
@@ -45,49 +55,59 @@ export default async function handler(
   }
 
   try {
-    const auth = getGoogleAuth();
-    const calendar = google.calendar({ version: 'v3', auth });
-
     switch (req.method) {
-      case 'GET':
-        // Buscar eventos
+      case 'GET': {
         const { timeMin, timeMax } = req.query;
+
+        if (!GOOGLE_API_KEY) {
+          return res.status(500).json({
+            error: 'Google Calendar API Key não configurada',
+            details: 'Defina GOOGLE_CALENDAR_API_KEY ou VITE_GOOGLE_CALENDAR_API_KEY',
+          });
+        }
+
+        const calendar = google.calendar({ version: 'v3', auth: GOOGLE_API_KEY });
         const response = await calendar.events.list({
           calendarId: CALENDAR_ID,
-          timeMin: timeMin as string || new Date().toISOString(),
-          timeMax: timeMax as string || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          timeMin: (timeMin as string) || new Date().toISOString(),
+          timeMax: (timeMax as string) || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
         });
 
         return res.status(200).json(response.data);
+      }
 
       case 'POST':
-        // Criar evento
-        const createResult = await calendar.events.insert({
-          calendarId: CALENDAR_ID,
-          requestBody: req.body,
-        });
-
-        return res.status(201).json(createResult.data);
-
       case 'PUT':
-        // Atualizar evento
-        const { eventId } = req.query;
-        if (!eventId) {
-          return res.status(400).json({ error: 'Event ID é obrigatório' });
+      case 'DELETE': {
+        const auth = getGoogleAuth();
+        const calendar = google.calendar({ version: 'v3', auth });
+
+        if (req.method === 'POST') {
+          const createResult = await calendar.events.insert({
+            calendarId: CALENDAR_ID,
+            requestBody: req.body,
+          });
+
+          return res.status(201).json(createResult.data);
         }
 
-        const updateResult = await calendar.events.update({
-          calendarId: CALENDAR_ID,
-          eventId: eventId as string,
-          requestBody: req.body,
-        });
+        if (req.method === 'PUT') {
+          const { eventId } = req.query;
+          if (!eventId) {
+            return res.status(400).json({ error: 'Event ID é obrigatório' });
+          }
 
-        return res.status(200).json(updateResult.data);
+          const updateResult = await calendar.events.update({
+            calendarId: CALENDAR_ID,
+            eventId: eventId as string,
+            requestBody: req.body,
+          });
 
-      case 'DELETE':
-        // Deletar evento
+          return res.status(200).json(updateResult.data);
+        }
+
         const { eventId: deleteEventId } = req.query;
         if (!deleteEventId) {
           return res.status(400).json({ error: 'Event ID é obrigatório' });
@@ -99,6 +119,7 @@ export default async function handler(
         });
 
         return res.status(204).end();
+      }
 
       default:
         return res.status(405).json({ error: 'Método não permitido' });
@@ -112,4 +133,3 @@ export default async function handler(
   }
 }
 
-// Made with Bob
