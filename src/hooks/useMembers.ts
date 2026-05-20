@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Member, MemberStatus, Event } from '../types';
+import { Member, MemberStatus } from '../types';
 import { firestoreService } from '../services/firestore.service';
 import { useAuth } from '../contexts/AuthContext';
 import { canCreate, canDelete, canEdit } from '../utils/permissions';
@@ -14,7 +14,6 @@ interface MemberFilters {
 interface MemberStats {
   total: number;
   active: number;
-  averageAttendance: number;
 }
 
 export const useMembers = () => {
@@ -22,7 +21,6 @@ export const useMembers = () => {
   
   // Estado dos membros e eventos
   const [members, setMembers] = useState<Member[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -30,7 +28,6 @@ export const useMembers = () => {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   
   // Estado dos filtros
   const [filters, setFilters] = useState<MemberFilters>({
@@ -51,17 +48,13 @@ export const useMembers = () => {
     setError(null);
 
     let unsubscribeMembers: (() => void) | undefined;
-    let unsubscribeEvents: (() => void) | undefined;
 
     try {
       unsubscribeMembers = firestoreService.getMembers(user.role, (updatedMembers) => {
         setMembers(updatedMembers);
       });
 
-      unsubscribeEvents = firestoreService.getEvents(user.role, (updatedEvents) => {
-        setEvents(updatedEvents);
-        setLoading(false);
-      });
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
       setLoading(false);
@@ -69,7 +62,6 @@ export const useMembers = () => {
 
     return () => {
       unsubscribeMembers?.();
-      unsubscribeEvents?.();
     };
   }, [user]);
 
@@ -87,14 +79,6 @@ export const useMembers = () => {
     }
     
     return age;
-  };
-
-  /**
-   * Calcula a taxa de presença de um membro
-   * NOTA: Funcionalidade de presença foi removida
-   */
-  const getMemberAttendanceRate = (memberId: string): number => {
-    return 0; // Funcionalidade removida
   };
 
   /**
@@ -145,28 +129,11 @@ export const useMembers = () => {
   const stats = useMemo((): MemberStats => {
     const activeMembers = members.filter(m => m.status === MemberStatus.ACTIVE);
     
-    // Calcula taxa média de presença
-    let totalAttendanceRate = 0;
-    let membersWithEvents = 0;
-    
-    activeMembers.forEach(member => {
-      const rate = getMemberAttendanceRate(member.id);
-      if (rate > 0) {
-        totalAttendanceRate += rate;
-        membersWithEvents++;
-      }
-    });
-    
-    const averageAttendance = membersWithEvents > 0 
-      ? totalAttendanceRate / membersWithEvents 
-      : 0;
-    
     return {
       total: members.length,
       active: activeMembers.length,
-      averageAttendance: Math.round(averageAttendance * 10) / 10,
     };
-  }, [members, events]);
+  }, [members]);
 
   /**
    * Cria um novo membro no Firestore
@@ -247,15 +214,6 @@ export const useMembers = () => {
   };
 
   /**
-   * Registra presença de membros em um evento no Firestore
-   * NOTA: Funcionalidade de presença foi removida
-   */
-  const handleAttendance = async (eventId: string, memberIds: string[]) => {
-    console.warn('Funcionalidade de presença foi removida');
-    return;
-  };
-
-  /**
    * Abre o formulário para criar novo membro
    */
   const handleNewMember = () => {
@@ -295,7 +253,6 @@ export const useMembers = () => {
       canCreateMember: !!user && canCreate(user.role, 'member'),
       canEditMember: !!user && canEdit(user.role, 'member'),
       canDeleteMember: !!user && canDelete(user.role, 'member'),
-      canManageAttendance: !!user && canEdit(user.role, 'event'),
     }),
     [user]
   );
@@ -304,7 +261,6 @@ export const useMembers = () => {
     // Dados
     members: filteredMembers,
     allMembers: members,
-    events,
     selectedMember,
     loading,
     error,
@@ -312,7 +268,6 @@ export const useMembers = () => {
     // Estados dos modais
     isFormOpen,
     isDetailsOpen,
-    isAttendanceOpen,
     
     // Filtros e estatísticas
     filters,
@@ -330,16 +285,13 @@ export const useMembers = () => {
     handleEditMember,
     handleViewDetails,
     handleFilterChange,
-    handleAttendance,
     
     // Setters dos modais
     setIsFormOpen,
     setIsDetailsOpen,
-    setIsAttendanceOpen,
     setSelectedMember,
     
     // Funções auxiliares
-    getMemberAttendanceRate,
     calculateAge,
   };
 };

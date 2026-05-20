@@ -36,7 +36,7 @@ const menuItemsByRole: Record<UserRole, Array<{
   path: string;
 }>> = {
   admin: [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
     { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
@@ -44,14 +44,14 @@ const menuItemsByRole: Record<UserRole, Array<{
     { text: 'Usuários', icon: <ManageAccountsIcon />, path: '/users' },
   ],
   coordinator: [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
     { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
     { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
   ],
   member: [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },
     { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
   ],

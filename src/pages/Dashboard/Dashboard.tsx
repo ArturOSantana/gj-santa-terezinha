@@ -15,7 +15,6 @@ import {
   People as PeopleIcon,
   Event as EventIcon,
   AccountBalance as AccountBalanceIcon,
-  TrendingUp as TrendingUpIcon,
   CheckCircle as CheckCircleIcon,
   AttachMoney as AttachMoneyIcon,
   Person as PersonIcon,
@@ -37,7 +36,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <Container maxWidth="lg">
-        <LoadingSpinner message="Carregando dashboard..." />
+        <LoadingSpinner message="Carregando visão geral..." />
       </Container>
     );
   }
@@ -48,7 +47,7 @@ const Dashboard = () => {
       <Container maxWidth="lg">
         <Box sx={{ mt: 4 }}>
           <Alert severity="error">
-            Erro ao carregar dados do dashboard. Por favor, tente novamente.
+            Erro ao carregar dados da visão geral. Por favor, tente novamente.
           </Alert>
         </Box>
       </Container>
@@ -58,8 +57,6 @@ const Dashboard = () => {
   // Função para obter ícone da atividade
   const getActivityIcon = (iconName: string) => {
     switch (iconName) {
-      case 'attendance':
-        return <CheckCircleIcon color="success" />;
       case 'transaction':
         return <AttachMoneyIcon color="primary" />;
       case 'member':
@@ -98,7 +95,7 @@ const Dashboard = () => {
           }}
         >
           <Typography variant="h4" component="h1" gutterBottom>
-            Dashboard
+            Visão Geral
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Visão geral do Grupo de Jovens e dos próximos acompanhamentos da comunidade.
@@ -112,7 +109,7 @@ const Dashboard = () => {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              md: user?.role === 'member' ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+              md: user?.role === 'member' ? '1fr' : 'repeat(3, 1fr)',
             },
             gap: { xs: 2, sm: 3 },
             mb: 1,
@@ -146,13 +143,6 @@ const Dashboard = () => {
             />
           )}
           
-          {/* Taxa de Presença - Para todos */}
-          <StatCard
-            title="Taxa de Presença"
-            value={`${stats.attendanceRate}%`}
-            icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
-            color="info"
-          />
         </Box>
 
         {/* Avisos Importantes */}
