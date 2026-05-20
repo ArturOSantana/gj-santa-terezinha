@@ -31,16 +31,22 @@ export const useUsers = (): UseUsersReturn => {
     setLoading(true);
     setError(null);
 
-    // Listener em tempo real
-    const unsubscribe = UsersService.onSnapshot((updatedUsers) => {
-      setUsers(updatedUsers);
-      setLoading(false);
-    });
+    try {
+      // Listener em tempo real
+      const unsubscribe = UsersService.onSnapshot(currentUser.role, (updatedUsers) => {
+        setUsers(updatedUsers);
+        setLoading(false);
+      });
 
-    // Cleanup
-    return () => {
-      unsubscribe();
-    };
+      // Cleanup
+      return () => {
+        unsubscribe();
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar usuários';
+      setError(errorMessage);
+      setLoading(false);
+    }
   }, [currentUser]);
 
   /**
@@ -135,7 +141,7 @@ export const useUsers = (): UseUsersReturn => {
     try {
       setLoading(true);
       setError(null);
-      const updatedUsers = await UsersService.getAllUsers();
+      const updatedUsers = await UsersService.getAllUsers(currentUser.role);
       setUsers(updatedUsers);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar usuários';

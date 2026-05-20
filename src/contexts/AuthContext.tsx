@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from '../config/firebase';
+import { auth } from '../config/firebase';
 import { AuthContextType, AuthUser } from '../types';
 import * as authService from '../services/auth.service';
 
@@ -15,17 +15,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      console.error(
-        '❌ FIREBASE NÃO CONFIGURADO!\n' +
-        'O sistema não pode funcionar sem Firebase configurado.\n' +
-        'Por favor, siga as instruções em SOLUCAO_ERRO_API_KEY.md'
-      );
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {

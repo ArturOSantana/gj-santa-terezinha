@@ -2,26 +2,39 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-const hasFirebaseConfig =
-  import.meta.env.VITE_FIREBASE_API_KEY &&
-  import.meta.env.VITE_FIREBASE_PROJECT_ID;
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-project',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789:web:abcdef',
+// Validar variáveis obrigatórias
+const requiredEnvVars = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-if (!hasFirebaseConfig) {
-  console.warn('Firebase não configurado. Configure as variáveis de ambiente.');
+// Verificar se alguma variável está faltando
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([_, value]) => !value)
+  .map(([key]) => key);
+
+if (missingVars.length > 0) {
+  throw new Error(
+    `Configuração do Firebase incompleta. Variáveis faltando: ${missingVars.join(', ')}. ` +
+    `Consulte FIREBASE_SETUP.md para instruções de configuração.`
+  );
 }
+
+const firebaseConfig = {
+  apiKey: requiredEnvVars.apiKey,
+  authDomain: requiredEnvVars.authDomain,
+  projectId: requiredEnvVars.projectId,
+  storageBucket: requiredEnvVars.storageBucket,
+  messagingSenderId: requiredEnvVars.messagingSenderId,
+  appId: requiredEnvVars.appId
+};
 
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const isFirebaseConfigured = hasFirebaseConfig;
 export default app;

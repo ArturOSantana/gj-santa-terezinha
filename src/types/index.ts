@@ -10,6 +10,10 @@ export enum EventCategory {
   BIRTHDAY = 'birthday',
   PARISH_EVENT = 'parish_event',
   NOVENA = 'novena',
+  // Novas categorias para Google Calendar
+  GJ_MEETING = 'gj_meeting',
+  RETREAT = 'retreat',
+  MASS = 'mass'
 }
 
 export enum ActivityType {

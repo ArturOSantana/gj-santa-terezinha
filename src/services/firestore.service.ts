@@ -590,21 +590,38 @@ export const UsersService = {
   /**
    * Buscar todos os usuários
    */
-  async getAllUsers(): Promise<User[]> {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, orderBy('displayName', 'asc'));
-    const snapshot = await getDocs(q);
+  async getAllUsers(currentUserRole: UserRole): Promise<User[]> {
+    // Validação: apenas admin pode listar todos os usuários
+    if (currentUserRole !== 'admin') {
+      console.warn('⚠️ Tentativa de listar usuários sem permissão de admin');
+      throw new Error('Apenas administradores podem listar todos os usuários');
+    }
     
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreUser;
-      return convertFirestoreUser({ ...data, id: doc.id });
-    });
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, orderBy('displayName', 'asc'));
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => {
+        const data = doc.data() as FirestoreUser;
+        return convertFirestoreUser({ ...data, id: doc.id });
+      });
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      throw error;
+    }
   },
 
   /**
    * Listener em tempo real para usuários
    */
-  onSnapshot(callback: (users: User[]) => void): () => void {
+  onSnapshot(currentUserRole: UserRole, callback: (users: User[]) => void): () => void {
+    // Validação: apenas admin pode observar mudanças em usuários
+    if (currentUserRole !== 'admin') {
+      console.warn('⚠️ Tentativa de observar usuários sem permissão de admin');
+      throw new Error('Apenas administradores podem observar mudanças em usuários');
+    }
+    
     const usersRef = collection(db, 'users');
     const q = query(usersRef, orderBy('displayName', 'asc'));
     

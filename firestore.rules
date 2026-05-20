@@ -11,7 +11,8 @@
       }
       
       function getUserRole() {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+        let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        return userDoc != null && userDoc.data != null ? userDoc.data.role : 'member';
       }
       
       function isAdmin() {
@@ -34,10 +35,8 @@
         // Leitura de lista: apenas admin
         allow list: if isAdmin();
         
-        // Criação: qualquer usuário autenticado pode criar seu próprio documento
-        // OU admin pode criar para qualquer um
-        allow create: if (request.auth != null && request.auth.uid == userId) ||
-                        (isAuthenticated() && isAdmin());
+        // Criação: qualquer usuário autenticado pode criar SEU PRÓPRIO documento
+        allow create: if request.auth != null && request.auth.uid == userId;
         
         // Atualização: admin pode tudo, usuário pode atualizar seus próprios dados de perfil
         allow update: if isAdmin() ||

@@ -1,4 +1,3 @@
-
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -18,8 +17,6 @@ import {
 import { auth, db } from '../config/firebase';
 import { User, UserRole, AuthUser } from '../types';
 
-const localRoles = new Map<string, UserRole>();
-
 const isFirestoreAvailable = async (): Promise<boolean> => {
   try {
     if (!db) return false;
@@ -36,41 +33,20 @@ const getUserRole = async (uid: string): Promise<UserRole> => {
     const userDoc = await getDoc(doc(db, 'users', uid));
     
     if (userDoc.exists()) {
-      const userData = userDoc.data() as User;
-      setUserRoleLocally(uid, userData.role);
-      return userData.role;
+      const role = userDoc.data().role as UserRole;
+      console.log(`✅ Role obtido do Firestore para ${uid}:`, role);
+      return role;
     }
-  } catch (error: any) {
-    console.error('Erro ao buscar role do Firestore:', error.message);
-  }
-  
-  const localRole = localRoles.get(uid) || 'member';
-  return localRole;
-};
-
-const setUserRoleLocally = (uid: string, role: UserRole): void => {
-  localRoles.set(uid, role);
-  try {
-    const roles = JSON.parse(localStorage.getItem('user_roles') || '{}');
-    roles[uid] = role;
-    localStorage.setItem('user_roles', JSON.stringify(roles));
+    
+    // Se o documento não existe, retorna 'member' como padrão
+    console.warn(`⚠️ Documento não encontrado para ${uid}, usando role padrão: member`);
+    return 'member';
   } catch (error) {
-    console.warn('Erro ao salvar role localmente:', error);
+    console.error('❌ Erro ao obter role do Firestore:', error);
+    // Em caso de erro, retorna 'member' como padrão seguro
+    return 'member';
   }
 };
-
-const loadLocalRoles = (): void => {
-  try {
-    const roles = JSON.parse(localStorage.getItem('user_roles') || '{}');
-    Object.entries(roles).forEach(([uid, role]) => {
-      localRoles.set(uid, role as UserRole);
-    });
-  } catch (error) {
-    console.warn('Erro ao carregar roles locais:', error);
-  }
-};
-
-loadLocalRoles();
 
 export const signIn = async (
   email: string,
@@ -145,8 +121,6 @@ export const signUp = async (
     
     // Todos os novos usuários entram como 'member'
     const finalRole = role;
-
-    setUserRoleLocally(user.uid, finalRole);
 
     if (await isFirestoreAvailable()) {
       try {

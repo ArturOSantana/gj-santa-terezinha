@@ -17,69 +17,65 @@ export const canEdit = (
   userRole: UserRole,
   resourceType: 'member' | 'event' | 'transaction'
 ): boolean => {
-  switch (resourceType) {
-    case 'member':
-      return hasPermission(userRole, 'coordinator');
-    case 'event':
-      return hasPermission(userRole, 'coordinator');
-    case 'transaction':
-      return hasPermission(userRole, 'coordinator');
-    default:
-      return false;
+  if (userRole === 'admin') return true;
+  
+  // Coordinator pode editar apenas events
+  if (userRole === 'coordinator') {
+    return resourceType === 'event';
   }
+  
+  return false;
 };
 
 export const canDelete = (
   userRole: UserRole,
   resourceType: 'member' | 'event' | 'transaction'
 ): boolean => {
-  switch (resourceType) {
-    case 'member':
-      return hasPermission(userRole, 'coordinator');
-    case 'event':
-      return hasPermission(userRole, 'coordinator');
-    case 'transaction':
-      return hasPermission(userRole, 'coordinator');
-    default:
-      return false;
+  if (userRole === 'admin') return true;
+  
+  // Coordinator pode deletar apenas events
+  if (userRole === 'coordinator') {
+    return resourceType === 'event';
   }
+  
+  return false;
 };
 
 export const canCreate = (
   userRole: UserRole,
   resourceType: 'member' | 'event' | 'transaction'
 ): boolean => {
-  switch (resourceType) {
-    case 'member':
-      return userRole === 'admin';
-    case 'event':
-      return hasPermission(userRole, 'coordinator');
-    case 'transaction':
-      return hasPermission(userRole, 'coordinator');
-    default:
-      return false;
+  if (userRole === 'admin') return true;
+  
+  // Coordinator pode criar apenas events e members
+  if (userRole === 'coordinator') {
+    return resourceType === 'event' || resourceType === 'member';
   }
+  
+  return false;
 };
 
 export const canView = (
   userRole: UserRole,
   resourceType: 'member' | 'event' | 'transaction' | 'dashboard' | 'finance' | 'contributions'
 ): boolean => {
-  switch (resourceType) {
-    case 'member':
-      return userRole === 'admin';
-    case 'event':
-      return true;
-    case 'transaction':
-    case 'finance':
-      return hasPermission(userRole, 'coordinator');
-    case 'contributions':
-      return true;
-    case 'dashboard':
-      return true;
-    default:
-      return false;
+  // Todos podem ver members (alinhado com firestore.rules)
+  if (resourceType === 'member') return true;
+  
+  // Admin pode ver tudo
+  if (userRole === 'admin') return true;
+  
+  // Coordinator pode ver events e transactions
+  if (userRole === 'coordinator') {
+    return resourceType === 'event' || resourceType === 'transaction';
   }
+  
+  // Member pode ver apenas events
+  if (userRole === 'member') {
+    return resourceType === 'event';
+  }
+  
+  return false;
 };
 
 export const canManageUsers = (userRole: UserRole): boolean => {
