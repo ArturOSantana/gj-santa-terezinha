@@ -67,27 +67,23 @@ const Members: React.FC = () => {
   }, [filters]);
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        {/* Cabeçalho */}
+    <Container maxWidth="xl" disableGutters>
+      <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 2,
-            mb: 4,
+            p: { xs: 2.5, sm: 3.5 },
+            borderRadius: 4,
+            background: 'linear-gradient(135deg, rgba(47,93,80,0.10) 0%, rgba(184,138,68,0.08) 100%)',
+            border: '1px solid',
+            borderColor: 'rgba(47,93,80,0.10)',
           }}
         >
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Membros do Grupo
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Visualize os membros do grupo e suas informações
-            </Typography>
-          </Box>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Membros do Grupo
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Acompanhe membros e coordenadores cadastrados, com filtros rápidos e visualização organizada.
+          </Typography>
         </Box>
 
         {/* Cards de Estatísticas */}
@@ -99,8 +95,8 @@ const Members: React.FC = () => {
               sm: 'repeat(2, 1fr)',
               md: 'repeat(3, 1fr)',
             },
-            gap: 3,
-            mb: 4,
+            gap: { xs: 2, sm: 3 },
+            mb: 0,
           }}
         >
           <StatCard
@@ -121,10 +117,12 @@ const Members: React.FC = () => {
         <Box
           sx={{
             bgcolor: 'background.paper',
-            p: 3,
-            borderRadius: 2,
-            boxShadow: 1,
-            mb: 4,
+            p: { xs: 2, sm: 3 },
+            borderRadius: 4,
+            boxShadow: '0 10px 30px rgba(31, 41, 51, 0.06)',
+            mb: 0,
+            border: '1px solid',
+            borderColor: 'rgba(31, 41, 51, 0.06)',
           }}
         >
           <Typography variant="h6" gutterBottom>
@@ -170,8 +168,8 @@ const Members: React.FC = () => {
                   label="Grupo"
                 >
                   <MenuItem value="all">Todos</MenuItem>
-                  <MenuItem value="male">Rapazes</MenuItem>
-                  <MenuItem value="female">Moças</MenuItem>
+                  <MenuItem value="male">Cavalheiros</MenuItem>
+                  <MenuItem value="female">Santa Joana</MenuItem>
                 </Select>
               </FormControl>
 
@@ -220,7 +218,7 @@ const Members: React.FC = () => {
                 )}
                 {filters.group !== 'all' && (
                   <Chip
-                    label={filters.group === 'male' ? 'Rapazes' : 'Moças'}
+                    label={filters.group === 'male' ? 'Cavalheiros' : 'Santa Joana'}
                     size="small"
                     onDelete={() => handleFilterChange({ group: 'all' })}
                   />
@@ -245,7 +243,15 @@ const Members: React.FC = () => {
         </Box>
 
         {/* Contador de Resultados */}
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 1,
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             {members.length} {members.length === 1 ? 'membro encontrado' : 'membros encontrados'}
           </Typography>
@@ -263,8 +269,10 @@ const Members: React.FC = () => {
               textAlign: 'center',
               py: 8,
               bgcolor: 'background.paper',
-              borderRadius: 2,
-              boxShadow: 1,
+              borderRadius: 4,
+              boxShadow: '0 10px 30px rgba(31, 41, 51, 0.06)',
+              border: '1px solid',
+              borderColor: 'rgba(31, 41, 51, 0.06)',
             }}
           >
             <PeopleIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -302,8 +310,8 @@ const Members: React.FC = () => {
                   md: 'repeat(3, 1fr)',
                   lg: 'repeat(4, 1fr)',
                 },
-                gap: 3,
-                mb: 4,
+                gap: { xs: 2, sm: 3 },
+                mb: 2,
               }}
             >
               {paginatedMembers.map((member) => (
@@ -352,7 +360,6 @@ const Members: React.FC = () => {
           onClose={() => setIsDetailsOpen(false)}
           onEdit={handleEditMember}
           member={selectedMember}
-          events={events}
           canEdit={permissions.canEditMember}
         />
       </Box>

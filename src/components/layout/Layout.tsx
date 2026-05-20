@@ -28,7 +28,7 @@ import { UserMenu } from './UserMenu';
 import { UserRole } from '../../types';
 import brasaoGJ from '../../assets/brasao-gj.png';
 
-const drawerWidth = 260;
+const drawerWidth = 272;
 
 const menuItemsByRole: Record<UserRole, Array<{
   text: string;
@@ -78,57 +78,95 @@ const Layout = () => {
   };
 
   const drawer = (
-    <Box>
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
+      }}
+    >
       <Box
         sx={{
-          p: 2.5,
+          px: 2.5,
+          pt: 3,
+          pb: 2.5,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           borderBottom: '1px solid',
           borderColor: 'divider',
-          bgcolor: 'primary.main',
+          background: 'linear-gradient(180deg, #2c5f2d 0%, #234a24 100%)',
           color: 'white',
         }}
       >
-        <img
-          src={brasaoGJ}
-          alt="Brasão GJ"
-          style={{
-            width: '70px',
-            height: '70px',
-            marginBottom: '8px',
+        <Box
+          sx={{
+            width: 82,
+            height: 82,
+            mb: 1.5,
+            borderRadius: '50%',
+            bgcolor: 'rgba(255,255,255,0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(255,255,255,0.18)',
           }}
-        />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        >
+          <img
+            src={brasaoGJ}
+            alt="Brasão GJ"
+            style={{
+              width: '58px',
+              height: '58px',
+              objectFit: 'contain',
+            }}
+          />
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'center' }}>
           GJ Santa Terezinha
         </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.82, textAlign: 'center', mt: 0.5 }}>
+          Gestão interna do grupo
+        </Typography>
       </Box>
-      <List sx={{ pt: 1, px: 1 }}>
+
+      <List sx={{ pt: 1.5, px: 1.5 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.75 }}>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => handleNavigation(item.path)}
               sx={{
-                borderRadius: 1,
-                mb: 0.5,
+                minHeight: 48,
+                borderRadius: 2.5,
+                px: 1.5,
+                '&:hover': {
+                  bgcolor: 'rgba(44, 95, 45, 0.06)',
+                },
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(44, 95, 45, 0.08)',
+                  bgcolor: 'rgba(44, 95, 45, 0.10)',
+                  color: 'primary.main',
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.main',
+                  },
+                  '& .MuiListItemText-primary': {
+                    fontWeight: 700,
+                  },
                   '&:hover': {
-                    bgcolor: 'rgba(44, 95, 45, 0.12)',
+                    bgcolor: 'rgba(44, 95, 45, 0.14)',
                   },
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
+              <ListItemIcon sx={{ minWidth: 38, color: 'text.secondary' }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText
                 primary={item.text}
                 primaryTypographyProps={{
                   fontSize: '0.95rem',
-                  fontWeight: location.pathname === item.path ? 600 : 400,
+                  fontWeight: location.pathname === item.path ? 700 : 500,
                 }}
               />
             </ListItemButton>
@@ -139,59 +177,89 @@ const Layout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <CssBaseline />
-      
-      {/* AppBar - Cabeçalho */}
+
       <AppBar
         position="fixed"
+        color="inherit"
+        elevation={0}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(250, 247, 242, 0.88)',
+          backdropFilter: 'blur(12px)',
         }}
       >
-        <Toolbar>
+        <Toolbar
+          sx={{
+            minHeight: { xs: 64, sm: 72 },
+            px: { xs: 2, sm: 3 },
+          }}
+        >
           <IconButton
-            color="inherit"
-            aria-label="open drawer"
+            color="primary"
+            aria-label="Abrir menu"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{
+              mr: 1.5,
+              display: { sm: 'none' },
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+            }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            GJ Santa Terezinha
-          </Typography>
+
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ fontSize: { xs: '1rem', sm: '1.15rem' }, fontWeight: 700, color: 'text.primary' }}
+            >
+              GJ Santa Terezinha
+            </Typography>
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{ display: { xs: 'none', sm: 'block' }, color: 'text.secondary' }}
+            >
+              Administração e acompanhamento do grupo
+            </Typography>
+          </Box>
+
           <UserMenu />
         </Toolbar>
       </AppBar>
 
-      {/* Drawer - Menu Lateral */}
       <Box
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
-        {/* Mobile drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
+              borderRight: 'none',
             },
           }}
         >
           {drawer}
         </Drawer>
 
-        {/* Desktop drawer */}
         <Drawer
           variant="permanent"
           sx={{
@@ -199,6 +267,9 @@ const Layout = () => {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              backgroundImage: 'none',
             },
           }}
           open
@@ -207,17 +278,22 @@ const Layout = () => {
         </Drawer>
       </Box>
 
-      {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
         }}
       >
-        <Toolbar /> {/* Spacer for AppBar */}
-        <Outlet />
+        <Toolbar sx={{ minHeight: { xs: 64, sm: 72 } }} />
+        <Box
+          sx={{
+            px: { xs: 1.5, sm: 3, md: 4 },
+            py: { xs: 2, sm: 3 },
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

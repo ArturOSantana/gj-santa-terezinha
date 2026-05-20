@@ -41,21 +41,23 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
     <Card
       sx={{
         height: '100%',
-        transition: 'all 0.3s ease',
+        border: '1px solid',
+        borderColor: 'rgba(31, 41, 51, 0.06)',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+          transform: 'translateY(-2px)',
+          boxShadow: '0 14px 28px rgba(31, 41, 51, 0.10)',
         },
       }}
     >
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box sx={{ flex: 1 }}>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="body2"
               color="text.secondary"
               gutterBottom
-              sx={{ fontWeight: 500, textTransform: 'uppercase', fontSize: '0.75rem' }}
+              sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.06em' }}
             >
               {title}
             </Typography>
@@ -63,9 +65,12 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
               variant="h4"
               component="div"
               sx={{
-                fontWeight: 600,
+                fontWeight: 700,
                 color: 'text.primary',
-                mb: 1,
+                mb: trend ? 1 : 0,
+                fontSize: { xs: '1.6rem', sm: '2rem' },
+                lineHeight: 1.15,
+                wordBreak: 'break-word',
               }}
             >
               {value}
@@ -75,20 +80,21 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 0.5,
+                  gap: 0.75,
+                  flexWrap: 'wrap',
                 }}
               >
                 <Typography
                   variant="body2"
                   sx={{
                     color: trend.isPositive ? 'success.main' : 'error.main',
-                    fontWeight: 500,
+                    fontWeight: 600,
                   }}
                 >
                   {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  vs. mês anterior
+                  em relação ao mês anterior
                 </Typography>
               </Box>
             )}
@@ -98,10 +104,10 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 56,
-              height: 56,
-              borderRadius: 2,
-              backgroundColor: `${cardColor}15`,
+              width: { xs: 48, sm: 56 },
+              height: { xs: 48, sm: 56 },
+              borderRadius: 3,
+              backgroundColor: `${cardColor}14`,
               color: cardColor,
               flexShrink: 0,
             }}

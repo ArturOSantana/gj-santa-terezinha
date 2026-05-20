@@ -87,17 +87,23 @@ const Dashboard = () => {
     : 'Nenhum evento agendado';
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        {/* Cabeçalho */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
+    <Container maxWidth="xl" disableGutters>
+      <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
+        <Paper
+          sx={{
+            p: { xs: 2.5, sm: 3.5 },
+            background: 'linear-gradient(135deg, rgba(47,93,80,0.10) 0%, rgba(184,138,68,0.08) 100%)',
+            border: '1px solid',
+            borderColor: 'rgba(47,93,80,0.10)',
+          }}
+        >
+          <Typography variant="h4" component="h1" gutterBottom>
             Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Visão geral do Grupo de Jovens - Paróquia Santa Terezinha
+            Visão geral do Grupo de Jovens e dos próximos acompanhamentos da comunidade.
           </Typography>
-        </Box>
+        </Paper>
 
         {/* Seção de Estatísticas */}
         <Box
@@ -108,8 +114,8 @@ const Dashboard = () => {
               sm: 'repeat(2, 1fr)',
               md: user?.role === 'member' ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
             },
-            gap: 3,
-            mb: 4,
+            gap: { xs: 2, sm: 3 },
+            mb: 1,
           }}
         >
           {/* Total de Membros - Apenas para Admin e Coordinator */}
@@ -151,8 +157,8 @@ const Dashboard = () => {
 
         {/* Avisos Importantes */}
         {stats.nextEvent && (
-          <Box sx={{ mb: 4 }}>
-            <Alert severity="info" sx={{ borderRadius: 2 }}>
+          <Box>
+            <Alert severity="info" sx={{ borderRadius: 3, py: 1 }}>
               <Typography variant="body1" sx={{ fontWeight: 500 }}>
                 Próximo encontro: {stats.nextEvent.title}
               </Typography>
@@ -172,11 +178,11 @@ const Dashboard = () => {
               xs: '1fr',
               md: '2fr 1fr',
             },
-            gap: 3,
+            gap: { xs: 2, md: 3 },
           }}
         >
           {/* Próximos Encontros */}
-          <Paper sx={{ p: 3, height: '100%' }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
               Próximos Encontros
             </Typography>
@@ -204,7 +210,7 @@ const Dashboard = () => {
 
           {/* Atividades Recentes */}
           <Box>
-            <Paper sx={{ p: 3, height: '100%' }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
                 Atividades Recentes
               </Typography>

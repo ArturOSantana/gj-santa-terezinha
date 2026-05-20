@@ -3,62 +3,103 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2c5f2d',
-      light: '#4a8f4c',
-      dark: '#1b3a1c',
-      contrastText: '#fff',
+      main: '#2f5d50',
+      light: '#4f7d70',
+      dark: '#1f4036',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#d4af37',
-      light: '#e6c966',
-      dark: '#a68b2a',
-      contrastText: '#000',
+      main: '#b88a44',
+      light: '#cda567',
+      dark: '#8d6930',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#fff',
+      default: '#f7f4ef',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#1f2933',
+      secondary: '#5b6572',
     },
   },
   typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily: '"Inter", "-apple-system", BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     h4: {
-      fontWeight: 600,
+      fontWeight: 700,
+      letterSpacing: '-0.03em',
     },
     h5: {
-      fontWeight: 600,
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
     },
     h6: {
-      fontWeight: 600,
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    subtitle1: {
+      lineHeight: 1.6,
+    },
+    body1: {
+      lineHeight: 1.65,
+    },
+    body2: {
+      lineHeight: 1.6,
     },
     button: {
       textTransform: 'none',
+      fontWeight: 600,
     },
   },
   shape: {
-    borderRadius: 6,
+    borderRadius: 14,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: '#f7f4ef',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
-          padding: '6px 16px',
+          borderRadius: 12,
+          padding: '9px 18px',
+          boxShadow: 'none',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+          borderRadius: 18,
+          boxShadow: '0 10px 30px rgba(31, 41, 51, 0.06)',
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+        rounded: {
+          borderRadius: 18,
         },
       },
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          boxShadow: 'none',
         },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        size: 'medium',
       },
     },
   },

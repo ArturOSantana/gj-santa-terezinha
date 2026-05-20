@@ -233,6 +233,7 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
       gender: formData.gender as 'male' | 'female',
       joinDate: member?.joinDate || new Date(),
       status: formData.status,
+      role: member?.role || 'member',
       notes: formData.notes?.trim() || undefined,
       photoUrl: member?.photoUrl,
     };
@@ -326,8 +327,8 @@ const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   disabled={readOnly}
                   label="Gênero"
                 >
-                  <MenuItem value="male">Rapazes</MenuItem>
-                  <MenuItem value="female">Moças</MenuItem>
+                  <MenuItem value="male">Cavalheiros</MenuItem>
+                  <MenuItem value="female">Santa Joana</MenuItem>
                 </Select>
                 {errors.gender && (
                   <FormHelperText>{errors.gender}</FormHelperText>

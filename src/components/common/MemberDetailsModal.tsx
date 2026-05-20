@@ -93,7 +93,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
 
   // Cores por gênero
   const genderColor = member.gender === 'male' ? '#2196f3' : member.gender === 'female' ? '#e91e63' : '#757575';
-  const genderLabel = member.gender === 'male' ? 'Rapazes' : member.gender === 'female' ? 'Moças' : 'Não informado';
+  const genderLabel = member.gender === 'male' ? 'Cavalheiros' : member.gender === 'female' ? 'Santa Joana' : 'Não informado';
 
   // Cores por status
   const statusConfig = {

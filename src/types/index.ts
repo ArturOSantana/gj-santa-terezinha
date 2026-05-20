@@ -181,6 +181,7 @@ export interface DashboardStats {
   totalMembers: number;
   nextEvent: Event | null;
   balance: number;
+  attendanceRate: number;
 }
 
 export interface Activity {
