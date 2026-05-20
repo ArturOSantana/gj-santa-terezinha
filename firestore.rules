@@ -10,10 +10,12 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/members/$(request.auth.uid));
     }
 
+    function currentUserExists() {
+      return isSignedIn() && currentUserDoc().data != null;
+    }
+
     function currentUserRole() {
-      return isSignedIn() && currentUserDoc().exists()
-        ? currentUserDoc().data.role
-        : null;
+      return currentUserExists() ? currentUserDoc().data.role : null;
     }
 
     function isAdmin() {
@@ -24,51 +26,63 @@ service cloud.firestore {
       return currentUserRole() == 'coordinator';
     }
 
-    function isMember() {
-      return currentUserRole() == 'member';
-    }
-
     function isCoordinatorOrAdmin() {
       return isCoordinator() || isAdmin();
     }
 
-    function isMainAdminTarget() {
-      return resource != null
-        && resource.data != null
-        && resource.data.email == 'admin@gj.com';
+    function isMainAdminEmail(email) {
+      return email == 'admin@gj.com';
     }
 
-    function isMainAdminRequest() {
-      return request.resource != null
-        && request.resource.data != null
-        && request.resource.data.email == 'admin@gj.com';
+    function isSelf(memberId) {
+      return isSignedIn() && request.auth.uid == memberId;
+    }
+
+    function creatingOwnProfile(memberId) {
+      return isSelf(memberId)
+        && !exists(/databases/$(database)/documents/members/$(memberId));
+    }
+
+    function updatingOwnProfileWithoutRoleChange() {
+      return request.resource.data.role == resource.data.role;
     }
 
     match /members/{memberId} {
       allow read: if isSignedIn();
 
       allow create: if isSignedIn() && (
-        request.auth.uid == memberId ||
-        isAdmin()
+        isAdmin() ||
+        (
+          creatingOwnProfile(memberId) &&
+          request.resource.data.id == request.auth.uid &&
+          request.resource.data.email is string &&
+          (
+            request.resource.data.role == 'member' ||
+            (
+              isMainAdminEmail(request.resource.data.email) &&
+              request.resource.data.role == 'admin'
+            )
+          )
+        )
       );
 
       allow update: if isSignedIn() && (
         isAdmin() ||
         (
-          isCoordinatorOrAdmin() &&
-          !isMainAdminTarget() &&
+          isCoordinator() &&
           resource.data.role == 'member' &&
-          request.resource.data.role == 'member'
+          request.resource.data.role == 'member' &&
+          resource.data.email != 'admin@gj.com'
         ) ||
         (
-          request.auth.uid == memberId &&
-          request.resource.data.role == resource.data.role
+          isSelf(memberId) &&
+          updatingOwnProfileWithoutRoleChange()
         )
       );
 
       allow delete: if isSignedIn() && (
-        isAdmin() && !isMainAdminTarget() ||
-        (isCoordinator() && !isMainAdminTarget() && resource.data.role == 'member')
+        (isAdmin() && resource.data.email != 'admin@gj.com') ||
+        (isCoordinator() && resource.data.role == 'member' && resource.data.email != 'admin@gj.com')
       );
     }
 
@@ -78,13 +92,11 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-      allow read: if isCoordinatorOrAdmin();
-      allow create, update, delete: if isCoordinatorOrAdmin();
+      allow read, create, update, delete: if isCoordinatorOrAdmin();
     }
 
     match /contributions/{contributionId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read, create: if isSignedIn();
       allow update, delete: if isCoordinatorOrAdmin();
     }
 
