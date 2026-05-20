@@ -103,16 +103,16 @@ export const useUsers = (): UseUsersReturn => {
    */
   const searchUsers = useCallback(
     (query: string): User[] => {
-      if (!query.trim()) {
+      const safeQuery = typeof query === 'string' ? query.trim().toLowerCase() : '';
+      if (!safeQuery) {
         return users;
       }
 
-      const lowerQuery = query.toLowerCase();
-      return users.filter(
-        (user) =>
-          user.displayName.toLowerCase().includes(lowerQuery) ||
-          user.email.toLowerCase().includes(lowerQuery)
-      );
+      return users.filter((user) => {
+        const displayName = typeof user.name === 'string' ? user.name.toLowerCase() : '';
+        const email = typeof user.email === 'string' ? user.email.toLowerCase() : '';
+        return displayName.includes(safeQuery) || email.includes(safeQuery);
+      });
     },
     [users]
   );

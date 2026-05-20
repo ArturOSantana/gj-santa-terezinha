@@ -102,10 +102,13 @@ export const useMembers = () => {
    */
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
+      const memberName = typeof member.name === 'string' ? member.name : '';
+      const memberEmail = typeof member.email === 'string' ? member.email : '';
+
       // Filtro de busca
-      const matchesSearch = 
-        member.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        member.email.toLowerCase().includes(filters.search.toLowerCase());
+      const matchesSearch =
+        memberName.toLowerCase().includes(filters.search.toLowerCase()) ||
+        memberEmail.toLowerCase().includes(filters.search.toLowerCase());
       
       // Filtro de grupo (gênero)
       const matchesGroup = 

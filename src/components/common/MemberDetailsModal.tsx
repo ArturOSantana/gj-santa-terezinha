@@ -39,9 +39,12 @@ interface MemberDetailsModalProps {
   canEdit?: boolean;
 }
 
-const calculateAge = (birthDate: Date): number => {
-  const today = new Date();
+const calculateAge = (birthDate?: Date | null): number | null => {
+  if (!birthDate) return null;
   const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) return null;
+
+  const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
   
@@ -52,12 +55,22 @@ const calculateAge = (birthDate: Date): number => {
   return age;
 };
 
-const getInitials = (name: string): string => {
-  const parts = name.split(' ');
+const getInitials = (name?: string | null): string => {
+  const safeName = typeof name === 'string' ? name.trim() : '';
+  if (!safeName) return '??';
+
+  const parts = safeName.split(' ').filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
-  return name.substring(0, 2).toUpperCase();
+  return safeName.substring(0, 2).toUpperCase();
+};
+
+const formatSafeDate = (value?: Date | null): string => {
+  if (!value) return 'Não informado';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Não informado';
+  return format(parsed, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 };
 
 const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
@@ -73,11 +86,14 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
   if (!member) return null;
 
   const age = calculateAge(member.birthDate);
+  const safeName = typeof member.name === 'string' && member.name.trim() ? member.name : 'Membro sem nome';
+  const safeEmail = typeof member.email === 'string' && member.email.trim() ? member.email : 'Email não informado';
+  const safePhone = typeof member.phone === 'string' && member.phone.trim() ? member.phone : 'Telefone não informado';
   const initials = getInitials(member.name);
 
   // Cores por gênero
-  const genderColor = member.gender === 'male' ? '#2196f3' : '#e91e63';
-  const genderLabel = member.gender === 'male' ? 'Rapazes' : 'Moças';
+  const genderColor = member.gender === 'male' ? '#2196f3' : member.gender === 'female' ? '#e91e63' : '#757575';
+  const genderLabel = member.gender === 'male' ? 'Rapazes' : member.gender === 'female' ? 'Moças' : 'Não informado';
 
   // Cores por status
   const statusConfig = {
@@ -125,7 +141,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
           <Avatar
             src={member.photoUrl}
-            alt={member.name}
+            alt={safeName}
             sx={{
               width: 100,
               height: 100,
@@ -139,7 +155,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
           </Avatar>
           
           <Typography variant="h5" component="h2" gutterBottom align="center">
-            {member.name}
+            {safeName}
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
@@ -174,7 +190,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
             </ListItemIcon>
             <ListItemText
               primary="Email"
-              secondary={member.email}
+              secondary={safeEmail}
             />
           </ListItem>
           <ListItem>
@@ -183,7 +199,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
             </ListItemIcon>
             <ListItemText
               primary="Telefone"
-              secondary={member.phone}
+              secondary={safePhone}
             />
           </ListItem>
         </List>
@@ -201,7 +217,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
             </ListItemIcon>
             <ListItemText
               primary="Data de Nascimento"
-              secondary={`${format(member.birthDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} (${age} anos)`}
+              secondary={age !== null ? `${formatSafeDate(member.birthDate)} (${age} anos)` : formatSafeDate(member.birthDate)}
             />
           </ListItem>
           <ListItem>
@@ -210,7 +226,7 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
             </ListItemIcon>
             <ListItemText
               primary="Membro desde"
-              secondary={format(member.joinDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              secondary={formatSafeDate(member.joinDate)}
             />
           </ListItem>
           <ListItem>

@@ -28,12 +28,24 @@ const roleConfig: Record<UserRole, { label: string; color: 'error' | 'warning' |
   member: { label: 'Membro', color: 'info' },
 };
 
-const getInitials = (name: string): string => {
-  const parts = name.trim().split(' ');
+const getInitials = (name?: string | null): string => {
+  const safeName = typeof name === 'string' ? name.trim() : '';
+  if (!safeName) return '??';
+
+  const parts = safeName.split(' ').filter(Boolean);
   if (parts.length === 1) {
     return parts[0].substring(0, 2).toUpperCase();
   }
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const formatSafeDate = (value?: Date | null, withTime = false): string => {
+  if (!value) return 'Não informado';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Não informado';
+  return withTime
+    ? format(parsed, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+    : format(parsed, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 };
 
 export const UserCard: React.FC<UserCardProps> = ({
@@ -44,7 +56,9 @@ export const UserCard: React.FC<UserCardProps> = ({
   isCurrentUser = false,
 }) => {
   const roleInfo = roleConfig[user.role];
-  const initials = getInitials(user.displayName);
+  const safeName = typeof user.name === 'string' && user.name.trim() ? user.name : 'Usuário sem nome';
+  const safeEmail = typeof user.email === 'string' && user.email.trim() ? user.email : 'Email não informado';
+  const initials = getInitials(user.name);
 
   const handleEditClick = () => {
     if (onEditRole && canEdit) {
@@ -84,7 +98,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         >
           <Avatar
             src={user.photoUrl}
-            alt={user.displayName}
+            alt={safeName}
             sx={{
               width: 56,
               height: 56,
@@ -107,7 +121,7 @@ export const UserCard: React.FC<UserCardProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {user.displayName}
+              {safeName}
               {isCurrentUser && (
                 <Chip
                   label="Você"
@@ -126,7 +140,7 @@ export const UserCard: React.FC<UserCardProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {user.email}
+              {safeEmail}
             </Typography>
           </Box>
 
@@ -184,12 +198,12 @@ export const UserCard: React.FC<UserCardProps> = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           <Typography variant="caption" color="text.secondary">
             <strong>Membro desde:</strong>{' '}
-            {format(user.createdAt, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {formatSafeDate(user.createdAt)}
           </Typography>
           {user.lastLogin && (
             <Typography variant="caption" color="text.secondary">
               <strong>Último acesso:</strong>{' '}
-              {format(user.lastLogin, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              {formatSafeDate(user.lastLogin, true)}
             </Typography>
           )}
         </Box>

@@ -29,9 +29,12 @@ interface MemberCardProps {
   canDelete?: boolean;
 }
 
-const calculateAge = (birthDate: Date): number => {
-  const today = new Date();
+const calculateAge = (birthDate?: Date | null): number | null => {
+  if (!birthDate) return null;
   const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) return null;
+
+  const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
   
@@ -42,12 +45,15 @@ const calculateAge = (birthDate: Date): number => {
   return age;
 };
 
-const getInitials = (name: string): string => {
-  const parts = name.split(' ');
+const getInitials = (name?: string | null): string => {
+  const safeName = typeof name === 'string' ? name.trim() : '';
+  if (!safeName) return '??';
+
+  const parts = safeName.split(' ').filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
-  return name.substring(0, 2).toUpperCase();
+  return safeName.substring(0, 2).toUpperCase();
 };
 
 const MemberCard: React.FC<MemberCardProps> = ({
@@ -59,11 +65,14 @@ const MemberCard: React.FC<MemberCardProps> = ({
   canDelete = true,
 }) => {
   const age = calculateAge(member.birthDate);
+  const safeName = typeof member.name === 'string' && member.name.trim() ? member.name : 'Membro sem nome';
+  const safeEmail = typeof member.email === 'string' && member.email.trim() ? member.email : 'Email não informado';
+  const safePhone = typeof member.phone === 'string' && member.phone.trim() ? member.phone : 'Telefone não informado';
   const initials = getInitials(member.name);
 
   // Cores por gênero
-  const genderColor = member.gender === 'male' ? '#2196f3' : '#e91e63';
-  const genderLabel = member.gender === 'male' ? 'Rapazes' : 'Moças';
+  const genderColor = member.gender === 'male' ? '#2196f3' : member.gender === 'female' ? '#e91e63' : '#757575';
+  const genderLabel = member.gender === 'male' ? 'Rapazes' : member.gender === 'female' ? 'Moças' : 'Não informado';
 
   // Cores por status
   const statusConfig = {
@@ -92,7 +101,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Avatar
             src={member.photoUrl}
-            alt={member.name}
+            alt={safeName}
             sx={{
               width: 56,
               height: 56,
@@ -115,7 +124,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {member.name}
+              {safeName}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
               <Chip
@@ -143,7 +152,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CakeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              {age} anos
+              {age !== null ? `${age} anos` : 'Idade não informada'}
             </Typography>
           </Box>
 
@@ -158,14 +167,14 @@ const MemberCard: React.FC<MemberCardProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {member.email}
+              {safeEmail}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <PhoneIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              {member.phone}
+              {safePhone}
             </Typography>
           </Box>
         </Box>
