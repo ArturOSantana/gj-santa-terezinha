@@ -1,14 +1,14 @@
 /**
- * Script para promover o primeiro usuário registrado a admin
- * 
+ * Script para promover um email específico a admin principal
+ *
  * USO:
- * 1. Certifique-se de ter um usuário registrado no sistema
+ * 1. Certifique-se de ter um usuário registrado no sistema com email admin@gj.com
  * 2. Configure as variáveis de ambiente do Firebase no .env
  * 3. Execute: node promote-first-admin.js
  */
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, updateDoc, doc, query, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, updateDoc, doc, query, where, limit } from 'firebase/firestore';
 import * as dotenv from 'dotenv';
 
 // Carregar variáveis de ambiente
@@ -28,50 +28,50 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function promoteFirstUserToAdmin() {
+const ADMIN_EMAIL = 'admin@gj.com';
+
+async function promoteMainAdmin() {
   try {
-    console.log('🔍 Buscando membros...');
+    console.log(`🔍 Buscando membro com email ${ADMIN_EMAIL}...`);
     
-    // Buscar o primeiro membro (ordenado por data de criação)
     const membersRef = collection(db, 'members');
-    const q = query(membersRef, orderBy('createdAt', 'asc'), limit(1));
+    const q = query(membersRef, where('email', '==', ADMIN_EMAIL), limit(1));
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
-      console.log('❌ Nenhum membro encontrado no Firestore.');
-      console.log('📝 Registre um usuário primeiro no sistema.');
+      console.log(`❌ Nenhum membro com email ${ADMIN_EMAIL} foi encontrado no Firestore.`);
+      console.log('📝 Cadastre esse usuário primeiro no sistema.');
       return;
     }
     
-    const firstMember = querySnapshot.docs[0];
-    const memberData = firstMember.data();
+    const adminMember = querySnapshot.docs[0];
+    const memberData = adminMember.data();
     
-    console.log('\n👤 Primeiro membro encontrado:');
-    console.log(`   ID: ${firstMember.id}`);
+    console.log('\n👤 Membro encontrado:');
+    console.log(`   ID: ${adminMember.id}`);
     console.log(`   Nome: ${memberData.name}`);
     console.log(`   Email: ${memberData.email}`);
     console.log(`   Role atual: ${memberData.role}`);
     
     if (memberData.role === 'admin') {
-      console.log('\n✅ Este membro já é admin!');
+      console.log('\n✅ Este membro já é o admin principal!');
       return;
     }
     
-    // Promover a admin
-    console.log('\n🔄 Promovendo membro a admin...');
-    const memberDocRef = doc(db, 'members', firstMember.id);
+    console.log('\n🔄 Promovendo membro a admin principal...');
+    const memberDocRef = doc(db, 'members', adminMember.id);
     await updateDoc(memberDocRef, {
       role: 'admin'
     });
     
-    console.log('✅ Usuário promovido a admin com sucesso!');
+    console.log(`✅ ${ADMIN_EMAIL} promovido a admin com sucesso!`);
     console.log('\n📋 Próximos passos:');
-    console.log('   1. Faça login com este usuário');
-    console.log('   2. Acesse a página "Usuários"');
-    console.log('   3. Agora você pode promover outros usuários');
+    console.log('   1. Faça logout/login com este usuário');
+    console.log('   2. Verifique se o painel administrativo foi liberado');
+    console.log('   3. Use este admin para promover outros usuários, se necessário');
     
   } catch (error) {
-    console.error('❌ Erro ao promover usuário:', error);
+    console.error('❌ Erro ao promover admin principal:', error);
     console.error('\n💡 Verifique se:');
     console.error('   - As variáveis de ambiente estão configuradas no .env');
     console.error('   - O Firebase está configurado corretamente');
@@ -80,6 +80,6 @@ async function promoteFirstUserToAdmin() {
 }
 
 // Executar
-promoteFirstUserToAdmin();
+promoteMainAdmin();
 
 // Made with Bob
