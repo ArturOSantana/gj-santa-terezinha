@@ -19,9 +19,8 @@ export const canEdit = (
 ): boolean => {
   if (userRole === 'admin') return true;
   
-  // Coordinator pode editar events (não pode editar members)
   if (userRole === 'coordinator') {
-    return resourceType === 'event';
+    return resourceType === 'event' || resourceType === 'transaction' || resourceType === 'member';
   }
   
   return false;
@@ -33,9 +32,8 @@ export const canDelete = (
 ): boolean => {
   if (userRole === 'admin') return true;
   
-  // Coordinator pode deletar apenas events (não pode deletar members)
   if (userRole === 'coordinator') {
-    return resourceType === 'event';
+    return resourceType === 'event' || resourceType === 'member';
   }
   
   return false;
@@ -47,9 +45,8 @@ export const canCreate = (
 ): boolean => {
   if (userRole === 'admin') return true;
   
-  // Coordinator pode criar apenas events (não pode criar members - apenas auto-cadastro)
   if (userRole === 'coordinator') {
-    return resourceType === 'event';
+    return resourceType === 'event' || resourceType === 'transaction';
   }
   
   return false;
@@ -59,38 +56,42 @@ export const canView = (
   userRole: UserRole,
   resourceType: 'member' | 'event' | 'transaction' | 'dashboard' | 'finance' | 'contributions'
 ): boolean => {
-  // Todos podem ver members (alinhado com firestore.rules)
-  if (resourceType === 'member') return true;
-  
-  // Admin pode ver tudo
   if (userRole === 'admin') return true;
   
-  // Coordinator pode ver events e transactions
   if (userRole === 'coordinator') {
-    return resourceType === 'event' || resourceType === 'transaction';
+    return (
+      resourceType === 'member' ||
+      resourceType === 'event' ||
+      resourceType === 'transaction' ||
+      resourceType === 'dashboard' ||
+      resourceType === 'finance' ||
+      resourceType === 'contributions'
+    );
   }
   
-  // Member pode ver apenas events
   if (userRole === 'member') {
-    return resourceType === 'event';
+    return (
+      resourceType === 'event' ||
+      resourceType === 'dashboard' ||
+      resourceType === 'contributions'
+    );
   }
   
   return false;
 };
 
 export const canManageUsers = (userRole: UserRole): boolean => {
-  return userRole === 'admin';
+  return userRole === 'admin' || userRole === 'coordinator';
 };
 
 export const canPromoteUser = (userRole: UserRole, targetRole: UserRole): boolean => {
   if (userRole === 'admin') return true;
-  if (userRole === 'coordinator' && targetRole !== 'admin') return true;
   return false;
 };
 
 export const canDemoteUser = (userRole: UserRole, targetRole: UserRole): boolean => {
   if (userRole === 'admin') return true;
-  if (userRole === 'coordinator' && targetRole !== 'admin') return true;
+  if (userRole === 'coordinator' && targetRole === 'member') return true;
   return false;
 };
 
