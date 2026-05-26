@@ -25,6 +25,7 @@ import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
+import { BoaNova } from './pages/BoaNova';
 
 // Permissions
 import { PERMISSIONS } from './utils/permissions';
@@ -116,6 +117,16 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={PERMISSIONS.ADMIN_ONLY}>
                     <Users />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Boa Nova - Admin e Coordinator */}
+              <Route
+                path="boanova"
+                element={
+                  <ProtectedRoute allowedRoles={PERMISSIONS.COORDINATOR_AND_ABOVE}>
+                    <BoaNova />
                   </ProtectedRoute>
                 }
               />

@@ -22,6 +22,7 @@ import {
   People as PeopleIcon,
   ManageAccounts as ManageAccountsIcon,
   Favorite as FavoriteIcon,
+  Campaign as CampaignIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserMenu } from './UserMenu';
@@ -41,6 +42,7 @@ const menuItemsByRole: Record<UserRole, Array<{
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
     { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
     { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
+    { text: 'Boa Nova', icon: <CampaignIcon />, path: '/boanova' },
     { text: 'Usuários', icon: <ManageAccountsIcon />, path: '/users' },
   ],
   coordinator: [
@@ -49,6 +51,7 @@ const menuItemsByRole: Record<UserRole, Array<{
     { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
     { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
     { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
+    { text: 'Boa Nova', icon: <CampaignIcon />, path: '/boanova' },
   ],
   member: [
     { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },

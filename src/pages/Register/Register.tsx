@@ -16,6 +16,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Visibility,
@@ -45,6 +47,8 @@ export const Register: React.FC = () => {
     gender: '' as 'male' | 'female' | '',
     password: '',
     confirmPassword: '',
+    whatsappConsent: true,  // Marcado por padrão
+    emailConsent: true,     // Marcado por padrão
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -106,7 +110,16 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await signUp(formData.email, formData.password, formData.name, formData.phone, new Date(formData.birthDate), formData.gender);
+      await signUp(
+        formData.email,
+        formData.password,
+        formData.name,
+        formData.phone,
+        new Date(formData.birthDate),
+        formData.gender,
+        formData.whatsappConsent,
+        formData.emailConsent
+      );
       navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta');
@@ -423,6 +436,101 @@ export const Register: React.FC = () => {
                     },
                   }}
                 />
+              </Box>
+
+              {/* Seção de Consentimento - Boa Nova */}
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2.5,
+                  bgcolor: 'rgba(26, 71, 49, 0.04)',
+                  borderRadius: 2.5,
+                  border: '1px solid rgba(26, 71, 49, 0.12)',
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 700,
+                    color: 'primary.main',
+                    mb: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  📢 Comunicação do GJ
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2, fontSize: '0.875rem' }}
+                >
+                  Para manter você informado sobre eventos, reuniões e atividades:
+                </Typography>
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.whatsappConsent}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsappConsent: e.target.checked,
+                        })
+                      }
+                      disabled={loading}
+                      sx={{
+                        color: 'primary.main',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                      Aceito receber mensagens via <strong>WhatsApp</strong>
+                    </Typography>
+                  }
+                  sx={{ mb: 1 }}
+                />
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.emailConsent}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          emailConsent: e.target.checked,
+                        })
+                      }
+                      disabled={loading}
+                      sx={{
+                        color: 'primary.main',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                      Aceito receber mensagens via <strong>E-mail</strong>
+                    </Typography>
+                  }
+                />
+
+                <Typography
+                  variant="caption"
+                  component="div"
+                  color="text.secondary"
+                  sx={{ mt: 1.5, fontSize: '0.75rem', fontStyle: 'italic' }}
+                >
+                  💡 Você pode alterar essas preferências a qualquer momento no seu perfil.
+                </Typography>
               </Box>
 
               <Button

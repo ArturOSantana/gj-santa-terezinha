@@ -100,6 +100,39 @@ service cloud.firestore {
       allow update, delete: if isCoordinatorOrAdmin();
     }
 
+    // Boa Nova - Sistema de envio de mensagens
+    match /boa_nova_broadcasts/{broadcastId} {
+      allow read: if isCoordinatorOrAdmin();
+      allow create: if isCoordinatorOrAdmin()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isCoordinatorOrAdmin()
+        && resource.data.userId == request.auth.uid;
+      
+      // Subcoleções
+      match /contacts/{contactId} {
+        allow read, write: if isCoordinatorOrAdmin()
+          && get(/databases/$(database)/documents/boa_nova_broadcasts/$(broadcastId)).data.userId == request.auth.uid;
+      }
+      
+      match /logs/{logId} {
+        allow read: if isCoordinatorOrAdmin()
+          && get(/databases/$(database)/documents/boa_nova_broadcasts/$(broadcastId)).data.userId == request.auth.uid;
+        allow write: if false; // Apenas via Functions
+      }
+    }
+    
+    // WhatsApp Sessions - Apenas coordenadores e admins
+    match /whatsapp_sessions/{sessionId} {
+      allow read, write: if isCoordinatorOrAdmin()
+        && request.auth.uid == resource.data.userId;
+    }
+    
+    // Rate Limits - Apenas leitura para usuários
+    match /whatsapp_rate_limits/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // Apenas via Functions
+    }
+
     match /{document=**} {
       allow read, write: if isAdmin();
     }

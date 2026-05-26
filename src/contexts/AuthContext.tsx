@@ -57,10 +57,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     displayName: string,
     phone: string,
     birthDate: Date,
-    gender: 'male' | 'female'
+    gender: 'male' | 'female',
+    whatsappConsent: boolean = true,
+    emailConsent: boolean = true
   ): Promise<void> => {
     try {
-      const authUser = await authService.signUp(email, password, displayName, phone, birthDate, gender);
+      const authUser = await authService.signUp(
+        email,
+        password,
+        displayName,
+        phone,
+        birthDate,
+        gender,
+        'member',
+        whatsappConsent,
+        emailConsent
+      );
       setUser(authUser);
     } catch (error) {
       throw error;

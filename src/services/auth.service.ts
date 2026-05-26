@@ -162,7 +162,9 @@ export const signUp = async (
   phone: string,
   birthDate: Date,
   gender: 'male' | 'female',
-  role: UserRole = 'member'
+  role: UserRole = 'member',
+  whatsappConsent: boolean = true,
+  emailConsent: boolean = true
 ): Promise<AuthUser> => {
   try {
     const userCredential: UserCredential = await createUserWithEmailAndPassword(
@@ -198,6 +200,17 @@ export const signUp = async (
           status: MemberStatus.ACTIVE,
           role: finalRole, // Role define permissões (admin/coordinator/member)
           photoUrl: null,
+          // Boa Nova - Consentimentos de comunicação
+          whatsappConsent: {
+            accepted: whatsappConsent,
+            acceptedAt: whatsappConsent ? now : null,
+            revokedAt: null,
+          },
+          emailConsent: {
+            accepted: emailConsent,
+            acceptedAt: emailConsent ? now : null,
+            revokedAt: null,
+          },
           createdAt: now,
           updatedAt: now,
           lastLogin: now,

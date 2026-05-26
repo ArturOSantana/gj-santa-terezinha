@@ -80,6 +80,22 @@ export interface Member {
     relationship: string;
   };
   notes?: string;
+  
+  // Boa Nova - Consentimentos de comunicação
+  whatsappConsent?: {
+    accepted: boolean;
+    acceptedAt: Date;
+    revokedAt?: Date;
+    ipAddress?: string;
+  };
+  
+  emailConsent?: {
+    accepted: boolean;
+    acceptedAt: Date;
+    revokedAt?: Date;
+    ipAddress?: string;
+  };
+  
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
@@ -162,7 +178,16 @@ export interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string, phone: string, birthDate: Date, gender: 'male' | 'female') => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string,
+    phone: string,
+    birthDate: Date,
+    gender: 'male' | 'female',
+    whatsappConsent?: boolean,
+    emailConsent?: boolean
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
