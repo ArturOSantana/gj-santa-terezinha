@@ -170,4 +170,3 @@ export interface SendResult {
   errors?: string[];
 }
 
-// Made with Bob - Sistema Boa Nova 📢

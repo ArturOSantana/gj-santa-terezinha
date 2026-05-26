@@ -12,6 +12,14 @@ import {
 } from './boanova/email.service';
 import { whatsappService } from './boanova/whatsapp.service';
 
+// Importar Google Calendar Functions
+export {
+  getCalendarEvents,
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+} from './googleCalendar';
+
 // Inicializar Firebase Admin
 admin.initializeApp();
 
@@ -232,7 +240,6 @@ export const cleanupOldBroadcasts = functions.pubsub
     return null;
   });
 
-// Made with Bob - Sistema Boa Nova 📢
 /**
  * ============================================================================
  * WHATSAPP FUNCTIONS
@@ -245,8 +252,8 @@ export const cleanupOldBroadcasts = functions.pubsub
  */
 export const startWhatsAppSession = functions
   .runWith({
-    timeoutSeconds: 300, // 5 minutos
-    memory: '512MB'
+    timeoutSeconds: 540, // 9 minutos (máximo permitido)
+    memory: '1GB' // Mais memória para Baileys
   })
   .https.onCall(async (data, context) => {
   // Validar autenticação
@@ -491,4 +498,5 @@ export const cleanupExpiredWhatsAppSessions = functions.pubsub
 
     console.log(`🧹 Limpeza de sessões WhatsApp: ${count} sessões encerradas`);
     return null;
+
   });

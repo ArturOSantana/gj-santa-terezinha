@@ -141,18 +141,29 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       return;
     }
 
-    const eventData = {
+    // Criar data no timezone local (Brasília UTC-3)
+    // Formato: "2026-06-03" -> Date com hora local meio-dia para evitar problemas de timezone
+    const [year, month, day] = formData.date.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 12, 0, 0, 0);
+    
+    const eventData: any = {
       title: formData.title.trim(),
       description: formData.description.trim(),
-      date: new Date(formData.date),
+      date: localDate,
       startTime: formData.startTime,
       endTime: formData.endTime,
       location: formData.location.trim(),
       category: formData.category,
-      activityType: formData.activityType,
-      targetGender: formData.targetGender,
       notes: formData.notes.trim(),
     };
+
+    // Adicionar campos opcionais apenas se tiverem valor
+    if (formData.activityType !== undefined) {
+      eventData.activityType = formData.activityType;
+    }
+    if (formData.targetGender !== undefined) {
+      eventData.targetGender = formData.targetGender;
+    }
 
     if (isEditing && event && onUpdate) {
       onUpdate(event.id, eventData);

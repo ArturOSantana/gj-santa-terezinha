@@ -1,10 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Event, EventCategory } from '../types';
 import { View } from 'react-big-calendar';
 import { firestoreService } from '../services/firestore.service';
 import { GoogleCalendarService } from '../services/googleCalendar.service';
 import { useAuth } from '../contexts/AuthContext';
 import { canCreate, canDelete, canEdit } from '../utils/permissions';
+
+// Constantes de cache
+const GOOGLE_CALENDAR_CACHE_KEY = 'google_calendar_events_cache';
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
 
 export const useCalendar = () => {
   const { user } = useAuth();
@@ -26,6 +30,11 @@ export const useCalendar = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref para garantir que Google Calendar seja buscado apenas 1 vez
+  const googleCalendarFetched = useRef(false);
+  // Ref para armazenar eventos do Google Calendar
+  const googleCalendarEvents = useRef<Event[]>([]);
 
   // Configura listener em tempo real para eventos do Firestore
   useEffect(() => {
@@ -40,8 +49,10 @@ export const useCalendar = () => {
     let unsubscribe: (() => void) | undefined;
 
     try {
-      unsubscribe = firestoreService.getEvents(user.role, (updatedEvents) => {
-        setEvents(updatedEvents);
+      unsubscribe = firestoreService.getEvents(user.role, (firestoreEvents) => {
+        console.log('[Firestore] Atualizado:', firestoreEvents.length, 'eventos');
+        // Mesclar eventos do Firestore com eventos do Google Calendar
+        setEvents([...firestoreEvents, ...googleCalendarEvents.current]);
         setLoading(false);
       });
     } catch (err) {
@@ -54,49 +65,106 @@ export const useCalendar = () => {
     };
   }, [user]);
 
-  // Buscar eventos do Google Calendar e mesclar com Firestore
+  // Buscar eventos do Google Calendar apenas 1 vez por sessão (com cache de 30 min)
   useEffect(() => {
-    if (!user) return;
+    if (!user || googleCalendarFetched.current) return;
 
     const fetchGoogleCalendarEvents = async () => {
       try {
+        // Verificar cache no localStorage
+        const cachedData = localStorage.getItem(GOOGLE_CALENDAR_CACHE_KEY);
+        if (cachedData) {
+          const { events: cachedEvents, timestamp } = JSON.parse(cachedData);
+          const now = Date.now();
+          
+          // Se cache ainda é válido (menos de 30 min), usar cache
+          if (now - timestamp < CACHE_DURATION) {
+            console.log('[Google Calendar] Usando cache (valido por', Math.round((CACHE_DURATION - (now - timestamp)) / 60000), 'min)');
+            console.log('[Google Calendar] Total de eventos em cache:', cachedEvents.length);
+            
+            // Armazenar eventos do Google Calendar na ref
+            const newGoogleEvents = cachedEvents.map((ge: any, index: number) => ({
+              ...ge,
+              date: new Date(ge.date),
+              createdAt: new Date(ge.createdAt),
+              updatedAt: new Date(ge.updatedAt),
+              id: `google-${index}-${Date.now()}`,
+            }));
+            
+            googleCalendarEvents.current = newGoogleEvents;
+            console.log('[Google Calendar] Eventos armazenados na ref:', newGoogleEvents.length);
+            
+            // Mesclar com eventos do Firestore
+            setEvents(prevEvents => {
+              console.log('[Merge] Eventos do Firestore:', prevEvents.length);
+              console.log('[Merge] Total apos mesclar:', prevEvents.length + newGoogleEvents.length);
+              return [...prevEvents, ...newGoogleEvents];
+            });
+            googleCalendarFetched.current = true;
+            return; // Não buscar da API
+          }
+        }
+
+        // Cache expirado ou não existe - buscar da API
+        console.log('[Google Calendar] Buscando da API...');
         const googleEvents = await GoogleCalendarService.fetchEvents();
         
         if (googleEvents.length > 0) {
-          // Mesclar eventos do Google Calendar com eventos do Firestore
-          // Evitar duplicatas verificando googleCalendarId
+          // Salvar no cache
+          localStorage.setItem(GOOGLE_CALENDAR_CACHE_KEY, JSON.stringify({
+            events: googleEvents,
+            timestamp: Date.now(),
+          }));
+          console.log('[Google Calendar] Cache atualizado (valido por 30 min)');
+
+          // Armazenar eventos do Google Calendar na ref
+          const newGoogleEvents = googleEvents.map((ge, index) => ({
+            ...ge,
+            id: `google-${index}-${Date.now()}`,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+          
+          googleCalendarEvents.current = newGoogleEvents;
+          console.log('[Google Calendar] Eventos armazenados na ref:', newGoogleEvents.length);
+          
+          // Mesclar com eventos do Firestore
           setEvents(prevEvents => {
-            const existingGoogleIds = new Set(
-              prevEvents
-                .filter(e => e.googleCalendarId)
-                .map(e => e.googleCalendarId)
-            );
-
-            const newGoogleEvents = googleEvents
-              .filter(ge => !existingGoogleIds.has(ge.googleCalendarId))
-              .map((ge, index) => ({
-                ...ge,
-                id: `google-${index}-${Date.now()}`,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }));
-
+            console.log('[Merge] Eventos do Firestore:', prevEvents.length);
+            console.log('[Merge] Total apos mesclar:', prevEvents.length + newGoogleEvents.length);
             return [...prevEvents, ...newGoogleEvents];
           });
         }
+        
+        googleCalendarFetched.current = true;
       } catch (error) {
-        console.error('Erro ao buscar eventos do Google Calendar:', error);
+        console.error('[Google Calendar] Erro ao buscar eventos:', error);
+        googleCalendarFetched.current = true; // Marcar como tentado mesmo com erro
       }
     };
 
+    // Buscar apenas 1 vez quando o componente monta
     fetchGoogleCalendarEvents();
   }, [user]);
 
   // Filtra eventos baseado nos filtros selecionados
   useEffect(() => {
+    console.log('[Filter] Filtrando eventos...');
+    console.log('[Filter] Total de eventos antes do filtro:', events.length);
+    console.log('[Filter] Filtros ativos:', filters);
+    
+    // Contar eventos por categoria
+    const categoryCounts: Record<string, number> = {};
+    events.forEach(event => {
+      categoryCounts[event.category] = (categoryCounts[event.category] || 0) + 1;
+    });
+    console.log('[Filter] Eventos por categoria:', categoryCounts);
+    
     const filtered = events.filter((event) =>
       filters.includes(event.category)
     );
+    
+    console.log('[Filter] Eventos apos filtro:', filtered.length);
     setFilteredEvents(filtered);
   }, [events, filters]);
 
@@ -115,20 +183,27 @@ export const useCalendar = () => {
           throw new Error('Usuário não tem permissão para criar eventos');
         }
 
-        // Criar evento no Firestore
-        const eventId = await firestoreService.createEvent(eventData, user.role);
-        
-        // Tentar criar no Google Calendar também
-        const googleEventId = await GoogleCalendarService.createEvent(eventData);
-        
-        // Se criou no Google Calendar, atualizar o evento no Firestore com o googleCalendarId
-        if (googleEventId) {
-          await firestoreService.updateEvent(eventId, { googleCalendarId }, user.role);
+        // Tentar criar no Google Calendar primeiro
+        let googleEventId: string | null = null;
+        try {
+          googleEventId = await GoogleCalendarService.createEvent(eventData);
+          // Limpar cache do Google Calendar para forçar atualização
+          localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
+          console.log('[Cache] Google Calendar limpo (evento criado)');
+        } catch (error) {
+          console.warn('Não foi possível criar no Google Calendar:', error);
         }
+        
+        // Criar evento no Firestore (com googleCalendarId se disponível)
+        const eventDataWithGoogle = googleEventId
+          ? { ...eventData, googleCalendarId: googleEventId }
+          : eventData;
+        
+        const eventId = await firestoreService.createEvent(eventDataWithGoogle, user.role);
         
         setIsFormModalOpen(false);
         setEditingEvent(null);
-        return { ...eventData, id: eventId, googleCalendarId, createdAt: new Date(), updatedAt: new Date() };
+        return { ...eventDataWithGoogle, id: eventId, createdAt: new Date(), updatedAt: new Date() };
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao criar evento';
         setError(errorMessage);
@@ -153,16 +228,47 @@ export const useCalendar = () => {
           throw new Error('Usuário não tem permissão para editar eventos');
         }
 
-        // Atualizar no Firestore
-        await firestoreService.updateEvent(id, eventData, user.role);
-        
-        // Se o evento tem googleCalendarId, atualizar no Google Calendar também
         const event = events.find(e => e.id === id);
-        if (event?.googleCalendarId) {
+        
+        // Se é um evento temporário do Google Calendar (ID começa com "google-")
+        if (id.startsWith('google-')) {
+          // Criar novo evento no Firestore com os dados atualizados
+          const fullEventData = {
+            ...event,
+            ...eventData,
+          } as Omit<Event, 'id' | 'createdAt' | 'updatedAt'>;
+          
+          // Criar no Google Calendar primeiro
+          let googleEventId: string | null = null;
           try {
-            await GoogleCalendarService.updateEvent(event.googleCalendarId, eventData);
+            googleEventId = await GoogleCalendarService.createEvent(fullEventData);
           } catch (error) {
-            console.warn('Não foi possível atualizar no Google Calendar:', error);
+            console.warn('Não foi possível criar no Google Calendar:', error);
+          }
+          
+          // Criar no Firestore
+          const eventDataWithGoogle = googleEventId
+            ? { ...fullEventData, googleCalendarId: googleEventId }
+            : fullEventData;
+          
+          await firestoreService.createEvent(eventDataWithGoogle, user.role);
+          
+          // Remover o evento temporário da lista local
+          setEvents(prevEvents => prevEvents.filter(e => e.id !== id));
+        } else {
+          // Evento normal do Firestore - atualizar normalmente
+          await firestoreService.updateEvent(id, eventData, user.role);
+          
+          // Se o evento tem googleCalendarId, atualizar no Google Calendar também
+          if (event?.googleCalendarId) {
+            try {
+              await GoogleCalendarService.updateEvent(event.googleCalendarId, eventData);
+              // Limpar cache do Google Calendar para forçar atualização
+              localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
+              console.log('[Cache] Google Calendar limpo (evento atualizado)');
+            } catch (error) {
+              console.warn('Não foi possível atualizar no Google Calendar:', error);
+            }
           }
         }
         
@@ -194,18 +300,42 @@ export const useCalendar = () => {
           throw new Error('Usuário não tem permissão para excluir eventos');
         }
 
-        // Se o evento tem googleCalendarId, deletar do Google Calendar também
         const event = events.find(e => e.id === id);
-        if (event?.googleCalendarId) {
-          try {
-            await GoogleCalendarService.deleteEvent(event.googleCalendarId);
-          } catch (error) {
-            console.warn('Não foi possível deletar do Google Calendar:', error);
+        
+        // Se é um evento temporário do Google Calendar (ID começa com "google-")
+        if (id.startsWith('google-')) {
+          // Deletar do Google Calendar
+          if (event?.googleCalendarId) {
+            try {
+              await GoogleCalendarService.deleteEvent(event.googleCalendarId);
+              // Limpar cache do Google Calendar para forçar atualização
+              localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
+              console.log('[Cache] Google Calendar limpo (evento deletado)');
+            } catch (error) {
+              console.warn('Não foi possível deletar do Google Calendar:', error);
+            }
           }
-        }
+          
+          // Remover da lista local (não existe no Firestore)
+          setEvents(prevEvents => prevEvents.filter(e => e.id !== id));
+        } else {
+          // Evento normal do Firestore
+          // Se o evento tem googleCalendarId, deletar do Google Calendar também
+          if (event?.googleCalendarId) {
+            try {
+              await GoogleCalendarService.deleteEvent(event.googleCalendarId);
+              // Limpar cache do Google Calendar para forçar atualização
+              localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
+              console.log('🗑️ Cache do Google Calendar limpo (evento deletado)');
+            } catch (error) {
+              console.warn('Não foi possível deletar do Google Calendar:', error);
+            }
+          }
 
-        // Deletar do Firestore
-        await firestoreService.deleteEvent(id, user.role);
+          // Deletar do Firestore
+          await firestoreService.deleteEvent(id, user.role);
+        }
+        
         setIsDetailsModalOpen(false);
         setSelectedEvent(null);
       } catch (err) {

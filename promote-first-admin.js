@@ -82,4 +82,3 @@ async function promoteMainAdmin() {
 // Executar
 promoteMainAdmin();
 
-// Made with Bob

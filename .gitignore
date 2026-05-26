@@ -62,16 +62,20 @@ coverage
 setup-env.sh
 clear-firestore.js
 
-# Documentação temporária
+# Documentação temporária (arquivos de desenvolvimento)
 PROXIMOS_PASSOS.md
 CONFIGURAR_VERCEL.md
 TROUBLESHOOTING.md
-CONFIGURACAO_LOCAL.md
 DEPLOY_GUIDE.md
 ESTRUTURA_PROJETO.md
 GUIA_RAPIDO.md
 FASE*.md
 OTIMIZACOES.md
+
+# Manter documentação útil:
+# README.md (documentação principal)
+# CONFIGURACAO_CI_CD.md (guia CI/CD)
+# CONFIGURACAO_LOCAL.md (guia configuração local)
 
 # Service Account (NUNCA COMMITAR!)
 *service-account*.json

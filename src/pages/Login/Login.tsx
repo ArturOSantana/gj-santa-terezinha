@@ -145,7 +145,7 @@ export const Login: React.FC = () => {
                   fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
                 }}
               >
-                Guarda de Jericó
+                Grupo de Jovens Santa Terezinha
               </Typography>
 
               <Typography

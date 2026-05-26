@@ -179,4 +179,3 @@ export async function verifyEmailService(): Promise<boolean> {
   }
 }
 
-// Made with Bob - Sistema Boa Nova 📢

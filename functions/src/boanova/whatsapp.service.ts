@@ -387,4 +387,3 @@ class WhatsAppService {
 
 export const whatsappService = new WhatsAppService();
 
-// Made with Bob

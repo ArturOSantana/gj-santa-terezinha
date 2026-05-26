@@ -239,4 +239,3 @@ async function verificarFirebase() {
 // Executar verificação
 verificarFirebase().catch(console.error);
 
-// Made with Bob

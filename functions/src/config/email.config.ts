@@ -44,4 +44,3 @@ export const EMAIL_CONFIG = {
   }
 };
 
-// Made with Bob - Sistema Boa Nova 📢

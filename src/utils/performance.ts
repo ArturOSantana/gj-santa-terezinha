@@ -233,4 +233,3 @@ export function preloadResource(url: string, type: 'script' | 'style' | 'image' 
   document.head.appendChild(link);
 }
 
-// Made with Bob

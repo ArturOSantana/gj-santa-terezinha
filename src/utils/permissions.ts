@@ -143,4 +143,3 @@ export const hasAnyRole = (
   return allowedRoles.includes(userRole);
 };
 
-// Made with Bob

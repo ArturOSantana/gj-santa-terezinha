@@ -1,6 +1,6 @@
 import { Event, EventCategory } from '../types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../config/firebase';
 
 interface GoogleCalendarEvent {
   id: string;
@@ -144,21 +144,16 @@ const detectEventCategory = (gEvent: GoogleCalendarEvent): EventCategory => {
 
 export const GoogleCalendarService = {
   /**
-   * Buscar eventos do Google Calendar via API serverless
+   * Buscar eventos do Google Calendar via Firebase Functions
    */
   async fetchEvents(timeMin?: Date, timeMax?: Date): Promise<Omit<Event, 'id' | 'createdAt' | 'updatedAt'>[]> {
     try {
-      const params = new URLSearchParams({
-        timeMin: (timeMin || new Date()).toISOString(),
-        timeMax: (timeMax || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)).toISOString(),
-      });
-
-      const response = await fetch(`${API_BASE_URL}/google-calendar?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Usar HTTP Request Function (pública)
+      const response = await fetch(
+        `https://us-central1-gj-santaterezinha.cloudfunctions.net/getCalendarEvents?` +
+        `timeMin=${(timeMin || new Date()).toISOString()}&` +
+        `timeMax=${(timeMax || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)).toISOString()}`
+      );
 
       if (!response.ok) {
         throw new Error(`Erro ao buscar eventos: ${response.statusText}`);
@@ -175,27 +170,18 @@ export const GoogleCalendarService = {
   },
 
   /**
-   * Criar evento no Google Calendar via API serverless
+   * Criar evento no Google Calendar via Firebase Functions
    */
   async createEvent(event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> {
     try {
       const googleEvent = convertToGoogleEvent(event);
-
-      const response = await fetch(`${API_BASE_URL}/google-calendar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(googleEvent),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao criar evento: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Evento criado no Google Calendar:', data.id);
-      return data.id;
+      const createCalendarEvent = httpsCallable(functions, 'createCalendarEvent');
+      
+      const result = await createCalendarEvent({ event: googleEvent });
+      const data = result.data as { success: boolean; event: { id: string } };
+      
+      console.log('✅ Evento criado no Google Calendar:', data.event.id);
+      return data.event.id;
     } catch (error) {
       console.error('❌ Erro ao criar evento no Google Calendar:', error);
       return null;
@@ -203,23 +189,17 @@ export const GoogleCalendarService = {
   },
 
   /**
-   * Atualizar evento no Google Calendar via API serverless
+   * Atualizar evento no Google Calendar via Firebase Functions
    */
   async updateEvent(googleEventId: string, event: Partial<Event>): Promise<void> {
     try {
       const googleEvent = convertToGoogleEvent(event as Omit<Event, 'id' | 'createdAt' | 'updatedAt'>);
-
-      const response = await fetch(`${API_BASE_URL}/google-calendar?eventId=${googleEventId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(googleEvent),
+      const updateCalendarEvent = httpsCallable(functions, 'updateCalendarEvent');
+      
+      await updateCalendarEvent({
+        eventId: googleEventId,
+        event: googleEvent,
       });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao atualizar evento: ${response.statusText}`);
-      }
 
       console.log('✅ Evento atualizado no Google Calendar:', googleEventId);
     } catch (error) {
@@ -229,20 +209,13 @@ export const GoogleCalendarService = {
   },
 
   /**
-   * Deletar evento no Google Calendar via API serverless
+   * Deletar evento no Google Calendar via Firebase Functions
    */
   async deleteEvent(googleEventId: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/google-calendar?eventId=${googleEventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao deletar evento: ${response.statusText}`);
-      }
+      const deleteCalendarEvent = httpsCallable(functions, 'deleteCalendarEvent');
+      
+      await deleteCalendarEvent({ eventId: googleEventId });
 
       console.log('✅ Evento deletado do Google Calendar:', googleEventId);
     } catch (error) {
@@ -254,4 +227,3 @@ export const GoogleCalendarService = {
 
 export default GoogleCalendarService;
 
-// Made with Bob

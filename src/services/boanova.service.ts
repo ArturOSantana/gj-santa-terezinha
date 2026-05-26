@@ -282,7 +282,10 @@ class BoaNovaService {
     qrCode: string;
   }> {
     try {
-      const startSessionFunction = httpsCallable(functions, 'startWhatsAppSession');
+      // Configurar timeout de 9 minutos (540 segundos) para corresponder ao backend
+      const startSessionFunction = httpsCallable(functions, 'startWhatsAppSession', {
+        timeout: 540000 // 9 minutos em milissegundos
+      });
       const result = await startSessionFunction();
       const data = result.data as any;
 
@@ -394,4 +397,3 @@ class BoaNovaService {
 
 export const boaNovaService = new BoaNovaService();
 
-// Made with Bob

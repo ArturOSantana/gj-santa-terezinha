@@ -120,4 +120,3 @@ Você atingiu o limite de 500 e-mails/dia do Gmail SMTP gratuito. Aguarde 24 hor
 
 ---
 
-Made with Bob - Sistema Boa Nova 📢
