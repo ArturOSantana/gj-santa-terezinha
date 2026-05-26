@@ -103,10 +103,10 @@ class BoaNovaService {
 
       broadcasts.forEach(broadcast => {
         // Contagem por status
-        if (broadcast.status === 'completed') {
+        if (broadcast.status === 'completed' && broadcast.recipients) {
           stats.sent += broadcast.recipients.sent || 0;
           stats.failed += broadcast.recipients.failed || 0;
-        } else if (broadcast.status === 'sending' || broadcast.status === 'scheduled') {
+        } else if ((broadcast.status === 'sending' || broadcast.status === 'scheduled') && broadcast.recipients) {
           stats.pending += broadcast.recipients.pending || 0;
         }
 

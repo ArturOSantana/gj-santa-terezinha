@@ -49,8 +49,7 @@ export const BoaNova: React.FC = () => {
     <RoleGuard roles={PERMISSIONS.COORDINATOR_AND_ABOVE}>
       <Container maxWidth="lg">
         <PageHeader
-          title="📢 Boa Nova"
-          subtitle="Sistema de envio de mensagens para membros do GJ"
+          title="Boa Nova"
         />
 
         <Alert severity="info" sx={{ mb: 3 }}>

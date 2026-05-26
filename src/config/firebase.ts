@@ -40,7 +40,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app, 'us-central1');
 
 // Conectar aos Firebase Emulators em desenvolvimento
 if (import.meta.env.DEV) {
