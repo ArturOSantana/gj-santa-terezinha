@@ -88,15 +88,49 @@ export const UserMenu: React.FC = () => {
         aria-haspopup="true"
         onClick={handleMenu}
         color="inherit"
+        sx={{
+          p: 0.5,
+        }}
       >
         {user.photoURL ? (
           <Avatar
             src={user.photoURL}
             alt={user.displayName || 'Usuário'}
-            sx={{ width: 32, height: 32 }}
+            sx={{
+              width: 40,
+              height: 40,
+              border: '2px solid',
+              borderColor: 'secondary.main',
+              boxShadow: '0 2px 8px rgba(26, 71, 49, 0.15)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                borderColor: 'secondary.light',
+                transform: 'scale(1.05)',
+                boxShadow: '0 4px 12px rgba(26, 71, 49, 0.25)',
+              },
+            }}
           />
         ) : (
-          <AccountCircle />
+          <Avatar
+            sx={{
+              width: 40,
+              height: 40,
+              bgcolor: 'primary.main',
+              border: '2px solid',
+              borderColor: 'secondary.main',
+              boxShadow: '0 2px 8px rgba(26, 71, 49, 0.15)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                borderColor: 'secondary.light',
+                transform: 'scale(1.05)',
+                boxShadow: '0 4px 12px rgba(26, 71, 49, 0.25)',
+              },
+            }}
+          >
+            <AccountCircle />
+          </Avatar>
         )}
       </IconButton>
       
@@ -114,45 +148,122 @@ export const UserMenu: React.FC = () => {
         }}
         open={Boolean(anchorEl)}
         onClose={handleClose}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1.5,
+              minWidth: 240,
+              borderRadius: 2,
+              boxShadow: '0 8px 24px rgba(26, 71, 49, 0.15)',
+              border: '1px solid',
+              borderColor: 'rgba(26, 71, 49, 0.1)',
+              overflow: 'visible',
+              '&::before': {
+                content: '""',
+                display: 'block',
+                position: 'absolute',
+                top: 0,
+                right: 14,
+                width: 10,
+                height: 10,
+                bgcolor: 'background.paper',
+                transform: 'translateY(-50%) rotate(45deg)',
+                zIndex: 0,
+                borderLeft: '1px solid',
+                borderTop: '1px solid',
+                borderColor: 'rgba(26, 71, 49, 0.1)',
+              },
+            },
+          },
+        }}
       >
-        <Box sx={{ px: 2, py: 1.5, minWidth: 200 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+        <Box sx={{ px: 2.5, py: 2, minWidth: 240 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>
             {user.displayName || 'Usuário'}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {user.email}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-            {getRoleIcon()}
-            <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              mt: 1,
+              px: 1,
+              py: 0.5,
+              bgcolor: 'rgba(26, 71, 49, 0.05)',
+              borderRadius: 1,
+            }}
+          >
+            <Box sx={{ color: 'secondary.main', display: 'flex', alignItems: 'center' }}>
+              {getRoleIcon()}
+            </Box>
+            <Typography variant="caption" sx={{ ml: 1, fontWeight: 600, color: 'text.primary' }}>
               {getRoleLabel()}
             </Typography>
           </Box>
         </Box>
         
-        <Divider />
+        <Divider sx={{ my: 1 }} />
         
-        <MenuItem onClick={handleProfile}>
-          <ListItemIcon>
+        <MenuItem
+          onClick={handleProfile}
+          sx={{
+            mx: 1,
+            borderRadius: 1,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              bgcolor: 'rgba(26, 71, 49, 0.08)',
+            },
+          }}
+        >
+          <ListItemIcon sx={{ color: 'primary.main' }}>
             <AccountCircle fontSize="small" />
           </ListItemIcon>
-          Meu Perfil
+          <Typography variant="body2">Meu Perfil</Typography>
         </MenuItem>
         
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon>
+        <MenuItem
+          onClick={handleClose}
+          sx={{
+            mx: 1,
+            borderRadius: 1,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              bgcolor: 'rgba(26, 71, 49, 0.08)',
+            },
+          }}
+        >
+          <ListItemIcon sx={{ color: 'primary.main' }}>
             <Settings fontSize="small" />
           </ListItemIcon>
-          Configurações
+          <Typography variant="body2">Configurações</Typography>
         </MenuItem>
         
-        <Divider />
+        <Divider sx={{ my: 1 }} />
         
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
+        <MenuItem
+          onClick={handleLogout}
+          sx={{
+            mx: 1,
+            mb: 1,
+            borderRadius: 1,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              bgcolor: 'rgba(178, 58, 72, 0.08)',
+              '& .MuiListItemIcon-root': {
+                color: 'error.main',
+              },
+              '& .MuiTypography-root': {
+                color: 'error.main',
+              },
+            },
+          }}
+        >
+          <ListItemIcon sx={{ color: 'text.secondary', transition: 'color 0.2s ease' }}>
             <Logout fontSize="small" />
           </ListItemIcon>
-          Sair
+          <Typography variant="body2" sx={{ transition: 'color 0.2s ease' }}>Sair</Typography>
         </MenuItem>
       </Menu>
     </Box>

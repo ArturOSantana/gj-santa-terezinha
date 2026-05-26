@@ -17,8 +17,9 @@ import {
   DialogActions,
   Pagination,
   InputAdornment,
-  Alert,
   Divider,
+  Grid,
+  alpha,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,16 +28,18 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   AccountBalance as AccountBalanceIcon,
+  Insights as InsightsIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useMemo } from 'react';
 import { useFinance } from '../../hooks/useFinance';
 import FinancialSummaryCard from '../../components/common/FinancialSummaryCard';
 import TransactionCard from '../../components/common/TransactionCard';
 import TransactionFormModal from '../../components/common/TransactionFormModal';
+import PageHeader from '../../components/common/PageHeader';
+import EmptyState from '../../components/common/EmptyState';
 import { TRANSACTION_CATEGORIES, PERIOD_OPTIONS, CATEGORY_LABELS, TRANSACTION_COLORS } from '../../utils/constants';
 import { TransactionType } from '../../types';
-
-const CHART_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
 
 const Finance = () => {
   const {
@@ -71,22 +74,6 @@ const Finance = () => {
     }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <Paper sx={{ p: 1.5, border: '2px solid #1e1e1e' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {payload[0].name}
-          </Typography>
-          <Typography variant="body2" color="primary">
-            {formatCurrency(payload[0].value)}
-          </Typography>
-        </Paper>
-      );
-    }
-    return null;
-  };
-
   const getAvailableCategories = () => {
     if (filters.type === TransactionType.INCOME) {
       return TRANSACTION_CATEGORIES.income;
@@ -96,208 +83,419 @@ const Finance = () => {
     return [...TRANSACTION_CATEGORIES.income, ...TRANSACTION_CATEGORIES.expense];
   };
 
+  const maxMonthlyValue = useMemo(() => {
+    return Math.max(
+      ...chartData.monthlyComparison.flatMap((item) => [item.income, item.expense]),
+      1
+    );
+  }, [chartData.monthlyComparison]);
+
+  const periodLabel =
+    PERIOD_OPTIONS.find((option) => option.value === filters.period)?.label ?? 'Período selecionado';
+
+  const headerAction = (
+    <Stack direction="row" spacing={1.25} sx={{ flexWrap: 'wrap' }}>
+      <Button
+        variant="outlined"
+        startIcon={<FileDownloadIcon />}
+        onClick={handleExportCSV}
+        sx={{ borderRadius: 2.5 }}
+      >
+        Exportar
+      </Button>
+      {permissions.canCreateTransaction && (
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreateForm}
+          sx={{ borderRadius: 2.5, px: 2.25 }}
+        >
+          Nova Transação
+        </Button>
+      )}
+    </Stack>
+  );
+
   return (
     <Container maxWidth="xl" disableGutters>
-      <Box sx={{ py: { xs: 1, sm: 2 }, display: 'grid', gap: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0, pb: 2, borderBottom: '2px solid #1e1e1e', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-              Controle Financeiro
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              onClick={handleExportCSV}
-            >
-              Exportar
-            </Button>
-            {permissions.canCreateTransaction && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleOpenCreateForm}
-              >
-                Nova Transação
-              </Button>
-            )}
-          </Stack>
-        </Box>
+      <Box sx={{ py: { xs: 1.5, sm: 2.5 }, display: 'grid', gap: { xs: 2.5, md: 3.5 } }}>
+        <PageHeader
+          title="Controle Financeiro"
+          action={headerAction}
+        />
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 0 }}>
-          <FinancialSummaryCard
-            title="Total de Receitas"
-            value={summary.totalIncome}
-            type="income"
-            icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
-          />
-          <FinancialSummaryCard
-            title="Total de Despesas"
-            value={summary.totalExpense}
-            type="expense"
-            icon={<TrendingDownIcon sx={{ fontSize: 32 }} />}
-          />
-          <FinancialSummaryCard
-            title="Saldo Atual"
-            value={summary.balance}
-            type="balance"
-            icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
-          />
-        </Box>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 3, mb: 0 }}>
-          <Box>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Despesas por Categoria
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            {chartData.expensesByCategory.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={chartData.expensesByCategory}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }: any) =>
-                      `${CATEGORY_LABELS[name as string] || name} (${((percent || 0) * 100).toFixed(0)}%)`
-                    }
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {chartData.expensesByCategory.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                <Typography color="text.secondary">Nenhuma despesa registrada</Typography>
-              </Box>
-            )}
-          </Box>
-
-          <Box>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Receitas vs Despesas (Últimos 6 Meses)
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData.monthlyComparison}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="income" name="Receitas" fill={TRANSACTION_COLORS.income.main} />
-                <Bar dataKey="expense" name="Despesas" fill={TRANSACTION_COLORS.expense.main} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </Box>
-
-        <Box>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-            Filtros
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-            <TextField
-              fullWidth
-              placeholder="Buscar transação..."
-              value={filters.searchTerm}
-              onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                },
-              }}
+        <Grid container columnSpacing={{ xs: 2, md: 3 }} rowSpacing={{ xs: 2, md: 2.5 }}>
+          <Grid size={{ xs: 12, md: 3.5 }}>
+            <FinancialSummaryCard
+              title="Total de Receitas"
+              value={summary.totalIncome}
+              type="income"
+              icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
             />
-
-            <FormControl fullWidth>
-              <InputLabel>Tipo</InputLabel>
-              <Select
-                value={filters.type}
-                label="Tipo"
-                onChange={(e) => handleFilterChange({ type: e.target.value as any, category: 'all' })}
-              >
-                <MenuItem value="all">Todos</MenuItem>
-                <MenuItem value={TransactionType.INCOME}>Entradas</MenuItem>
-                <MenuItem value={TransactionType.EXPENSE}>Saídas</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth>
-              <InputLabel>Categoria</InputLabel>
-              <Select
-                value={filters.category}
-                label="Categoria"
-                onChange={(e) => handleFilterChange({ category: e.target.value })}
-              >
-                <MenuItem value="all">Todas</MenuItem>
-                {getAvailableCategories().map((cat) => (
-                  <MenuItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth>
-              <InputLabel>Período</InputLabel>
-              <Select
-                value={filters.period}
-                label="Período"
-                onChange={(e) => handleFilterChange({ period: e.target.value })}
-              >
-                {PERIOD_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
-          {(filters.type !== 'all' || filters.category !== 'all' || filters.searchTerm) && (
-            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {filters.type !== 'all' && (
-                <Chip
-                  label={`Tipo: ${filters.type === TransactionType.INCOME ? 'Entradas' : 'Saídas'}`}
-                  onDelete={() => handleFilterChange({ type: 'all' })}
-                  size="small"
-                />
-              )}
-              {filters.category !== 'all' && (
-                <Chip
-                  label={`Categoria: ${CATEGORY_LABELS[filters.category] || filters.category}`}
-                  onDelete={() => handleFilterChange({ category: 'all' })}
-                  size="small"
-                />
-              )}
-              {filters.searchTerm && (
-                <Chip
-                  label={`Busca: "${filters.searchTerm}"`}
-                  onDelete={() => handleFilterChange({ searchTerm: '' })}
-                  size="small"
-                />
-              )}
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Box sx={{ mt: { md: 1.2 } }}>
+              <FinancialSummaryCard
+                title="Total de Despesas"
+                value={summary.totalExpense}
+                type="expense"
+                icon={<TrendingDownIcon sx={{ fontSize: 32 }} />}
+              />
             </Box>
-          )}
-        </Box>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
+            <FinancialSummaryCard
+              title="Saldo Atual"
+              value={summary.balance}
+              type="balance"
+              icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 2 }}>
+            <Paper
+              sx={{
+                p: 2.25,
+                borderRadius: 3,
+                height: '100%',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(255,255,255,0.96) 100%)',
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Resultado
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  mt: 1,
+                  fontWeight: 700,
+                  color: summary.balance >= 0 ? 'success.main' : 'error.main',
+                }}
+              >
+                {summary.balance >= 0 ? 'Positivo' : 'Ajustar gastos'}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
 
-        <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Grid container columnSpacing={{ xs: 2, md: 3 }} rowSpacing={{ xs: 2.5, md: 3 }}>
+          <Grid size={{ xs: 12, lg: 4.5 }}>
+            <Paper
+              sx={{
+                p: { xs: 1.75, sm: 2, md: 2.75 },
+                borderRadius: { xs: 3, md: 3.5 },
+                height: '100%',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 }, mb: { xs: 1.75, md: 2 } }}>
+                <InsightsIcon sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+                  }}
+                >
+                  Filtros
+                </Typography>
+              </Box>
+
+              <Stack spacing={2.25}>
+                <TextField
+                  fullWidth
+                  placeholder="Buscar transação..."
+                  value={filters.searchTerm}
+                  onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2.5,
+                    },
+                  }}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+                    gap: 1.75,
+                  }}
+                >
+                  <FormControl fullWidth>
+                    <InputLabel>Tipo</InputLabel>
+                    <Select
+                      value={filters.type}
+                      label="Tipo"
+                      onChange={(e) => handleFilterChange({ type: e.target.value as any, category: 'all' })}
+                      sx={{ borderRadius: 2.5 }}
+                    >
+                      <MenuItem value="all">Todos</MenuItem>
+                      <MenuItem value={TransactionType.INCOME}>Entradas</MenuItem>
+                      <MenuItem value={TransactionType.EXPENSE}>Saídas</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth>
+                    <InputLabel>Categoria</InputLabel>
+                    <Select
+                      value={filters.category}
+                      label="Categoria"
+                      onChange={(e) => handleFilterChange({ category: e.target.value })}
+                      sx={{ borderRadius: 2.5 }}
+                    >
+                      <MenuItem value="all">Todas</MenuItem>
+                      {getAvailableCategories().map((cat) => (
+                        <MenuItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth sx={{ gridColumn: { md: '1 / -1' } }}>
+                    <InputLabel>Período</InputLabel>
+                    <Select
+                      value={filters.period}
+                      label="Período"
+                      onChange={(e) => handleFilterChange({ period: e.target.value })}
+                      sx={{ borderRadius: 2.5 }}
+                    >
+                      {PERIOD_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                {(filters.type !== 'all' || filters.category !== 'all' || filters.searchTerm) && (
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {filters.type !== 'all' && (
+                      <Chip
+                        label={`Tipo: ${filters.type === TransactionType.INCOME ? 'Entradas' : 'Saídas'}`}
+                        onDelete={() => handleFilterChange({ type: 'all' })}
+                        size="small"
+                        sx={{ bgcolor: alpha(TRANSACTION_COLORS.income.main, 0.1) }}
+                      />
+                    )}
+                    {filters.category !== 'all' && (
+                      <Chip
+                        label={`Categoria: ${CATEGORY_LABELS[filters.category] || filters.category}`}
+                        onDelete={() => handleFilterChange({ category: 'all' })}
+                        size="small"
+                        sx={{ bgcolor: alpha(TRANSACTION_COLORS.expense.main, 0.1) }}
+                      />
+                    )}
+                    {filters.searchTerm && (
+                      <Chip
+                        label={`Busca: "${filters.searchTerm}"`}
+                        onDelete={() => handleFilterChange({ searchTerm: '' })}
+                        size="small"
+                      />
+                    )}
+                  </Box>
+                )}
+
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, rgba(26,71,49,0.05) 0%, rgba(26,71,49,0.01) 100%)',
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Transações no recorte atual
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {totalTransactions}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, lg: 7.5 }}>
+            <Stack spacing={2.5}>
+              <Paper
+                sx={{
+                  p: { xs: 1.75, sm: 2, md: 2.75 },
+                  borderRadius: { xs: 3, md: 3.5 },
+                  background: 'linear-gradient(135deg, rgba(248,245,238,1) 0%, rgba(255,255,255,1) 100%)',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 }, mb: { xs: 2, md: 2.25 } }}>
+                  <TimelineIcon sx={{ color: 'secondary.main', fontSize: { xs: 20, sm: 24 } }} />
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+                    }}
+                  >
+                    Receitas vs Despesas
+                  </Typography>
+                </Box>
+
+                <Stack spacing={{ xs: 1.25, md: 1.5 }}>
+                  {chartData.monthlyComparison.map((item, index) => (
+                    <Box
+                      key={item.month}
+                      sx={{
+                        p: { xs: 1.25, sm: 1.5 },
+                        borderRadius: { xs: 2, md: 2.5 },
+                        ml: index % 2 === 0 ? 0 : { md: 1.5 },
+                        bgcolor: index % 2 === 0 ? alpha('#1a4731', 0.03) : alpha('#8b5e34', 0.04),
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 0.75, md: 1 }, flexWrap: 'wrap', gap: 0.5 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: { xs: '0.85rem', sm: '0.875rem' },
+                          }}
+                        >
+                          {item.month}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                        >
+                          Comparativo mensal
+                        </Typography>
+                      </Box>
+
+                      <Stack spacing={1.1}>
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Receitas
+                            </Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: TRANSACTION_COLORS.income.main }}>
+                              {formatCurrency(item.income)}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              height: 10,
+                              borderRadius: 999,
+                              bgcolor: alpha(TRANSACTION_COLORS.income.main, 0.12),
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: `${(item.income / maxMonthlyValue) * 100}%`,
+                                height: '100%',
+                                background: `linear-gradient(90deg, ${TRANSACTION_COLORS.income.main} 0%, ${TRANSACTION_COLORS.income.light} 100%)`,
+                              }}
+                            />
+                          </Box>
+                        </Box>
+
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Despesas
+                            </Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: TRANSACTION_COLORS.expense.main }}>
+                              {formatCurrency(item.expense)}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              height: 10,
+                              borderRadius: 999,
+                              bgcolor: alpha(TRANSACTION_COLORS.expense.main, 0.12),
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: `${(item.expense / maxMonthlyValue) * 100}%`,
+                                height: '100%',
+                                background: `linear-gradient(90deg, ${TRANSACTION_COLORS.expense.main} 0%, ${TRANSACTION_COLORS.expense.light} 100%)`,
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+              </Paper>
+
+              <Paper
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 3.5,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                  Despesas por categoria
+                </Typography>
+
+                {chartData.expensesByCategory.length > 0 ? (
+                  <Stack spacing={1.25}>
+                    {chartData.expensesByCategory.map((item, index) => (
+                      <Box
+                        key={item.name}
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto',
+                          gap: 1,
+                          p: 1.5,
+                          borderRadius: 2.5,
+                          mr: index === 1 ? { md: 2 } : 0,
+                          bgcolor: alpha('#8b5e34', 0.05),
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {CATEGORY_LABELS[item.name] || item.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Participação no período filtrado
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          {formatCurrency(item.value)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <EmptyState
+                    title="Sem despesas categorizadas"
+                    description="Quando houver saídas registradas no período, o resumo por categoria aparecerá aqui."
+                  />
+                )}
+              </Paper>
+            </Stack>
+          </Grid>
+        </Grid>
+
+        <Paper sx={{ p: { xs: 2, md: 2.75 }, borderRadius: 3.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', md: 'center' },
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 1,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Transações
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -308,19 +506,22 @@ const Finance = () => {
 
           {transactions.length > 0 ? (
             <>
-              {transactions.map((transaction) => (
-                <TransactionCard
-                  key={transaction.id}
-                  transaction={transaction}
-                  onEdit={handleOpenEditForm}
-                  onDelete={handleOpenDeleteDialog}
-                  canEdit={permissions.canEditTransaction}
-                  canDelete={permissions.canDeleteTransaction}
-                />
-              ))}
+              <Stack spacing={2}>
+                {transactions.map((transaction, index) => (
+                  <Box key={transaction.id} sx={{ ml: index % 2 === 0 ? 0 : { md: 1.5 } }}>
+                    <TransactionCard
+                      transaction={transaction}
+                      onEdit={handleOpenEditForm}
+                      onDelete={handleOpenDeleteDialog}
+                      canEdit={permissions.canEditTransaction}
+                      canDelete={permissions.canDeleteTransaction}
+                    />
+                  </Box>
+                ))}
+              </Stack>
 
               {totalTransactions > rowsPerPage && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3.5 }}>
                   <Pagination
                     count={Math.ceil(totalTransactions / rowsPerPage)}
                     page={page + 1}
@@ -331,48 +532,24 @@ const Finance = () => {
               )}
             </>
           ) : (
-            <Alert severity="info">
-              Nenhuma transação encontrada com os filtros aplicados.
-            </Alert>
+            <EmptyState
+              title="Nenhuma transação encontrada"
+              description="Os filtros atuais não retornaram resultados. Ajuste os critérios ou registre uma nova movimentação."
+              action={
+                permissions.canCreateTransaction ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleOpenCreateForm}
+                    sx={{ borderRadius: 2.5 }}
+                  >
+                    Nova Transação
+                  </Button>
+                ) : undefined
+              }
+            />
           )}
-        </Box>
-
-        {allTransactions.length > 0 && (
-          <Box sx={{ p: 3, mt: 0, backgroundColor: '#efe8da', borderTop: '2px solid #1e1e1e' }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 3 }}>
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total de Entradas
-                </Typography>
-                <Typography variant="h6" sx={{ color: TRANSACTION_COLORS.income.main, fontWeight: 700 }}>
-                  {formatCurrency(summary.totalIncome)}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Total de Saídas
-                </Typography>
-                <Typography variant="h6" sx={{ color: TRANSACTION_COLORS.expense.main, fontWeight: 700 }}>
-                  {formatCurrency(summary.totalExpense)}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Saldo do Período
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: summary.balance >= 0 ? TRANSACTION_COLORS.income.main : TRANSACTION_COLORS.expense.main,
-                    fontWeight: 700,
-                  }}
-                >
-                  {formatCurrency(summary.balance)}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        )}
+        </Paper>
 
         <TransactionFormModal
           open={isFormOpen}
@@ -400,7 +577,6 @@ const Finance = () => {
             </DialogActions>
           </Dialog>
         )}
-
       </Box>
     </Container>
   );

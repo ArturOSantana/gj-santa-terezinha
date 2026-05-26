@@ -2,7 +2,6 @@
 import { useState, useMemo } from 'react';
 import {
   Box,
-  Typography,
   TextField,
   InputAdornment,
   Paper,
@@ -10,28 +9,34 @@ import {
   Tab,
   Alert,
   Skeleton,
-  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
   Button,
+  Grid,
+  MenuItem,
+  Typography,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  People as PeopleIcon,
+  PersonAdd as PersonAddIcon,
+  PeopleAlt as PeopleAltIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  EditNote as EditNoteIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUsers } from '../../hooks/useUsers';
-import { UserCard } from '../../components/common/UserCard';
 import { UserRoleModal } from '../../components/common/UserRoleModal';
 import { User, UserRole } from '../../types';
+import { EmptyState, PageHeader, StatCard, UserCard } from '../../components/common';
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { users, loading, error, updateUserRole, deleteUser, searchUsers, filterByRole } = useUsers();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -39,22 +44,21 @@ const Users: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-  // Filtrar usuários por busca e role
   const filteredUsers = useMemo(() => {
-    let result = users;
+    let result = filterByRole(selectedRole);
 
-    // Filtrar por role
-    result = filterByRole(selectedRole);
-
-    // Filtrar por busca
     if (searchQuery.trim()) {
-      result = searchUsers(searchQuery);
+      const query = searchQuery.trim().toLowerCase();
+      result = result.filter((user) => {
+        const name = (user.name || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        return name.includes(query) || email.includes(query);
+      });
     }
 
     return result;
-  }, [users, selectedRole, searchQuery, filterByRole, searchUsers]);
+  }, [selectedRole, searchQuery, filterByRole]);
 
-  // Contadores por role
   const roleCounts = useMemo(() => {
     return {
       all: users.length,
@@ -108,10 +112,14 @@ const Users: React.FC = () => {
     setUserToDelete(null);
   };
 
-  // Verificar se usuário é admin
+  const handleAddUser = () => {
+    setModalOpen(true);
+    setSelectedUser(null);
+  };
+
   if (!currentUser || currentUser.role !== 'admin') {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ py: 3 }}>
         <Alert severity="error">
           Você não tem permissão para acessar esta página.
         </Alert>
@@ -121,125 +129,184 @@ const Users: React.FC = () => {
 
   return (
     <Box>
-      {/* Cabeçalho */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <PeopleIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Gerenciamento de Usuários
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Gerenciar Usuários"
+        action={(
+          <Button
+            variant="contained"
+            startIcon={<PersonAddIcon />}
+            onClick={handleAddUser}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              borderRadius: 2.75,
+              px: 2.5,
+            }}
+          >
+            Adicionar Usuário
+          </Button>
+        )}
+      />
 
-      {/* Mensagem de Erro */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2.5 }}>
           {error}
         </Alert>
       )}
 
-      {/* Filtros */}
-      <Paper sx={{ mb: 3, p: 2 }}>
-        <Stack spacing={2}>
-          {/* Campo de Busca */}
-          <TextField
-            fullWidth
-            placeholder="Buscar por nome ou email..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              },
-            }}
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <StatCard
+            title="Total de usuários"
+            value={roleCounts.all}
+            icon={<PeopleAltIcon />}
+            color="primary"
           />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <StatCard
+            title="Admins"
+            value={roleCounts.admin}
+            icon={<AdminPanelSettingsIcon />}
+            color="error"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <StatCard
+            title="Editores"
+            value={roleCounts.coordinator}
+            icon={<EditNoteIcon />}
+            color="warning"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 12, lg: 3 }}>
+          <StatCard
+            title="Visualizadores"
+            value={roleCounts.member}
+            icon={<VisibilityIcon />}
+            color="info"
+          />
+        </Grid>
+      </Grid>
 
-          {/* Tabs de Filtro por Role */}
-          <Tabs
-            value={selectedRole}
-            onChange={handleRoleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab
-              label={`Todos (${roleCounts.all})`}
-              value="all"
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 2.5 },
+          mb: 3,
+          borderRadius: { xs: 3, md: 3.5 },
+          border: '1px solid rgba(26, 71, 49, 0.08)',
+          background: 'linear-gradient(135deg, rgba(26, 71, 49, 0.03) 0%, rgba(184, 134, 11, 0.02) 100%)',
+        }}
+      >
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 7 }}>
+            <TextField
+              fullWidth
+              placeholder="Buscar por nome ou email..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
-            <Tab
-              label={`Administradores (${roleCounts.admin})`}
-              value="admin"
-            />
-            <Tab
-              label={`Coordenadores (${roleCounts.coordinator})`}
-              value="coordinator"
-            />
-            <Tab
-              label={`Membros (${roleCounts.member})`}
-              value="member"
-            />
-          </Tabs>
-        </Stack>
+          </Grid>
+          <Grid size={{ xs: 12, md: 5 }}>
+            <TextField
+              select
+              fullWidth
+              label="Filtrar perfil"
+              value={selectedRole}
+              onChange={(event) => setSelectedRole(event.target.value as UserRole | 'all')}
+            >
+              <MenuItem value="all">Todos os perfis</MenuItem>
+              <MenuItem value="admin">Administradores</MenuItem>
+              <MenuItem value="coordinator">Editores</MenuItem>
+              <MenuItem value="member">Visualizadores</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <Tabs
+              value={selectedRole}
+              onChange={handleRoleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{
+                minHeight: 44,
+                '& .MuiTab-root': {
+                  minHeight: 44,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                },
+              }}
+            >
+              <Tab label={`Todos (${roleCounts.all})`} value="all" />
+              <Tab label={`Administradores (${roleCounts.admin})`} value="admin" />
+              <Tab label={`Editores (${roleCounts.coordinator})`} value="coordinator" />
+              <Tab label={`Visualizadores (${roleCounts.member})`} value="member" />
+            </Tabs>
+          </Grid>
+        </Grid>
       </Paper>
 
-      {/* Lista de Usuários */}
       {loading ? (
-        <Box
+        <Grid container spacing={2.5}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+              <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 3 }} />
+            </Grid>
+          ))}
+        </Grid>
+      ) : filteredUsers.length === 0 ? (
+        <Paper
+          elevation={0}
           sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-            },
-            gap: 3,
+            borderRadius: { xs: 3, md: 4 },
+            border: '1px solid rgba(26, 71, 49, 0.08)',
+            background: 'linear-gradient(135deg, rgba(26, 71, 49, 0.025) 0%, rgba(184, 134, 11, 0.02) 100%)',
           }}
         >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
-          ))}
-        </Box>
-      ) : filteredUsers.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <PeopleIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Nenhum usuário encontrado
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {searchQuery
-              ? 'Tente ajustar os filtros de busca'
-              : 'Não há usuários cadastrados no sistema'}
-          </Typography>
+          <EmptyState
+            title="Nenhum usuário encontrado"
+            description={
+              searchQuery || selectedRole !== 'all'
+                ? 'Ajuste os filtros para encontrar usuários cadastrados.'
+                : 'Adicione o primeiro usuário do sistema para começar o controle de acesso.'
+            }
+            action={
+              <Button variant="contained" startIcon={<PersonAddIcon />} onClick={handleAddUser}>
+                Adicionar Usuário
+              </Button>
+            }
+          />
         </Paper>
       ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-            },
-            gap: 3,
-          }}
-        >
+        <Grid container spacing={2.5}>
           {filteredUsers.map((user) => (
-            <UserCard
-              key={user.id}
-              user={user}
-              onEditRole={handleEditRole}
-              onDelete={handleDeleteUser}
-              canEdit={true}
-              isCurrentUser={user.id === currentUser.uid}
-            />
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={user.id}>
+              <UserCard
+                user={user}
+                onEditRole={handleEditRole}
+                onDelete={handleDeleteUser}
+                canEdit={true}
+                isCurrentUser={user.id === currentUser.uid}
+              />
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       )}
 
-      {/* Modal de Edição de Role */}
+      {!loading && filteredUsers.length > 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5 }}>
+          Exibindo {filteredUsers.length} usuário(s) com os filtros atuais.
+        </Typography>
+      )}
+
       <UserRoleModal
         open={modalOpen}
         user={selectedUser}
@@ -247,7 +314,6 @@ const Users: React.FC = () => {
         onSave={handleSaveRole}
       />
 
-      {/* Dialog de Confirmação de Exclusão */}
       <Dialog
         open={deleteDialogOpen}
         onClose={handleCancelDelete}
@@ -259,7 +325,7 @@ const Users: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Tem certeza que deseja deletar o usuário <strong>{userToDelete?.displayName}</strong>?
+            Tem certeza que deseja deletar o usuário <strong>{userToDelete?.name}</strong>?
             <br />
             Esta ação não pode ser desfeita.
           </DialogContentText>
