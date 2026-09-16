@@ -42,7 +42,8 @@ export const useCalendar = () => {
   // Ref para armazenar eventos do Google Calendar
   const googleCalendarEvents = useRef<Event[]>([]);
 
-  // Configura listener em tempo real para eventos do Firestore
+  // Carrega eventos do Firestore. Usa setEvents com função de atualização para
+  // preservar eventos do Google Calendar que podem já ter sido carregados na ref.
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -59,7 +60,11 @@ export const useCalendar = () => {
         const firestoreEvents = await TerezinhaService.getEvents();
         if (isMounted) {
           console.log('[Firestore] Carregado:', firestoreEvents.length, 'eventos');
-          setEvents([...firestoreEvents, ...googleCalendarEvents.current]);
+          // Preserva eventos do Google Calendar já carregados (evita race condition)
+          setEvents(prev => {
+            const googleEvents = prev.filter(e => e.id.startsWith('google-'));
+            return [...firestoreEvents, ...googleEvents];
+          });
           setLoading(false);
         }
       } catch (err) {
@@ -387,8 +392,12 @@ export const useCalendar = () => {
    * Abre o modal de criação de evento com data pré-selecionada
    */
   const handleSelectSlot = useCallback((slotInfo: { start: Date; end: Date }) => {
-    // Não permite criar eventos no passado
-    if (slotInfo.start < new Date()) {
+    // Não permite criar eventos em datas anteriores a hoje (compara apenas a data, não a hora)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const slotDay = new Date(slotInfo.start);
+    slotDay.setHours(0, 0, 0, 0);
+    if (slotDay < today) {
       return;
     }
     

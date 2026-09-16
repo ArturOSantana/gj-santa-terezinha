@@ -111,10 +111,16 @@ export const EventsPage = () => {
     if (!newTitle || saving) return;
     setSaving(true);
 
+    // Parsear a data como local (evita que "2025-07-15" vire UTC midnight e apareça como 14/07 no Brasil)
+    const parsedDate = (() => {
+      if (!newDate) return new Date();
+      const [y, m, d] = newDate.split('-').map(Number);
+      return new Date(y, m - 1, d, 12, 0, 0, 0);
+    })();
     const created = await TerezinhaService.createEvent({
       title: newTitle,
       description: '',
-      date: newDate ? new Date(newDate + 'T00:00:00') : new Date(),
+      date: parsedDate,
       startTime: '19:00',
       endTime: '21:00',
       location: newLocation,

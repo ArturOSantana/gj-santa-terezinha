@@ -13,6 +13,7 @@ export { default as MemberDetailsModal } from './MemberDetailsModal';
 export { UserCard } from './UserCard';
 export { default as FirebaseConfigWarning } from './FirebaseConfigWarning';
 export { UserRoleModal } from './UserRoleModal';
+export { AddUserModal } from './AddUserModal';
 export { PageHeader } from './PageHeader';
 export { EmptyState } from './EmptyState';
 

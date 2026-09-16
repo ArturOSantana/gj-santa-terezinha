@@ -29,18 +29,19 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUsers } from '../../hooks/useUsers';
-import { UserRoleModal } from '../../components/common/UserRoleModal';
+import { UserRoleModal, AddUserModal } from '../../components/common';
 import { User, UserRole } from '../../types';
 import { EmptyState, PageHeader, StatCard, UserCard } from '../../components/common';
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { users, loading, error, updateUserRole, deleteUser, searchUsers, filterByRole } = useUsers();
+  const { users, loading, error, createUser, updateUserRole, deleteUser, searchUsers, filterByRole } = useUsers();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
@@ -78,11 +79,11 @@ const Users: React.FC = () => {
 
   const handleEditRole = (user: User) => {
     setSelectedUser(user);
-    setModalOpen(true);
+    setRoleModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
+  const handleRoleModalClose = () => {
+    setRoleModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -113,8 +114,16 @@ const Users: React.FC = () => {
   };
 
   const handleAddUser = () => {
-    setModalOpen(true);
-    setSelectedUser(null);
+    setAddUserModalOpen(true);
+  };
+
+  const handleAddUserSubmit = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+  }) => {
+    await createUser(data);
   };
 
   if (!currentUser || currentUser.role !== 'admin') {
@@ -353,10 +362,16 @@ const Users: React.FC = () => {
       )}
 
       <UserRoleModal
-        open={modalOpen}
+        open={roleModalOpen}
         user={selectedUser}
-        onClose={handleModalClose}
+        onClose={handleRoleModalClose}
         onSave={handleSaveRole}
+      />
+
+      <AddUserModal
+        open={addUserModalOpen}
+        onClose={() => setAddUserModalOpen(false)}
+        onAddUser={handleAddUserSubmit}
       />
 
       <Dialog

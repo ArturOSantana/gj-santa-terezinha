@@ -21,8 +21,24 @@ interface GoogleCalendarEvent {
  * Converte evento do sistema para formato do Google Calendar
  */
 const convertToGoogleEvent = (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Partial<GoogleCalendarEvent> => {
-  const startDateTime = event.date.toISOString();
-  const endDateTime = new Date(event.date.getTime() + 2 * 60 * 60 * 1000).toISOString(); // +2 horas
+  // Montar datetime a partir da data e dos campos startTime/endTime para
+  // evitar que .toISOString() (UTC) desloque o horário no Google Calendar.
+  const [startHour, startMin] = (event.startTime || '00:00').split(':').map(Number);
+  const [endHour, endMin] = (event.endTime || '23:59').split(':').map(Number);
+
+  const startDate = new Date(event.date);
+  startDate.setHours(startHour, startMin, 0, 0);
+  const endDate = new Date(event.date);
+  endDate.setHours(endHour, endMin, 0, 0);
+
+  // Formata como "YYYY-MM-DDTHH:MM:SS-03:00" (Brasília) para o Google Calendar
+  const formatBRT = (d: Date): string => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00-03:00`;
+  };
+
+  const startDateTime = formatBRT(startDate);
+  const endDateTime = formatBRT(endDate);
 
   return {
     summary: event.title,

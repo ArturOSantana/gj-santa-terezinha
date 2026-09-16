@@ -26,7 +26,7 @@ if (missingVars.length > 0) {
   );
 }
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: requiredEnvVars.apiKey,
   authDomain: requiredEnvVars.authDomain,
   projectId: requiredEnvVars.projectId,

@@ -2,12 +2,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, UserRole } from '../types';
 import { UsersService } from '../services/firestore.service';
+import * as authService from '../services/auth.service';
 import { useAuth } from '../contexts/AuthContext';
+
+interface CreateUserData {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  personId?: string;
+}
 
 interface UseUsersReturn {
   users: User[];
   loading: boolean;
   error: string | null;
+  createUser: (data: CreateUserData) => Promise<{ uid: string }>;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   searchUsers: (query: string) => User[];
@@ -48,6 +58,28 @@ export const useUsers = (): UseUsersReturn => {
       setLoading(false);
     }
   }, [currentUser]);
+
+  /**
+   * Criar um novo usuário diretamente pelo painel administrativo
+   */
+  const createUser = useCallback(
+    async ({ name, email, password, role, personId }: CreateUserData): Promise<{ uid: string }> => {
+      if (!currentUser || currentUser.role !== 'admin') {
+        throw new Error('Apenas administradores podem cadastrar novos usuários');
+      }
+
+      try {
+        setError(null);
+        const result = await authService.createOperatorUser(email, password, name, role, personId);
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao cadastrar usuário';
+        setError(errorMessage);
+        throw err;
+      }
+    },
+    [currentUser]
+  );
 
   /**
    * Atualizar role de um usuário
@@ -155,6 +187,7 @@ export const useUsers = (): UseUsersReturn => {
     users,
     loading,
     error,
+    createUser,
     updateUserRole,
     deleteUser,
     searchUsers,

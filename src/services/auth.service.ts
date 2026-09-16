@@ -1,9 +1,11 @@
+import { initializeApp, deleteApp } from 'firebase/app';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   updateProfile,
+  getAuth,
   UserCredential,
 } from 'firebase/auth';
 import {
@@ -13,7 +15,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { auth, db, firebaseConfig } from '../config/firebase';
 import { UserRole, AuthUser } from '../types';
 
 /**
@@ -96,6 +98,7 @@ export const signIn = async (
 /**
  * Criação de novo operador administrativo no painel do grupo.
  * Exclusivo para ser invocado por administradores.
+ * Utiliza uma instância secundária do Firebase Auth para NÃO deslogar o administrador atual.
  */
 export const createOperatorUser = async (
   email: string,
@@ -104,26 +107,42 @@ export const createOperatorUser = async (
   role: UserRole,
   personId?: string
 ): Promise<{ uid: string }> => {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-  const uid = userCredential.user.uid;
+  const secondaryAppName = `secondary-auth-${Date.now()}`;
+  const secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+  const secondaryAuth = getAuth(secondaryApp);
 
-  await updateProfile(userCredential.user, {
-    displayName: name,
-  });
+  try {
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+    const uid = userCredential.user.uid;
 
-  const now = serverTimestamp();
-  await setDoc(doc(db, 'users', uid), {
-    id: uid,
-    personId: personId || null,
-    name,
-    email,
-    role,
-    createdAt: now,
-    updatedAt: now,
-    lastLogin: null,
-  });
+    await updateProfile(userCredential.user, {
+      displayName: name,
+    });
 
-  return { uid };
+    const now = serverTimestamp();
+    await setDoc(doc(db, 'users', uid), {
+      id: uid,
+      personId: personId || null,
+      name,
+      email,
+      role,
+      createdAt: now,
+      updatedAt: now,
+      lastLogin: null,
+    });
+
+    await firebaseSignOut(secondaryAuth);
+    return { uid };
+  } catch (error: any) {
+    console.error('Erro ao criar usuário:', error);
+    throw handleAuthError(error);
+  } finally {
+    try {
+      await deleteApp(secondaryApp);
+    } catch {
+      // Ignora erro no cleanup do app secundário
+    }
+  }
 };
 
 export const signOut = async (): Promise<void> => {
