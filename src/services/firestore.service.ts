@@ -1,4 +1,3 @@
-
 import {
   collection,
   doc,
@@ -11,816 +10,1132 @@ import {
   query,
   where,
   orderBy,
-  onSnapshot,
+  limit,
+  serverTimestamp,
   Timestamp,
-  DocumentData,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import {
-  Member,
+  Person,
+  PersonStatus,
   Event,
+  EventRegistration,
+  Task,
+  TaskStatus,
+  ScheduleAssignment,
+  ScheduleStatus,
+  AttendanceRecord,
+  Meeting,
+  GroupDocument,
   Transaction,
-  User,
-  UserRole,
-  MemberStatus,
   TransactionType,
+  DashboardStats,
+  PublicPageConfig,
+  DEFAULT_PUBLIC_PAGE_CONFIG,
+  PublicCard,
 } from '../types';
-import {
-  canCreate,
-  canEdit,
-  canDelete,
-  canView,
-} from '../utils/permissions';
+import { logAuditEvent } from './audit.service';
 
-// ============================================================================
-// TIPOS AUXILIARES
-// ============================================================================
-
-type FirestoreDate = Timestamp | Date;
-
-interface FirestoreMember extends Omit<Member, 'birthDate' | 'joinDate' | 'createdAt' | 'updatedAt'> {
-  birthDate: FirestoreDate;
-  joinDate: FirestoreDate;
-  createdAt: FirestoreDate;
-  updatedAt: FirestoreDate;
-}
-
-interface FirestoreEvent extends Omit<Event, 'date' | 'createdAt' | 'updatedAt'> {
-  date: FirestoreDate;
-  createdAt: FirestoreDate;
-  updatedAt: FirestoreDate;
-}
-
-interface FirestoreTransaction extends Omit<Transaction, 'date' | 'createdAt' | 'updatedAt'> {
-  date: FirestoreDate;
-  createdAt: FirestoreDate;
-  updatedAt: FirestoreDate;
-}
-
-interface FirestoreUser extends Omit<User, 'birthDate' | 'joinDate' | 'createdAt' | 'updatedAt' | 'lastLogin'> {
-  birthDate: FirestoreDate;
-  joinDate: FirestoreDate;
-  createdAt: FirestoreDate;
-  updatedAt: FirestoreDate;
-  lastLogin?: FirestoreDate;
-}
-
-// ============================================================================
-// CONVERSORES DE DATA
-// ============================================================================
-
-const timestampToDate = (timestamp: FirestoreDate): Date => {
-  if (timestamp instanceof Timestamp) {
-    return timestamp.toDate();
-  }
-  return timestamp;
+// Helpers para conversão de Timestamps do Firestore
+const toDateSafe = (val: any): Date => {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val.toDate === 'function') return val.toDate();
+  if (typeof val === 'string' || typeof val === 'number') return new Date(val);
+  return new Date();
 };
 
-const dateToTimestamp = (date: Date): Timestamp => {
-  return Timestamp.fromDate(date);
-};
-
-// ============================================================================
-// CONVERSORES DE DOCUMENTOS
-// ============================================================================
-
-const convertFirestoreMember = (data: FirestoreMember): Member => ({
-  ...data,
-  birthDate: timestampToDate(data.birthDate),
-  joinDate: timestampToDate(data.joinDate),
-  createdAt: timestampToDate(data.createdAt),
-  updatedAt: timestampToDate(data.updatedAt),
-});
-
-const convertFirestoreEvent = (data: FirestoreEvent): Event => ({
-  ...data,
-  date: timestampToDate(data.date),
-  createdAt: timestampToDate(data.createdAt),
-  updatedAt: timestampToDate(data.updatedAt),
-});
-
-const convertFirestoreTransaction = (data: FirestoreTransaction): Transaction => ({
-  ...data,
-  date: timestampToDate(data.date),
-  createdAt: timestampToDate(data.createdAt),
-  updatedAt: timestampToDate(data.updatedAt),
-});
-
-const convertFirestoreUser = (data: FirestoreUser): User => ({
-  ...data,
-  birthDate: timestampToDate(data.birthDate),
-  joinDate: timestampToDate(data.joinDate),
-  createdAt: timestampToDate(data.createdAt),
-  updatedAt: timestampToDate(data.updatedAt),
-  lastLogin: data.lastLogin ? timestampToDate(data.lastLogin) : undefined,
-});
-
-// ============================================================================
-// VALIDAÇÃO DE PERMISSÕES
-// ============================================================================
-
-const validateCreate = (userRole: UserRole, resourceType: 'member' | 'event' | 'transaction'): void => {
-  if (!canCreate(userRole, resourceType)) {
-    throw new Error(`Usuário não tem permissão para criar ${resourceType}`);
-  }
-};
-
-const validateEdit = (userRole: UserRole, resourceType: 'member' | 'event' | 'transaction'): void => {
-  if (!canEdit(userRole, resourceType)) {
-    throw new Error(`Usuário não tem permissão para editar ${resourceType}`);
-  }
-};
-
-const validateDelete = (userRole: UserRole, resourceType: 'member' | 'event' | 'transaction'): void => {
-  if (!canDelete(userRole, resourceType)) {
-    throw new Error(`Usuário não tem permissão para deletar ${resourceType}`);
-  }
-};
-
-const validateView = (userRole: UserRole, resourceType: 'member' | 'event' | 'transaction' | 'finance'): void => {
-  if (!canView(userRole, resourceType)) {
-    throw new Error(`Usuário não tem permissão para visualizar ${resourceType}`);
-  }
-};
-
-// ============================================================================
-// SERVIÇO DE MEMBROS
-// ============================================================================
-
-export const MembersService = {
-  /**
-   * Buscar todos os membros
-   */
-  async getAll(userRole: UserRole): Promise<Member[]> {
-    validateView(userRole, 'member');
-    
-    const membersRef = collection(db, 'members');
-    const q = query(membersRef, orderBy('name', 'asc'));
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreMember;
-      return convertFirestoreMember({ ...data, id: doc.id });
-    });
-  },
-
-  /**
-   * Buscar membro por ID
-   */
-  async getById(id: string, userRole: UserRole): Promise<Member | null> {
-    validateView(userRole, 'member');
-    
-    const memberRef = doc(db, 'members', id);
-    const snapshot = await getDoc(memberRef);
-    
-    if (!snapshot.exists()) {
-      return null;
-    }
-    
-    const data = snapshot.data() as FirestoreMember;
-    return convertFirestoreMember({ ...data, id: snapshot.id });
-  },
-
-  /**
-   * Criar novo membro
-   */
-  async create(memberData: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>, userRole: UserRole): Promise<string> {
-    validateCreate(userRole, 'member');
-    
-    const now = Timestamp.now();
-    const data: Omit<FirestoreMember, 'id'> = {
-      ...memberData,
-      birthDate: dateToTimestamp(memberData.birthDate),
-      joinDate: dateToTimestamp(memberData.joinDate),
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    const membersRef = collection(db, 'members');
-    const docRef = await addDoc(membersRef, data);
-    return docRef.id;
-  },
-
-  /**
-   * Atualizar membro
-   */
-  async update(id: string, memberData: Partial<Member>, userRole: UserRole): Promise<void> {
-    validateEdit(userRole, 'member');
-    
-    const memberRef = doc(db, 'members', id);
-    const updateData: Partial<FirestoreMember> = {
-      ...memberData,
-      updatedAt: Timestamp.now(),
-    };
-    
-    if (memberData.birthDate) {
-      updateData.birthDate = dateToTimestamp(memberData.birthDate);
-    }
-    if (memberData.joinDate) {
-      updateData.joinDate = dateToTimestamp(memberData.joinDate);
-    }
-    
-    await updateDoc(memberRef, updateData as DocumentData);
-  },
-
-  /**
-   * Deletar membro
-   */
-  async delete(id: string, userRole: UserRole): Promise<void> {
-    validateDelete(userRole, 'member');
-    
-    const memberRef = doc(db, 'members', id);
-    await deleteDoc(memberRef);
-  },
-
-  /**
-   * Listener em tempo real para membros
-   */
-  onSnapshot(userRole: UserRole, callback: (members: Member[]) => void): () => void {
-    validateView(userRole, 'member');
-    
-    const membersRef = collection(db, 'members');
-    const q = query(membersRef, orderBy('name', 'asc'));
-    
-    return onSnapshot(q, (snapshot) => {
-      const members = snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreMember;
-        return convertFirestoreMember({ ...data, id: doc.id });
-      });
-      callback(members);
-    });
-  },
-
-  /**
-   * Buscar membros ativos
-   */
-  async getActive(userRole: UserRole): Promise<Member[]> {
-    validateView(userRole, 'member');
-    
-    const membersRef = collection(db, 'members');
-    const q = query(
-      membersRef,
-      where('status', '==', MemberStatus.ACTIVE),
-      orderBy('name', 'asc')
-    );
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreMember;
-      return convertFirestoreMember({ ...data, id: doc.id });
-    });
-  },
-};
-
-// ============================================================================
-// SERVIÇO DE EVENTOS
-// ============================================================================
-
-export const EventsService = {
-  /**
-   * Buscar todos os eventos
-   */
-  async getAll(userRole: UserRole): Promise<Event[]> {
-    validateView(userRole, 'event');
-    
-    const eventsRef = collection(db, 'events');
-    const q = query(eventsRef, orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreEvent;
-      return convertFirestoreEvent({ ...data, id: doc.id });
-    });
-  },
-
-  /**
-   * Buscar evento por ID
-   */
-  async getById(id: string, userRole: UserRole): Promise<Event | null> {
-    validateView(userRole, 'event');
-    
-    const eventRef = doc(db, 'events', id);
-    const snapshot = await getDoc(eventRef);
-    
-    if (!snapshot.exists()) {
-      return null;
-    }
-    
-    const data = snapshot.data() as FirestoreEvent;
-    return convertFirestoreEvent({ ...data, id: snapshot.id });
-  },
-
-  /**
-   * Criar novo evento
-   */
-  async create(eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>, userRole: UserRole): Promise<string> {
-    validateCreate(userRole, 'event');
-    
-    const now = Timestamp.now();
-    const data: Omit<FirestoreEvent, 'id'> = {
-      ...eventData,
-      date: dateToTimestamp(eventData.date),
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    const eventsRef = collection(db, 'events');
-    const docRef = await addDoc(eventsRef, data);
-    return docRef.id;
-  },
-
-  /**
-   * Atualizar evento
-   */
-  async update(id: string, eventData: Partial<Event>, userRole: UserRole): Promise<void> {
-    validateEdit(userRole, 'event');
-    
-    const eventRef = doc(db, 'events', id);
-    const updateData: Partial<FirestoreEvent> = {
-      ...eventData,
-      updatedAt: Timestamp.now(),
-    };
-    
-    if (eventData.date) {
-      updateData.date = dateToTimestamp(eventData.date);
-    }
-    
-    await updateDoc(eventRef, updateData as DocumentData);
-  },
-
-  /**
-   * Deletar evento
-   */
-  async delete(id: string, userRole: UserRole): Promise<void> {
-    validateDelete(userRole, 'event');
-    
-    const eventRef = doc(db, 'events', id);
-    await deleteDoc(eventRef);
-  },
-
-  /**
-   * Listener em tempo real para eventos
-   */
-  onSnapshot(userRole: UserRole, callback: (events: Event[]) => void): () => void {
-    validateView(userRole, 'event');
-    
-    const eventsRef = collection(db, 'events');
-    const q = query(eventsRef, orderBy('date', 'desc'));
-    
-    return onSnapshot(q, (snapshot) => {
-      const events = snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreEvent;
-        return convertFirestoreEvent({ ...data, id: doc.id });
-      });
-      callback(events);
-    });
-  },
-
-  /**
-   * Buscar eventos futuros
-   */
-  async getUpcoming(userRole: UserRole): Promise<Event[]> {
-    validateView(userRole, 'event');
-    
-    const now = Timestamp.now();
-    const eventsRef = collection(db, 'events');
-    const q = query(
-      eventsRef,
-      where('date', '>=', now),
-      orderBy('date', 'asc')
-    );
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreEvent;
-      return convertFirestoreEvent({ ...data, id: doc.id });
-    });
-  },
-
-  /**
-   * Buscar eventos por período
-   */
-  async getByDateRange(startDate: Date, endDate: Date, userRole: UserRole): Promise<Event[]> {
-    validateView(userRole, 'event');
-    
-    const eventsRef = collection(db, 'events');
-    const q = query(
-      eventsRef,
-      where('date', '>=', dateToTimestamp(startDate)),
-      where('date', '<=', dateToTimestamp(endDate)),
-      orderBy('date', 'asc')
-    );
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreEvent;
-      return convertFirestoreEvent({ ...data, id: doc.id });
-    });
-  },
-};
-
-// ============================================================================
-// SERVIÇO DE TRANSAÇÕES
-// ============================================================================
-
-export const TransactionsService = {
-  /**
-   * Buscar todas as transações
-   */
-  async getAll(userRole: UserRole): Promise<Transaction[]> {
-    validateView(userRole, 'finance');
-    
-    const transactionsRef = collection(db, 'transactions');
-    const q = query(transactionsRef, orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreTransaction;
-      return convertFirestoreTransaction({ ...data, id: doc.id });
-    });
-  },
-
-  /**
-   * Buscar transação por ID
-   */
-  async getById(id: string, userRole: UserRole): Promise<Transaction | null> {
-    validateView(userRole, 'finance');
-    
-    const transactionRef = doc(db, 'transactions', id);
-    const snapshot = await getDoc(transactionRef);
-    
-    if (!snapshot.exists()) {
-      return null;
-    }
-    
-    const data = snapshot.data() as FirestoreTransaction;
-    return convertFirestoreTransaction({ ...data, id: snapshot.id });
-  },
-
-  /**
-   * Criar nova transação
-   */
-  async create(transactionData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>, userRole: UserRole): Promise<string> {
-    if (userRole !== 'admin') {
-      throw new Error('Usuário não tem permissão para criar transaction');
-    }
-    
-    const now = Timestamp.now();
-    const data: Omit<FirestoreTransaction, 'id'> = {
-      ...transactionData,
-      date: dateToTimestamp(transactionData.date),
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    const transactionsRef = collection(db, 'transactions');
-    const docRef = await addDoc(transactionsRef, data);
-    return docRef.id;
-  },
-
-  /**
-   * Atualizar transação
-   */
-  async update(id: string, transactionData: Partial<Transaction>, userRole: UserRole): Promise<void> {
-    if (userRole !== 'admin') {
-      throw new Error('Usuário não tem permissão para editar transaction');
-    }
-    
-    const transactionRef = doc(db, 'transactions', id);
-    const updateData: Partial<FirestoreTransaction> = {
-      ...transactionData,
-      updatedAt: Timestamp.now(),
-    };
-    
-    if (transactionData.date) {
-      updateData.date = dateToTimestamp(transactionData.date);
-    }
-    
-    await updateDoc(transactionRef, updateData as DocumentData);
-  },
-
-  /**
-   * Deletar transação
-   */
-  async delete(id: string, userRole: UserRole): Promise<void> {
-    if (userRole !== 'admin') {
-      throw new Error('Usuário não tem permissão para deletar transaction');
-    }
-    
-    const transactionRef = doc(db, 'transactions', id);
-    await deleteDoc(transactionRef);
-  },
-
-  /**
-   * Listener em tempo real para transações
-   */
-  onSnapshot(userRole: UserRole, callback: (transactions: Transaction[]) => void): () => void {
-    validateView(userRole, 'finance');
-    
-    const transactionsRef = collection(db, 'transactions');
-    const q = query(transactionsRef, orderBy('date', 'desc'));
-    
-    return onSnapshot(q, (snapshot) => {
-      const transactions = snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreTransaction;
-        return convertFirestoreTransaction({ ...data, id: doc.id });
-      });
-      callback(transactions);
-    });
-  },
-
-  /**
-   * Buscar transações por período
-   */
-  async getByDateRange(startDate: Date, endDate: Date, userRole: UserRole): Promise<Transaction[]> {
-    validateView(userRole, 'finance');
-    
-    const transactionsRef = collection(db, 'transactions');
-    const q = query(
-      transactionsRef,
-      where('date', '>=', dateToTimestamp(startDate)),
-      where('date', '<=', dateToTimestamp(endDate)),
-      orderBy('date', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreTransaction;
-      return convertFirestoreTransaction({ ...data, id: doc.id });
-    });
-  },
-
-  /**
-   * Buscar transações por tipo
-   */
-  async getByType(type: TransactionType, userRole: UserRole): Promise<Transaction[]> {
-    validateView(userRole, 'finance');
-    
-    const transactionsRef = collection(db, 'transactions');
-    const q = query(
-      transactionsRef,
-      where('type', '==', type),
-      orderBy('date', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-      const data = doc.data() as FirestoreTransaction;
-      return convertFirestoreTransaction({ ...data, id: doc.id });
-    });
-  },
-
-  /**
-   * Calcular saldo total
-   */
-  async getBalance(userRole: UserRole): Promise<number> {
-    validateView(userRole, 'finance');
-    
-    const transactions = await this.getAll(userRole);
-    
-    return transactions.reduce((balance, transaction) => {
-      if (transaction.type === TransactionType.INCOME) {
-        return balance + transaction.amount;
-      } else {
-        return balance - transaction.amount;
-      }
-    }, 0);
-  },
-};
-
-// ============================================================================
-// SERVIÇO DE USUÁRIOS
-// ============================================================================
-
-export const UsersService = {
-  /**
-   * Buscar todos os usuários (membros)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
-   */
-  async getAllUsers(currentUserRole: UserRole): Promise<User[]> {
-    // Validação: apenas admin pode listar todos os usuários
-    if (currentUserRole !== 'admin') {
-      console.warn('⚠️ Tentativa de listar usuários sem permissão de admin');
-      throw new Error('Apenas administradores podem listar todos os usuários');
-    }
-    
+export const TerezinhaService = {
+  // ==========================================================================
+  // DASHBOARD
+  // ==========================================================================
+  async getDashboardStats(): Promise<DashboardStats> {
     try {
-      const membersRef = collection(db, 'members');
-      const q = query(membersRef, orderBy('name', 'asc'));
-      const snapshot = await getDocs(q);
-      
-      return snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreMember;
-        return convertFirestoreMember({ ...data, id: doc.id });
-      });
+      const people = await this.getPeople();
+      const events = await this.getEvents();
+      const transactions = await this.getTransactions();
+      const tasks = await this.getTasks();
+
+      const totalPeople = people.length;
+      const activePeople = people.filter((p) => p.status === PersonStatus.ACTIVE).length;
+      const newPeople = people.filter((p) => p.status === PersonStatus.NEW).length;
+      const awayPeople = people.filter((p) => p.status === PersonStatus.AWAY).length;
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const upcomingSorted = events
+        .filter((e) => new Date(e.date) >= now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const nextEvent = upcomingSorted[0] || null;
+
+      const totalIncome = transactions
+        .filter((t) => t.type === TransactionType.INCOME)
+        .reduce((acc, t) => acc + (t.amountCents ? t.amountCents / 100 : t.amount), 0);
+
+      const totalExpense = transactions
+        .filter((t) => t.type === TransactionType.EXPENSE)
+        .reduce((acc, t) => acc + (t.amountCents ? t.amountCents / 100 : t.amount), 0);
+
+      const balance = totalIncome - totalExpense;
+
+      const pendingTasksCount = tasks.filter((t) => t.status !== TaskStatus.COMPLETED).length;
+
+      const expensesWithoutReceiptTotal = transactions
+        .filter((t) => t.type === TransactionType.EXPENSE && !t.hasReceipt)
+        .reduce((acc, t) => acc + (t.amountCents ? t.amountCents / 100 : t.amount), 0);
+
+      const retreatEvent = events.find((e) => e.category === 'retreat');
+      let retreatRegistrationsCount = 0;
+      let retreatTarget = 40;
+
+      if (retreatEvent) {
+        retreatTarget = retreatEvent.maxParticipants || 40;
+        const regs = await this.getRegistrationsByEvent(retreatEvent.id);
+        retreatRegistrationsCount = regs.length;
+      }
+
+      return {
+        totalPeople,
+        activePeople,
+        newPeople,
+        awayPeople,
+        nextEvent,
+        balance,
+        pendingTasksCount,
+        expensesWithoutReceiptTotal,
+        retreatRegistrationsCount,
+        retreatTarget,
+      };
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
+      console.error('Erro ao calcular estatísticas do dashboard:', error);
       throw error;
     }
   },
 
-  /**
-   * Listener em tempo real para usuários (membros)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
-   */
-  onSnapshot(currentUserRole: UserRole, callback: (users: User[]) => void): () => void {
-    // Validação: apenas admin pode observar mudanças em usuários
-    if (currentUserRole !== 'admin') {
-      console.warn('⚠️ Tentativa de observar usuários sem permissão de admin');
-      throw new Error('Apenas administradores podem observar mudanças em usuários');
-    }
-    
-    const membersRef = collection(db, 'members');
-    const q = query(membersRef, orderBy('name', 'asc'));
-    
-    return onSnapshot(q, (snapshot) => {
-      const users = snapshot.docs.map(doc => {
-        const data = doc.data() as FirestoreMember;
-        return convertFirestoreMember({ ...data, id: doc.id });
+  // ==========================================================================
+  // PESSOAS / JOVENS (People)
+  // ==========================================================================
+  async getPeople(): Promise<Person[]> {
+    try {
+      const q = query(collection(db, 'people'), orderBy('name', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((docSnap) => {
+        const d = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...d,
+          birthDate: d.birthDate ? toDateSafe(d.birthDate) : undefined,
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Person;
       });
-      callback(users);
-    });
+    } catch (error) {
+      console.error('Erro ao listar pessoas:', error);
+      return [];
+    }
   },
 
-  /**
-   * Criar documento de usuário (membro)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
-   */
-  async createUser(userId: string, userData: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'lastLogin'> & Partial<Pick<User, 'lastLogin'>>): Promise<void> {
-    const now = Timestamp.now();
-    const data = {
-      id: userId,
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone,
-      birthDate: dateToTimestamp(userData.birthDate),
-      gender: userData.gender,
-      joinDate: dateToTimestamp(userData.joinDate),
-      status: userData.status,
-      role: userData.role,
-      photoUrl: userData.photoUrl,
-      address: userData.address,
-      emergencyContact: userData.emergencyContact,
-      notes: userData.notes,
-      createdAt: now,
-      updatedAt: now,
-      lastLogin: userData.lastLogin ? dateToTimestamp(userData.lastLogin) : now,
-    };
-
-    const memberRef = doc(db, 'members', userId);
-    await setDoc(memberRef, data as DocumentData);
-  },
-
-  /**
-   * Buscar usuário (membro)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
-   */
-  async getUser(userId: string): Promise<User | null> {
-    const memberRef = doc(db, 'members', userId);
-    const snapshot = await getDoc(memberRef);
-
-    if (!snapshot.exists()) {
+  async getPersonById(id: string): Promise<Person | null> {
+    try {
+      const docRef = doc(db, 'people', id);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) return null;
+      const d = snap.data();
+      return {
+        id: snap.id,
+        ...d,
+        birthDate: d.birthDate ? toDateSafe(d.birthDate) : undefined,
+        createdAt: toDateSafe(d.createdAt),
+        updatedAt: toDateSafe(d.updatedAt),
+      } as Person;
+    } catch (error) {
+      console.error(`Erro ao buscar pessoa ${id}:`, error);
       return null;
     }
+  },
 
-    const data = snapshot.data() as FirestoreMember;
-    return convertFirestoreMember({ ...data, id: snapshot.id });
+  async createPerson(person: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>): Promise<Person> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...person,
+        createdAt: now,
+        updatedAt: now,
+      };
+      if (person.birthDate) {
+        payload.birthDate = Timestamp.fromDate(new Date(person.birthDate));
+      }
+
+      const docRef = await addDoc(collection(db, 'people'), payload);
+      await logAuditEvent('create', 'people', docRef.id, { name: person.name });
+
+      return {
+        ...person,
+        id: docRef.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar pessoa:', error);
+      throw error;
+    }
+  },
+
+  async updatePerson(id: string, updates: Partial<Person>): Promise<void> {
+    try {
+      const payload: any = {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      };
+      if (updates.birthDate) {
+        payload.birthDate = Timestamp.fromDate(new Date(updates.birthDate));
+      }
+
+      await updateDoc(doc(db, 'people', id), payload);
+      await logAuditEvent('update', 'people', id, updates);
+    } catch (error) {
+      console.error(`Erro ao atualizar pessoa ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async deletePerson(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'people', id));
+      await logAuditEvent('delete', 'people', id);
+    } catch (error) {
+      console.error(`Erro ao excluir pessoa ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // EVENTOS (Events)
+  // ==========================================================================
+  async getEvents(): Promise<Event[]> {
+    try {
+      const q = query(collection(db, 'events'), orderBy('date', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((docSnap) => {
+        const d = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...d,
+          date: toDateSafe(d.date),
+          endDate: d.endDate ? toDateSafe(d.endDate) : undefined,
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+          registrationSource: d.registrationSource
+            ? {
+                ...d.registrationSource,
+                lastSyncedAt: d.registrationSource.lastSyncedAt
+                  ? toDateSafe(d.registrationSource.lastSyncedAt)
+                  : undefined,
+              }
+            : undefined,
+        } as Event;
+      });
+    } catch (error) {
+      console.error('Erro ao listar eventos:', error);
+      return [];
+    }
+  },
+
+  async getEventBySlug(slug: string): Promise<Event | null> {
+    try {
+      // Tentar busca por publicSlug
+      const q = query(collection(db, 'events'), where('publicSlug', '==', slug), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const d = snap.docs[0].data();
+        return {
+          id: snap.docs[0].id,
+          ...d,
+          date: toDateSafe(d.date),
+          endDate: d.endDate ? toDateSafe(d.endDate) : undefined,
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Event;
+      }
+
+      // Fallback: tentar busca por id direto
+      const docRef = doc(db, 'events', slug);
+      const byIdSnap = await getDoc(docRef);
+      if (byIdSnap.exists()) {
+        const d = byIdSnap.data();
+        return {
+          id: byIdSnap.id,
+          ...d,
+          date: toDateSafe(d.date),
+          endDate: d.endDate ? toDateSafe(d.endDate) : undefined,
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Event;
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Erro ao buscar evento ${slug}:`, error);
+      return null;
+    }
+  },
+
+  async createEvent(event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...event,
+        date: Timestamp.fromDate(new Date(event.date)),
+        endDate: event.endDate ? Timestamp.fromDate(new Date(event.endDate)) : null,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, 'events'), payload);
+      await logAuditEvent('create', 'events', docRef.id, { title: event.title });
+
+      return {
+        ...event,
+        id: docRef.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar evento:', error);
+      throw error;
+    }
+  },
+
+  async updateEvent(id: string, updates: Partial<Event>): Promise<void> {
+    try {
+      const payload: any = {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      };
+      if (updates.date) {
+        payload.date = Timestamp.fromDate(new Date(updates.date));
+      }
+      if (updates.endDate) {
+        payload.endDate = Timestamp.fromDate(new Date(updates.endDate));
+      }
+
+      await updateDoc(doc(db, 'events', id), payload);
+      await logAuditEvent('update', 'events', id, updates);
+    } catch (error) {
+      console.error(`Erro ao atualizar evento ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async deleteEvent(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'events', id));
+      await logAuditEvent('delete', 'events', id, {});
+    } catch (error) {
+      console.error(`Erro ao excluir evento ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async toggleChecklistItem(eventId: string, itemId: string): Promise<void> {
+    try {
+      const event = await this.getEventBySlug(eventId);
+      if (!event) return;
+
+      const checklist = (event.checklist || []).map((item) =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      );
+
+      await this.updateEvent(eventId, { checklist });
+    } catch (error) {
+      console.error(`Erro ao alterar checklist do evento ${eventId}:`, error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // INSCRIÇÕES (Event Registrations)
+  // ==========================================================================
+  async getRegistrationsByEvent(eventId: string): Promise<EventRegistration[]> {
+    try {
+      const q = query(
+        collection(db, `events/${eventId}/registrations`),
+        orderBy('registeredAt', 'desc')
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          registeredAt: toDateSafe(d.registeredAt),
+          birthDate: d.birthDate ? toDateSafe(d.birthDate) : undefined,
+        } as EventRegistration;
+      });
+    } catch (error) {
+      console.error(`Erro ao listar inscrições do evento ${eventId}:`, error);
+      return [];
+    }
+  },
+
+  async createRegistration(
+    registration: Omit<EventRegistration, 'id' | 'registeredAt'>
+  ): Promise<EventRegistration> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...registration,
+        registeredAt: now,
+      };
+      if (registration.birthDate) {
+        payload.birthDate = Timestamp.fromDate(new Date(registration.birthDate));
+      }
+
+      const docRef = await addDoc(
+        collection(db, `events/${registration.eventId}/registrations`),
+        payload
+      );
+
+      return {
+        ...registration,
+        id: docRef.id,
+        registeredAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao cadastrar inscrição:', error);
+      throw error;
+    }
+  },
+
+  async syncGoogleSheets(eventId: string): Promise<{ syncedCount: number; lastSyncedAt: Date }> {
+    try {
+      const now = new Date();
+      await updateDoc(doc(db, 'events', eventId), {
+        'registrationSource.lastSyncedAt': Timestamp.fromDate(now),
+        updatedAt: serverTimestamp(),
+      });
+      const regs = await this.getRegistrationsByEvent(eventId);
+      return { syncedCount: regs.length, lastSyncedAt: now };
+    } catch (error) {
+      console.error(`Erro ao sincronizar planilha do evento ${eventId}:`, error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // TAREFAS (Tasks)
+  // ==========================================================================
+  async getTasks(): Promise<Task[]> {
+    try {
+      const q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          dueDate: toDateSafe(d.dueDate),
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Task;
+      });
+    } catch (error) {
+      console.error('Erro ao listar tarefas:', error);
+      return [];
+    }
+  },
+
+  async createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...task,
+        dueDate: Timestamp.fromDate(new Date(task.dueDate)),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, 'tasks'), payload);
+      await logAuditEvent('create', 'tasks', docRef.id, { title: task.title });
+
+      return {
+        ...task,
+        id: docRef.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar tarefa:', error);
+      throw error;
+    }
+  },
+
+  async deleteTask(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'tasks', id));
+      await logAuditEvent('delete', 'tasks', id);
+    } catch (error) {
+      console.error(`Erro ao excluir tarefa ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async updateTaskStatus(id: string, status: TaskStatus): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'tasks', id), {
+        status,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error(`Erro ao atualizar status da tarefa ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // ESCALAS (Schedules)
+  // ==========================================================================
+  async getSchedules(eventId?: string): Promise<ScheduleAssignment[]> {
+    try {
+      const collRef = collection(db, 'schedules');
+      const q = eventId
+        ? query(collRef, where('eventId', '==', eventId))
+        : query(collRef, orderBy('eventDate', 'asc'));
+
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          eventDate: toDateSafe(d.eventDate),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as ScheduleAssignment;
+      });
+    } catch (error) {
+      console.error('Erro ao listar escalas:', error);
+      return [];
+    }
+  },
+
+  async createSchedule(
+    schedule: Omit<ScheduleAssignment, 'id' | 'updatedAt'>
+  ): Promise<ScheduleAssignment> {
+    try {
+      const now = serverTimestamp();
+      // Token expira em 7 dias
+      const tokenExpiresAt = schedule.publicToken
+        ? Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
+        : null;
+
+      const payload: any = {
+        ...schedule,
+        eventDate: Timestamp.fromDate(new Date(schedule.eventDate)),
+        updatedAt: now,
+        tokenUsed: false,
+        ...(tokenExpiresAt ? { tokenExpiresAt } : {}),
+      };
+
+      const docRef = await addDoc(collection(db, 'schedules'), payload);
+      return {
+        ...schedule,
+        id: docRef.id,
+        updatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar escala:', error);
+      throw error;
+    }
+  },
+
+  async updateScheduleStatus(id: string, status: ScheduleStatus): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'schedules', id), {
+        status,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error(`Erro ao atualizar escala ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async getScheduleByPublicToken(token: string): Promise<ScheduleAssignment | null> {
+    try {
+      const q = query(
+        collection(db, 'schedules'),
+        where('publicToken', '==', token),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const schedDoc = snap.docs[0];
+      const data = schedDoc.data();
+      return {
+        id: schedDoc.id,
+        ...data,
+        eventDate: toDateSafe(data.eventDate),
+        updatedAt: toDateSafe(data.updatedAt),
+      } as ScheduleAssignment;
+    } catch (error) {
+      console.error('Erro ao buscar escala por token:', error);
+      return null;
+    }
+  },
+
+  async respondSchedulePublicToken(
+    token: string,
+    status: ScheduleStatus
+  ): Promise<ScheduleAssignment | null> {
+    try {
+      const q = query(
+        collection(db, 'schedules'),
+        where('publicToken', '==', token),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+
+      const schedDoc = snap.docs[0];
+      const data = schedDoc.data();
+
+      // Verificar se o token já foi usado
+      if (data.tokenUsed === true) {
+        console.warn('Token de escala já utilizado:', token);
+        return null;
+      }
+
+      // Verificar se o token não expirou
+      if (data.tokenExpiresAt) {
+        const expiry: Date = toDateSafe(data.tokenExpiresAt);
+        if (expiry < new Date()) {
+          console.warn('Token de escala expirado:', token);
+          return null;
+        }
+      }
+
+      await updateDoc(schedDoc.ref, {
+        status,
+        tokenUsed: true,
+        updatedAt: serverTimestamp(),
+      });
+
+      return {
+        id: schedDoc.id,
+        ...data,
+        status,
+        tokenUsed: true,
+        eventDate: toDateSafe(data.eventDate),
+        updatedAt: new Date(),
+      } as ScheduleAssignment;
+    } catch (error) {
+      console.error('Erro ao responder escala com token:', error);
+      return null;
+    }
+  },
+
+  // ==========================================================================
+  // TESOURARIA / CAIXA (Transactions)
+  // ==========================================================================
+  async getTransactions(): Promise<Transaction[]> {
+    try {
+      const q = query(collection(db, 'transactions'), orderBy('date', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        const amount = d.amountCents !== undefined ? d.amountCents / 100 : d.amount || 0;
+        return {
+          id: dSnap.id,
+          ...d,
+          amount,
+          amountCents: d.amountCents !== undefined ? d.amountCents : Math.round(amount * 100),
+          date: toDateSafe(d.date),
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Transaction;
+      });
+    } catch (error) {
+      console.error('Erro ao listar transações:', error);
+      return [];
+    }
+  },
+
+  async createTransaction(
+    tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Transaction> {
+    try {
+      const now = serverTimestamp();
+      const amountCents = tx.amountCents ?? Math.round(tx.amount * 100);
+      const payload: any = {
+        ...tx,
+        amount: tx.amount,
+        amountCents,
+        date: Timestamp.fromDate(new Date(tx.date)),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, 'transactions'), payload);
+      await logAuditEvent('create', 'transactions', docRef.id, {
+        description: tx.description,
+        amountCents,
+        type: tx.type,
+      });
+
+      return {
+        ...tx,
+        id: docRef.id,
+        amountCents,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar transação:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // REUNIÕES (Meetings)
+  // ==========================================================================
+  async getMeetings(): Promise<Meeting[]> {
+    try {
+      const q = query(collection(db, 'meetings'), orderBy('date', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          date: toDateSafe(d.date),
+          createdAt: toDateSafe(d.createdAt),
+        } as Meeting;
+      });
+    } catch (error) {
+      console.error('Erro ao listar reuniões:', error);
+      return [];
+    }
+  },
+
+  async createMeeting(meeting: Omit<Meeting, 'id' | 'createdAt'>): Promise<Meeting> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...meeting,
+        date: Timestamp.fromDate(new Date(meeting.date)),
+        createdAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, 'meetings'), payload);
+      await logAuditEvent('create', 'meetings', docRef.id, { title: meeting.title });
+
+      return {
+        ...meeting,
+        id: docRef.id,
+        createdAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar ata de reunião:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // DOCUMENTOS (Documents)
+  // ==========================================================================
+  async getDocuments(): Promise<GroupDocument[]> {
+    try {
+      const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          createdAt: toDateSafe(d.createdAt),
+        } as GroupDocument;
+      });
+    } catch (error) {
+      console.error('Erro ao listar documentos:', error);
+      return [];
+    }
+  },
+
+  async createDocument(
+    docItem: Omit<GroupDocument, 'id' | 'createdAt'>
+  ): Promise<GroupDocument> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...docItem,
+        createdAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, 'documents'), payload);
+      await logAuditEvent('create', 'documents', docRef.id, { title: docItem.title });
+
+      return {
+        ...docItem,
+        id: docRef.id,
+        createdAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao cadastrar documento:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // PRESENÇAS (Attendance)
+  // ==========================================================================
+  async getAttendanceRecords(eventId?: string): Promise<AttendanceRecord[]> {
+    try {
+      const collRef = collection(db, 'attendances');
+      const q = eventId
+        ? query(collRef, where('eventId', '==', eventId))
+        : query(collRef, orderBy('checkedInAt', 'desc'));
+
+      const snap = await getDocs(q);
+      return snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          eventDate: toDateSafe(d.eventDate),
+          checkedInAt: toDateSafe(d.checkedInAt),
+        } as AttendanceRecord;
+      });
+    } catch (error) {
+      console.error('Erro ao listar registros de presença:', error);
+      return [];
+    }
+  },
+
+  async registerAttendance(
+    record: Omit<AttendanceRecord, 'id' | 'checkedInAt'>
+  ): Promise<AttendanceRecord> {
+    try {
+      const now = serverTimestamp();
+      const payload: any = {
+        ...record,
+        eventDate: Timestamp.fromDate(new Date(record.eventDate)),
+        checkedInAt: now,
+      };
+
+      const docRef = await addDoc(collection(db, 'attendances'), payload);
+      return {
+        ...record,
+        id: docRef.id,
+        checkedInAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao registrar presença:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // CONFIGURAÇÃO DA PÁGINA PÚBLICA
+  // ==========================================================================
+  async getPublicPageConfig(): Promise<PublicPageConfig> {
+    try {
+      const docRef = doc(db, 'settings', 'publicPage');
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) return { ...DEFAULT_PUBLIC_PAGE_CONFIG };
+      const d = snap.data();
+      return {
+        ...DEFAULT_PUBLIC_PAGE_CONFIG,
+        ...d,
+        updatedAt: d.updatedAt ? toDateSafe(d.updatedAt) : new Date(),
+      } as PublicPageConfig;
+    } catch (error) {
+      console.error('Erro ao carregar configuração da página pública:', error);
+      return { ...DEFAULT_PUBLIC_PAGE_CONFIG };
+    }
+  },
+
+  async savePublicPageConfig(
+    config: Omit<PublicPageConfig, 'updatedAt'>,
+    updatedByName?: string
+  ): Promise<void> {
+    try {
+      const docRef = doc(db, 'settings', 'publicPage');
+      await setDoc(docRef, {
+        ...config,
+        updatedByName: updatedByName || '',
+        updatedAt: serverTimestamp(),
+      });
+      await logAuditEvent('update', 'settings', 'publicPage', { updatedByName });
+    } catch (error) {
+      console.error('Erro ao salvar configuração da página pública:', error);
+      throw error;
+    }
+  },
+
+  // ==========================================================================
+  // CARDS CUSTOMIZADOS DA PÁGINA PÚBLICA
+  // ==========================================================================
+  async getPublicCards(): Promise<PublicCard[]> {
+    try {
+      const q = query(collection(db, 'publicCards'), orderBy('order', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+        createdAt: toDateSafe(d.data().createdAt),
+        updatedAt: toDateSafe(d.data().updatedAt),
+      })) as PublicCard[];
+    } catch (error) {
+      console.error('Erro ao listar cards públicos:', error);
+      return [];
+    }
+  },
+
+  async createPublicCard(
+    card: Omit<PublicCard, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<PublicCard> {
+    try {
+      const now = serverTimestamp();
+      const ref = await addDoc(collection(db, 'publicCards'), {
+        ...card,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await logAuditEvent('create', 'publicCards', ref.id, { title: card.title });
+      return {
+        ...card,
+        id: ref.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    } catch (error) {
+      console.error('Erro ao criar card público:', error);
+      throw error;
+    }
+  },
+
+  async updatePublicCard(
+    id: string,
+    updates: Partial<Omit<PublicCard, 'id' | 'createdAt'>>
+  ): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'publicCards', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      await logAuditEvent('update', 'publicCards', id, updates);
+    } catch (error) {
+      console.error(`Erro ao atualizar card ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async deletePublicCard(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'publicCards', id));
+      await logAuditEvent('delete', 'publicCards', id);
+    } catch (error) {
+      console.error(`Erro ao excluir card ${id}:`, error);
+      throw error;
+    }
+  },
+
+};
+
+// Aliases para manter compatibilidade com hooks legados
+export const firestoreService = {
+  /**
+   * Listener em tempo real para transações (retorna unsubscribe).
+   */
+  getTransactions(
+    _role: string,
+    callback: (transactions: Transaction[]) => void
+  ): () => void {
+    const q = query(collection(db, 'transactions'), orderBy('date', 'desc'));
+    return onSnapshot(q, (snap) => {
+      const list = snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        const amount = d.amountCents !== undefined ? d.amountCents / 100 : d.amount || 0;
+        return {
+          id: dSnap.id,
+          ...d,
+          amount,
+          amountCents: d.amountCents !== undefined ? d.amountCents : Math.round(amount * 100),
+          date: toDateSafe(d.date),
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Transaction;
+      });
+      callback(list);
+    });
+  },
+
+  async createTransaction(
+    tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>,
+    _role?: string
+  ): Promise<Transaction> {
+    return TerezinhaService.createTransaction(tx);
+  },
+
+  async updateTransaction(
+    id: string,
+    tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>,
+    _role?: string
+  ): Promise<void> {
+    const now = serverTimestamp();
+    const amountCents = tx.amountCents ?? Math.round(tx.amount * 100);
+    await updateDoc(doc(db, 'transactions', id), {
+      ...tx,
+      amountCents,
+      date: Timestamp.fromDate(new Date(tx.date)),
+      updatedAt: now,
+    });
+    await logAuditEvent('update', 'transactions', id, {
+      description: tx.description,
+      amountCents,
+      type: tx.type,
+    });
+  },
+
+  async deleteTransaction(id: string, _role?: string): Promise<void> {
+    await deleteDoc(doc(db, 'transactions', id));
+    await logAuditEvent('delete', 'transactions', id, {});
   },
 
   /**
-   * Atualizar usuário (membro)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
+   * Listener em tempo real para membros/pessoas.
    */
-  async updateUser(userId: string, userData: Partial<User>): Promise<void> {
-    const memberRef = doc(db, 'members', userId);
-    const updateData: any = {
-      updatedAt: Timestamp.now(),
-    };
-
-    // Copiar campos simples
-    if (userData.name !== undefined) updateData.name = userData.name;
-    if (userData.email !== undefined) updateData.email = userData.email;
-    if (userData.phone !== undefined) updateData.phone = userData.phone;
-    if (userData.gender !== undefined) updateData.gender = userData.gender;
-    if (userData.status !== undefined) updateData.status = userData.status;
-    if (userData.role !== undefined) updateData.role = userData.role;
-    if (userData.photoUrl !== undefined) updateData.photoUrl = userData.photoUrl;
-    if (userData.address !== undefined) updateData.address = userData.address;
-    if (userData.emergencyContact !== undefined) updateData.emergencyContact = userData.emergencyContact;
-    if (userData.notes !== undefined) updateData.notes = userData.notes;
-
-    // Converter datas
-    if (userData.birthDate) {
-      updateData.birthDate = dateToTimestamp(userData.birthDate);
-    }
-
-    if (userData.joinDate) {
-      updateData.joinDate = dateToTimestamp(userData.joinDate);
-    }
-
-    if (userData.lastLogin) {
-      updateData.lastLogin = dateToTimestamp(userData.lastLogin);
-    }
-
-    await updateDoc(memberRef, updateData as DocumentData);
-  },
-
-  /**
-   * Buscar role do usuário (membro)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
-   */
-  async getUserRole(userId: string): Promise<UserRole | null> {
-    const user = await this.getUser(userId);
-    return user?.role ?? null;
-  },
-
-  /**
-   * Atualizar role do usuário (apenas admin)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
-   */
-  async updateUserRole(userId: string, role: UserRole, currentUserRole: UserRole): Promise<void> {
-    if (currentUserRole !== 'admin') {
-      throw new Error('Apenas administradores podem alterar roles');
-    }
-
-    const memberRef = doc(db, 'members', userId);
-    await updateDoc(memberRef, {
-      role,
-      updatedAt: Timestamp.now(),
+  getMembers(
+    _role: string,
+    callback: (members: Person[]) => void
+  ): () => void {
+    const q = query(collection(db, 'people'), orderBy('name', 'asc'));
+    return onSnapshot(q, (snap) => {
+      const list = snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          birthDate: toDateSafe(d.birthDate),
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Person;
+      });
+      callback(list);
     });
   },
 
   /**
-   * Deletar usuário (apenas admin)
-   * CORRIGIDO: Agora usa a coleção 'members' como fonte canônica
+   * Listener em tempo real para eventos.
    */
-  async deleteUser(userId: string, currentUserRole: UserRole, currentUserId: string): Promise<void> {
-    if (currentUserRole !== 'admin') {
-      throw new Error('Apenas administradores podem deletar usuários');
-    }
+  getEvents(
+    _role: string,
+    callback: (events: Event[]) => void
+  ): () => void {
+    const q = query(collection(db, 'events'), orderBy('date', 'asc'));
+    return onSnapshot(q, (snap) => {
+      const list = snap.docs.map((dSnap) => {
+        const d = dSnap.data();
+        return {
+          id: dSnap.id,
+          ...d,
+          date: toDateSafe(d.date),
+          createdAt: toDateSafe(d.createdAt),
+          updatedAt: toDateSafe(d.updatedAt),
+        } as Event;
+      });
+      callback(list);
+    });
+  },
+};
+export const MembersService = {
+  getAll: () => TerezinhaService.getPeople(),
+  getById: (id: string) => TerezinhaService.getPersonById(id),
+  create: (p: any) => TerezinhaService.createPerson(p),
+  update: (id: string, u: any) => TerezinhaService.updatePerson(id, u),
+  delete: (id: string) => TerezinhaService.deletePerson(id),
+};
+export const EventsService = {
+  getAll: () => TerezinhaService.getEvents(),
+  getById: (id: string) => TerezinhaService.getEventBySlug(id),
+  create: (e: any) => TerezinhaService.createEvent(e),
+  update: (id: string, u: any) => TerezinhaService.updateEvent(id, u),
+  delete: (id: string) => deleteDoc(doc(db, 'events', id)),
+};
+export const TransactionsService = {
+  getAll: () => TerezinhaService.getTransactions(),
+  create: (t: any) => TerezinhaService.createTransaction(t),
+};
 
-    if (userId === currentUserId) {
-      throw new Error('Você não pode deletar sua própria conta');
-    }
-
-    const memberRef = doc(db, 'members', userId);
-    await deleteDoc(memberRef);
+export const UsersService = {
+  /**
+   * Busca todos os usuários (somente admin).
+   */
+  async getAllUsers(callerRole: string): Promise<import('../types').User[]> {
+    if (callerRole !== 'admin') throw new Error('Apenas administradores podem listar usuários');
+    const snap = await getDocs(query(collection(db, 'users'), orderBy('name', 'asc')));
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        createdAt: toDateSafe(data.createdAt),
+        updatedAt: toDateSafe(data.updatedAt),
+      } as import('../types').User;
+    });
   },
 
   /**
-   * Compatibilidade com API anterior
+   * Listener em tempo real para a coleção users (somente admin).
    */
-  async getById(id: string): Promise<User | null> {
-    return this.getUser(id);
+  onSnapshot(
+    callerRole: string,
+    callback: (users: import('../types').User[]) => void
+  ): () => void {
+    if (callerRole !== 'admin') {
+      callback([]);
+      return () => {};
+    }
+    const q = query(collection(db, 'users'), orderBy('name', 'asc'));
+    return onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          createdAt: toDateSafe(data.createdAt),
+          updatedAt: toDateSafe(data.updatedAt),
+        } as import('../types').User;
+      });
+      callback(list);
+    });
   },
 
-  async create(userData: Omit<User, 'createdAt' | 'lastLogin'>): Promise<void> {
-    const { id, ...rest } = userData;
-    await this.createUser(id, rest);
+  /**
+   * Atualiza o role de um usuário (somente admin).
+   */
+  async updateUserRole(
+    userId: string,
+    newRole: import('../types').UserRole,
+    callerRole: string
+  ): Promise<void> {
+    if (callerRole !== 'admin') throw new Error('Apenas administradores podem alterar roles');
+    await updateDoc(doc(db, 'users', userId), {
+      role: newRole,
+      updatedAt: serverTimestamp(),
+    });
+    await logAuditEvent('update', 'users', userId, { role: newRole });
   },
 
-  async update(id: string, userData: Partial<User>): Promise<void> {
-    await this.updateUser(id, userData);
-  },
-
-  async updateLastLogin(id: string): Promise<void> {
-    await this.updateUser(id, { lastLogin: new Date() });
-  },
-
-  async delete(id: string, adminRole: UserRole, adminId: string): Promise<void> {
-    await this.deleteUser(id, adminRole, adminId);
-  },
-  
-  async updateRole(id: string, role: UserRole, adminRole: UserRole): Promise<void> {
-    await this.updateUserRole(id, role, adminRole);
+  /**
+   * Remove um usuário do Firestore (somente admin).
+   * Nota: remove apenas o documento — a conta Firebase Auth permanece.
+   */
+  async delete(userId: string, callerRole: string, callerUid: string): Promise<void> {
+    if (callerRole !== 'admin') throw new Error('Apenas administradores podem remover usuários');
+    if (userId === callerUid) throw new Error('Você não pode remover sua própria conta');
+    await deleteDoc(doc(db, 'users', userId));
+    await logAuditEvent('delete', 'users', userId, {});
   },
 };
-
-export const firestoreService = {
-  createUser: UsersService.createUser.bind(UsersService),
-  getUser: UsersService.getUser.bind(UsersService),
-  updateUser: UsersService.updateUser.bind(UsersService),
-  getUserRole: UsersService.getUserRole.bind(UsersService),
-  updateUserRole: UsersService.updateUserRole.bind(UsersService),
-
-  getMembers: MembersService.onSnapshot.bind(MembersService),
-  getMember: MembersService.getById.bind(MembersService),
-  createMember: MembersService.create.bind(MembersService),
-  updateMember: MembersService.update.bind(MembersService),
-  deleteMember: MembersService.delete.bind(MembersService),
-
-  getEvents: EventsService.onSnapshot.bind(EventsService),
-  getEvent: EventsService.getById.bind(EventsService),
-  createEvent: EventsService.create.bind(EventsService),
-  updateEvent: EventsService.update.bind(EventsService),
-  deleteEvent: EventsService.delete.bind(EventsService),
-
-  getTransactions: TransactionsService.onSnapshot.bind(TransactionsService),
-  getTransaction: TransactionsService.getById.bind(TransactionsService),
-  createTransaction: TransactionsService.create.bind(TransactionsService),
-  updateTransaction: TransactionsService.update.bind(TransactionsService),
-  deleteTransaction: TransactionsService.delete.bind(TransactionsService),
-};
-
-export default firestoreService;
-

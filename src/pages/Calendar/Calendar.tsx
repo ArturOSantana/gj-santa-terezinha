@@ -137,7 +137,7 @@ const Calendar: React.FC = () => {
     const categoryMatch = filters.includes(event.category);
     if (!categoryMatch) return false;
 
-    if (event.category === EventCategory.SATURDAY && event.activityType) {
+    if (event.activityType) {
       if (!activityFilters.includes(event.activityType)) return false;
     }
 
@@ -253,9 +253,12 @@ const Calendar: React.FC = () => {
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper
             sx={{
-              p: { xs: 1.75, sm: 2, md: 2.5 },
-              borderRadius: { xs: 3, md: 3.5 },
-              background: 'linear-gradient(135deg, rgba(26,71,49,0.04) 0%, rgba(212,175,55,0.08) 100%)',
+              p: { xs: 2, sm: 2.5, md: 3 },
+              borderRadius: '16px',
+              bgcolor: '#f7efdd',
+              color: '#2a1420',
+              border: '1px solid rgba(211, 163, 76, 0.25)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.18)',
               height: '100%',
             }}
           >
@@ -264,9 +267,10 @@ const Calendar: React.FC = () => {
                 <Typography
                   variant="overline"
                   sx={{
-                    color: 'text.secondary',
+                    color: '#6b5347',
                     letterSpacing: '0.08em',
-                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                    fontWeight: 700,
+                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
                   }}
                 >
                   Panorama da agenda
@@ -275,7 +279,8 @@ const Calendar: React.FC = () => {
                   variant="h5"
                   sx={{
                     fontWeight: 700,
-                    fontFamily: 'Merriweather, serif',
+                    fontFamily: '"Fraunces", Georgia, serif',
+                    color: '#2a1420',
                     fontSize: { xs: '1.25rem', sm: '1.35rem', md: '1.5rem' },
                   }}
                 >
@@ -286,16 +291,20 @@ const Calendar: React.FC = () => {
               <Box
                 sx={{
                   p: { xs: 1.5, sm: 2 },
-                  borderRadius: { xs: 2.5, md: 3 },
-                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  borderRadius: 2.5,
+                  bgcolor: '#efe2c4',
+                  border: '1px solid rgba(211, 163, 76, 0.3)',
                 }}
               >
                 <Typography
-                  variant="body2"
-                  color="text.secondary"
+                  variant="caption"
                   sx={{
                     mb: 0.5,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    display: 'block',
+                    fontWeight: 700,
+                    color: '#6b5347',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                   }}
                 >
                   Mês em foco
@@ -304,7 +313,9 @@ const Calendar: React.FC = () => {
                   variant="h6"
                   sx={{
                     fontWeight: 700,
-                    fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' },
+                    color: '#2a1420',
+                    textTransform: 'capitalize',
+                    fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
                   }}
                 >
                   {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
@@ -315,29 +326,32 @@ const Calendar: React.FC = () => {
                 <Typography
                   variant="subtitle2"
                   sx={{
-                    fontWeight: 700,
+                    fontWeight: 800,
+                    color: '#2a1420',
                     fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                   }}
                 >
                   Legenda de categorias
                 </Typography>
-                {eventCategories.map((category, index) => (
+                {eventCategories.map((category) => (
                   <Box
                     key={category.type}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: { xs: 1, md: 1.5 },
-                      ml: index % 2 === 0 ? 0 : { md: 1 },
+                      gap: 1.5,
+                      py: 0.25,
                     }}
                   >
                     <Box
                       sx={{
-                        width: { xs: 12, sm: 14 },
-                        height: { xs: 12, sm: 14 },
+                        width: 14,
+                        height: 14,
                         borderRadius: '4px',
                         backgroundColor: category.color,
-                        boxShadow: `0 0 0 4px ${alpha(category.color, 0.12)}`,
+                        boxShadow: `0 0 0 2px rgba(211, 163, 76, 0.25)`,
                         flexShrink: 0,
                       }}
                     />
@@ -345,7 +359,8 @@ const Calendar: React.FC = () => {
                       variant="body2"
                       sx={{
                         fontWeight: 600,
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        color: '#2a1420',
+                        fontSize: { xs: '0.85rem', sm: '0.9rem' },
                       }}
                     >
                       {category.label}
@@ -360,16 +375,19 @@ const Calendar: React.FC = () => {
         <Grid size={{ xs: 12, md: 8 }}>
           <Paper
             sx={{
-              p: { xs: 1.75, sm: 2, md: 2.75 },
-              borderRadius: { xs: 3, md: 3.5 },
-              background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,245,238,1) 100%)',
+              p: { xs: 2, sm: 2.5, md: 3 },
+              borderRadius: '16px',
+              bgcolor: '#f7efdd',
+              color: '#2a1420',
+              border: '1px solid rgba(211, 163, 76, 0.25)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.18)',
             }}
           >
             <Box
               sx={{
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', lg: '1.2fr 0.8fr' },
-                gap: { xs: 2, sm: 2.5, md: 3 },
+                gap: { xs: 2.5, sm: 3 },
               }}
             >
               <Box>
@@ -377,8 +395,10 @@ const Calendar: React.FC = () => {
                   variant="h6"
                   sx={{
                     fontWeight: 700,
-                    mb: { xs: 1.25, md: 1.5 },
-                    fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+                    fontFamily: '"Fraunces", Georgia, serif',
+                    color: '#2a1420',
+                    mb: { xs: 1.5, md: 2 },
+                    fontSize: { xs: '1.05rem', sm: '1.2rem', md: '1.3rem' },
                   }}
                 >
                   Eventos próximos
@@ -386,8 +406,8 @@ const Calendar: React.FC = () => {
 
                 {upcomingHighlighted.length > 0 ? (
                   <Stack spacing={2}>
-                    {upcomingHighlighted.map((event, index) => (
-                      <Box key={event.id} sx={{ mr: index === 1 ? { lg: 2 } : 0, ml: index === 2 ? { lg: 1 } : 0 }}>
+                    {upcomingHighlighted.map((event) => (
+                      <Box key={event.id}>
                         <EventCard event={event} />
                       </Box>
                     ))}
@@ -402,20 +422,22 @@ const Calendar: React.FC = () => {
 
               <Box
                 sx={{
-                  p: { xs: 1.5, sm: 1.75, md: 2 },
-                  borderRadius: { xs: 2.5, md: 3 },
-                  bgcolor: alpha(theme.palette.secondary.main, 0.05),
-                  transform: { lg: 'translateY(18px)' },
+                  p: { xs: 2, sm: 2.5 },
+                  borderRadius: 2.5,
+                  bgcolor: '#efe2c4',
+                  border: '1px solid rgba(211, 163, 76, 0.3)',
                 }}
               >
                 <Stack spacing={{ xs: 2, md: 2.25 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 } }}>
-                    <EventAvailableIcon sx={{ color: 'secondary.main', fontSize: { xs: 20, sm: 24 } }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <EventAvailableIcon sx={{ color: '#c15c71', fontSize: { xs: 22, sm: 24 } }} />
                     <Typography
                       variant="h6"
                       sx={{
                         fontWeight: 700,
-                        fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' },
+                        fontFamily: '"Fraunces", Georgia, serif',
+                        color: '#2a1420',
+                        fontSize: { xs: '1rem', sm: '1.15rem' },
                       }}
                     >
                       Filtros
@@ -425,11 +447,11 @@ const Calendar: React.FC = () => {
                   {showFilters ? (
                     <Stack spacing={2.5}>
                       <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2a1420' }}>
                             Categorias
                           </Typography>
-                          <Button size="small" onClick={handleToggleAllFilters} sx={{ textTransform: 'none' }}>
+                          <Button size="small" onClick={handleToggleAllFilters} sx={{ textTransform: 'none', color: '#c15c71', fontWeight: 700 }}>
                             {filters.length === eventCategories.length ? 'Limpar' : 'Todos'}
                           </Button>
                         </Box>
@@ -441,6 +463,7 @@ const Calendar: React.FC = () => {
                                 <Checkbox
                                   checked={filters.includes(category.type)}
                                   onChange={() => handleFilterToggle(category.type)}
+                                  size="small"
                                   sx={{
                                     color: category.color,
                                     '&.Mui-checked': {
@@ -449,18 +472,18 @@ const Calendar: React.FC = () => {
                                   }}
                                 />
                               }
-                              label={<Typography variant="body2">{category.label}</Typography>}
+                              label={<Typography variant="body2" sx={{ color: '#2a1420', fontWeight: 500 }}>{category.label}</Typography>}
                             />
                           ))}
                         </FormGroup>
                       </Box>
 
                       <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2a1420' }}>
                             Tipo de atividade
                           </Typography>
-                          <Button size="small" onClick={handleToggleAllActivityFilters} sx={{ textTransform: 'none' }}>
+                          <Button size="small" onClick={handleToggleAllActivityFilters} sx={{ textTransform: 'none', color: '#c15c71', fontWeight: 700 }}>
                             {activityFilters.length === activityTypes.length ? 'Limpar' : 'Todos'}
                           </Button>
                         </Box>
@@ -472,26 +495,27 @@ const Calendar: React.FC = () => {
                                 <Checkbox
                                   checked={activityFilters.includes(activity.type)}
                                   onChange={() => handleActivityFilterToggle(activity.type)}
+                                  size="small"
                                   sx={{
-                                    color: '#2c5f2d',
+                                    color: '#7fa176',
                                     '&.Mui-checked': {
-                                      color: '#2c5f2d',
+                                      color: '#4f6b4f',
                                     },
                                   }}
                                 />
                               }
-                              label={<Typography variant="body2">{activity.label}</Typography>}
+                              label={<Typography variant="body2" sx={{ color: '#2a1420', fontWeight: 500 }}>{activity.label}</Typography>}
                             />
                           ))}
                         </FormGroup>
                       </Box>
 
                       <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2a1420' }}>
                             Público
                           </Typography>
-                          <Button size="small" onClick={handleToggleAllGenderFilters} sx={{ textTransform: 'none' }}>
+                          <Button size="small" onClick={handleToggleAllGenderFilters} sx={{ textTransform: 'none', color: '#c15c71', fontWeight: 700 }}>
                             {genderFilters.length === 3 ? 'Limpar' : 'Todos'}
                           </Button>
                         </Box>
@@ -501,45 +525,48 @@ const Calendar: React.FC = () => {
                               <Checkbox
                                 checked={genderFilters.includes(Gender.MALE)}
                                 onChange={() => handleGenderFilterToggle(Gender.MALE)}
+                                size="small"
                                 sx={{
-                                  color: '#2c5f2d',
+                                  color: '#7fa176',
                                   '&.Mui-checked': {
-                                    color: '#2c5f2d',
+                                    color: '#4f6b4f',
                                   },
                                 }}
                               />
                             }
-                            label={<Typography variant="body2">Cavalheiros</Typography>}
+                            label={<Typography variant="body2" sx={{ color: '#2a1420', fontWeight: 500 }}>Cavalheiros</Typography>}
                           />
                           <FormControlLabel
                             control={
                               <Checkbox
                                 checked={genderFilters.includes(Gender.FEMALE)}
                                 onChange={() => handleGenderFilterToggle(Gender.FEMALE)}
+                                size="small"
                                 sx={{
-                                  color: '#2c5f2d',
+                                  color: '#7fa176',
                                   '&.Mui-checked': {
-                                    color: '#2c5f2d',
+                                    color: '#4f6b4f',
                                   },
                                 }}
                               />
                             }
-                            label={<Typography variant="body2">Santa Joana</Typography>}
+                            label={<Typography variant="body2" sx={{ color: '#2a1420', fontWeight: 500 }}>Santa Joana</Typography>}
                           />
                           <FormControlLabel
                             control={
                               <Checkbox
                                 checked={genderFilters.includes(Gender.MIXED)}
                                 onChange={() => handleGenderFilterToggle(Gender.MIXED)}
+                                size="small"
                                 sx={{
-                                  color: '#2c5f2d',
+                                  color: '#7fa176',
                                   '&.Mui-checked': {
-                                    color: '#2c5f2d',
+                                    color: '#4f6b4f',
                                   },
                                 }}
                               />
                             }
-                            label={<Typography variant="body2">Misto</Typography>}
+                            label={<Typography variant="body2" sx={{ color: '#2a1420', fontWeight: 500 }}>Misto</Typography>}
                           />
                         </FormGroup>
                       </Box>
@@ -549,7 +576,7 @@ const Calendar: React.FC = () => {
                       variant="outlined"
                       startIcon={<FilterIcon />}
                       onClick={() => setShowFilters(true)}
-                      sx={{ alignSelf: 'flex-start', borderRadius: 2.5 }}
+                      sx={{ alignSelf: 'flex-start', borderRadius: 2, borderColor: '#d3a34c', color: '#2a1420' }}
                     >
                       Exibir filtros
                     </Button>
@@ -563,33 +590,27 @@ const Calendar: React.FC = () => {
 
       <Paper
         sx={{
-          p: { xs: 2, md: 2.75 },
-          borderRadius: 3.5,
+          p: { xs: 2, md: 3 },
+          borderRadius: '16px',
+          bgcolor: '#f7efdd',
+          color: '#2a1420',
+          border: '1px solid rgba(211, 163, 76, 0.25)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.18)',
           minHeight: { xs: 520, md: 640 },
           position: 'relative',
           overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: 180,
-            height: 180,
-            right: -60,
-            bottom: -60,
-            borderRadius: '50%',
-            background: alpha(theme.palette.primary.main, 0.05),
-          },
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <CalendarMonthIcon sx={{ color: 'primary.main' }} />
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <CalendarMonthIcon sx={{ color: '#c15c71' }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Fraunces", Georgia, serif', color: '#2a1420' }}>
             Visualização principal
           </Typography>
           <Chip
             icon={<AutoAwesomeMotionIcon />}
             label={view === 'month' ? 'Mês' : view === 'week' ? 'Semana' : view === 'agenda' ? 'Agenda' : 'Dia'}
             size="small"
-            sx={{ ml: 'auto', fontWeight: 700 }}
+            sx={{ ml: 'auto', fontWeight: 700, bgcolor: '#efe2c4', color: '#2a1420' }}
           />
         </Box>
 

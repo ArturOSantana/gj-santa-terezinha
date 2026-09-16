@@ -1,522 +1,737 @@
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Container,
-  Paper,
-  Alert,
-  Stack,
   Grid,
-  Avatar,
+  Checkbox,
+  Button,
   Chip,
-  alpha,
 } from '@mui/material';
 import {
-  People as PeopleIcon,
-  Event as EventIcon,
-  AccountBalance as AccountBalanceIcon,
-  CheckCircle as CheckCircleIcon,
-  AttachMoney as AttachMoneyIcon,
+  LocationOn as LocationIcon,
   Person as PersonIcon,
-  Receipt as ReceiptIcon,
-  CalendarMonth as CalendarMonthIcon,
-  Schedule as ScheduleIcon,
-  LocationOn as LocationOnIcon,
-  Cake as CakeIcon,
+  CheckCircle as CheckIcon,
+  Schedule as TimeIcon,
+  ArrowForward as ArrowIcon,
+  WarningAmber as WarningIcon,
+  QrCode2 as QrIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material';
-import { differenceInDays, format, getMonth, isSameMonth } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { useDashboard } from '../../hooks/useDashboard';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import StatCard from '../../components/common/StatCard';
-import EventCard from '../../components/common/EventCard';
-import PageHeader from '../../components/common/PageHeader';
-import EmptyState from '../../components/common/EmptyState';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestore.service';
-import { Member } from '../../types';
+import { TerezinhaService } from '../../services/firestore.service';
+import { DashboardStats, Event, Task, Meeting } from '../../types';
 
-const Dashboard = () => {
+export const Dashboard = () => {
   const { user } = useAuth();
-  const { loading, stats, upcomingEvents, recentActivities } = useDashboard();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [lastMeeting, setLastMeeting] = useState<Meeting | null>(null);
 
-  if (loading) {
-    return (
-      <Container maxWidth="lg">
-        <LoadingSpinner message="Carregando visão geral..." />
-      </Container>
-    );
-  }
+  useEffect(() => {
+    const loadDashboard = async () => {
+      const st = await TerezinhaService.getDashboardStats();
+      const evs = await TerezinhaService.getEvents();
+      const ts = await TerezinhaService.getTasks();
+      const mts = await TerezinhaService.getMeetings();
 
-  if (!stats) {
-    return (
-      <Container maxWidth="lg">
-        <Box sx={{ mt: 4 }}>
-          <Alert severity="error">
-            Erro ao carregar dados da visão geral. Por favor, tente novamente.
-          </Alert>
-        </Box>
-      </Container>
-    );
-  }
+      setStats(st);
+      setEvents(evs);
+      setTasks(ts);
+      setLastMeeting(mts[0] || null);
+    };
 
-  const membersRef = (firestoreService as unknown as { data?: { members?: Member[] } })?.data?.members ?? [];
-  const birthdayMembers = membersRef
-    .filter((member) => member.birthDate && isSameMonth(new Date(member.birthDate), new Date()))
-    .slice(0, 4);
+    loadDashboard();
+  }, []);
 
-  const getActivityIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'transaction':
-        return <AttachMoneyIcon sx={{ color: '#2d6b4a' }} />;
-      case 'member':
-        return <PersonIcon sx={{ color: '#7a4b1f' }} />;
-      case 'event':
-        return <EventIcon sx={{ color: '#8f6a1f' }} />;
-      case 'receipt':
-        return <ReceiptIcon sx={{ color: '#9a5a13' }} />;
-      default:
-        return <CheckCircleIcon sx={{ color: '#1a4731' }} />;
-    }
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const upcomingEvents = events
+    .filter((e) => new Date(e.date) >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const nextEvent = upcomingEvents[0] || stats?.nextEvent || null;
+  const userName = user?.displayName?.split(' ')[0] || user?.name?.split(' ')[0] || '';
+
+  const handleToggleTask = async (taskId: string, currentCompleted: boolean) => {
+    const newStatus = currentCompleted ? ('pending' as any) : ('completed' as any);
+    await TerezinhaService.updateTaskStatus(taskId, newStatus);
+    const updated = await TerezinhaService.getTasks();
+    setTasks(updated);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
+  const handleToggleEventChecklist = async (eventId: string, itemId: string) => {
+    await TerezinhaService.toggleChecklistItem(eventId, itemId);
+    const updated = await TerezinhaService.getEvents();
+    setEvents(updated);
   };
 
-  const nextEventDate = stats.nextEvent
-    ? format(stats.nextEvent.date, "dd/MM/yyyy", { locale: ptBR })
-    : 'Nenhum evento agendado';
-
-  const countdownDays = stats.nextEvent
-    ? Math.max(differenceInDays(new Date(stats.nextEvent.date), new Date()), 0)
-    : null;
-
-  const quickStats = [
-    user?.role !== 'member'
-      ? {
-          title: 'Total de membros',
-          value: stats.totalMembers,
-          icon: <PeopleIcon sx={{ fontSize: 32 }} />,
-          color: 'primary' as const,
-        }
-      : null,
-    {
-      title: 'Próximo encontro',
-      value: nextEventDate,
-      icon: <EventIcon sx={{ fontSize: 32 }} />,
-      color: 'secondary' as const,
-    },
-    user?.role !== 'member'
-      ? {
-          title: 'Saldo do caixa',
-          value: formatCurrency(stats.balance),
-          icon: <AccountBalanceIcon sx={{ fontSize: 32 }} />,
-          color: 'success' as const,
-        }
-      : null,
-  ].filter(Boolean);
+  const overdueTasks = tasks.filter((t) => t.status === 'overdue' || (t.status !== 'completed' && t.dueDate && new Date(t.dueDate) < new Date()));
 
   return (
-    <Container maxWidth="xl" disableGutters>
-      <Box sx={{ py: { xs: 1.5, sm: 2.5 }, display: 'grid', gap: { xs: 2.5, md: 3.5 } }}>
-        <PageHeader
-          title="Painel de Controle"
-        />
+    <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+      {/* Saudação de Comando */}
+      <Box sx={{ mb: 3.5 }}>
+        <Typography
+          variant="h3"
+          sx={{
+            fontFamily: '"Fraunces", Georgia, serif',
+            fontWeight: 700,
+            color: '#f4e6e9',
+            fontSize: { xs: '1.8rem', sm: '2.4rem' },
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Boa tarde, {userName}.
+        </Typography>
+      </Box>
 
-        <Grid container columnSpacing={{ xs: 2, md: 3 }} rowSpacing={{ xs: 2, md: 2.5 }} sx={{ mb: 0.5 }}>
-          {quickStats.map((item, index) => (
-            <Grid key={item!.title} size={{ xs: 12, sm: index === 1 ? 12 : 6, md: index === 1 ? 5 : 3.5 }}>
-              <Box sx={{ mt: index === 1 ? { md: 1.25 } : 0 }}>
-                <StatCard
-                  title={item!.title}
-                  value={item!.value}
-                  icon={item!.icon}
-                  color={item!.color}
-                />
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-
-        {stats.nextEvent ? (
-          <Paper
+      {/* Grid de Cards de Destaque */}
+      <Grid container spacing={2.5}>
+        {/* COL 1, LINHA 1: Próximo Evento */}
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Box
             sx={{
-              p: { xs: 2, sm: 2.5, md: 4 },
-              borderRadius: { xs: 3, md: 4 },
-              color: 'common.white',
-              background:
-                'linear-gradient(135deg, #163b2b 0%, #24553d 45%, #3b7a57 100%)',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 20px 50px rgba(22, 59, 43, 0.22)',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                width: { xs: 180, md: 240 },
-                height: { xs: 180, md: 240 },
-                right: { xs: -40, md: -60 },
-                top: { xs: -80, md: -110 },
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.09)',
-              },
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                width: { xs: 120, md: 160 },
-                height: { xs: 120, md: 160 },
-                left: { xs: -25, md: -35 },
-                bottom: { xs: -50, md: -70 },
-                borderRadius: '50%',
-                background: 'rgba(212, 175, 55, 0.16)',
-              },
+              bgcolor: '#2f1522',
+              color: '#ffffff',
+              borderRadius: '12px',
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              border: '1px solid rgba(193, 92, 113, 0.4)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
             }}
           >
-            <Grid container spacing={{ xs: 2, md: 3 }} sx={{ position: 'relative', zIndex: 1 }}>
-              <Grid size={{ xs: 12, md: 7 }}>
-                <Stack spacing={{ xs: 1.25, md: 1.5 }}>
-                  <Chip
-                    label="Próximo Encontro"
-                    sx={{
-                      alignSelf: 'flex-start',
-                      bgcolor: 'rgba(255,255,255,0.16)',
-                      color: 'common.white',
-                      fontWeight: 700,
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                      height: { xs: 24, sm: 28 },
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 } }}>
-                    <Avatar
-                      sx={{
-                        width: { xs: 56, sm: 64, md: 72 },
-                        height: { xs: 56, sm: 64, md: 72 },
-                        bgcolor: 'rgba(255,255,255,0.16)',
-                        border: '1px solid rgba(255,255,255,0.18)',
-                      }}
-                    >
-                      <CalendarMonthIcon sx={{ fontSize: { xs: 28, sm: 32, md: 36 } }} />
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          fontFamily: 'Merriweather, serif',
-                          fontWeight: 700,
-                          mb: 0.75,
-                          fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {stats.nextEvent.title}
-                      </Typography>
-                      {stats.nextEvent.description && (
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            color: 'rgba(255,255,255,0.82)',
-                            maxWidth: 520,
-                            fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem' },
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {stats.nextEvent.description}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                </Stack>
-              </Grid>
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: 'uppercase',
+                  color: '#f4e6e9',
+                  letterSpacing: '0.08em',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  display: 'block',
+                  mb: 1,
+                }}
+              >
+                PRÓXIMO EVENTO
+              </Typography>
 
-              <Grid size={{ xs: 12, md: 5 }}>
-                <Box
+              {nextEvent ? (
+                <>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontFamily: '"Fraunces", Georgia, serif',
+                      fontWeight: 700,
+                      fontSize: { xs: '1.4rem', sm: '1.65rem' },
+                      lineHeight: 1.2,
+                      mb: 1.5,
+                      color: '#ffffff',
+                    }}
+                  >
+                    {nextEvent.title}
+                  </Typography>
+
+                  {nextEvent.description && (
+                    <Typography variant="body2" sx={{ color: '#f4e6e9', opacity: 0.9, fontSize: '0.88rem' }}>
+                      {nextEvent.description}
+                    </Typography>
+                  )}
+                </>
+              ) : (
+                <Typography variant="body2" sx={{ color: '#f4e6e9', opacity: 0.6, mt: 1 }}>
+                  Nenhum evento cadastrado.
+                </Typography>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                my: 2.5,
+                borderBottom: '1px solid rgba(211, 163, 76, 0.15)',
+              }}
+            />
+
+            {/* Metadados e Ações Rápidas */}
+            <Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+                {nextEvent?.startTime && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                    <TimeIcon sx={{ fontSize: 16, color: '#f7efdd' }} />
+                    <Typography variant="caption" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                      {nextEvent.startTime}
+                    </Typography>
+                  </Box>
+                )}
+                {nextEvent?.location && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                    <LocationIcon sx={{ fontSize: 16, color: '#f7efdd' }} />
+                    <Typography variant="caption" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                      {nextEvent.location.split('—')[0]}
+                    </Typography>
+                  </Box>
+                )}
+                {nextEvent?.responsibleName && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                    <PersonIcon sx={{ fontSize: 16, color: '#f7efdd' }} />
+                    <Typography variant="caption" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                      {nextEvent.responsibleName}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<QrIcon />}
+                  onClick={() => navigate('/p/checkin')}
                   sx={{
-                    ml: { md: 'auto' },
-                    maxWidth: 360,
-                    p: { xs: 1.75, sm: 2, md: 2.5 },
-                    borderRadius: { xs: 2.5, md: 3 },
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255,255,255,0.14)',
+                    bgcolor: '#241019',
+                    color: '#f4e6e9',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    borderRadius: 1.5,
+                    '&:hover': { bgcolor: '#1d0b14' },
                   }}
                 >
-                  <Typography
-                    variant="overline"
-                    sx={{
-                      color: 'rgba(255,255,255,0.7)',
-                      letterSpacing: '0.08em',
-                      fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                  Abrir QR Presença
+                </Button>
+                {nextEvent && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<ShareIcon />}
+                    onClick={() => {
+                      const date = nextEvent.date ? new Date(nextEvent.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+                      const time = nextEvent.startTime ? ` às ${nextEvent.startTime}` : '';
+                      const location = nextEvent.location ? ` em ${nextEvent.location.split('—')[0].trim()}` : '';
+                      const txt = `*${nextEvent.title}*\nData: ${date}${time}${location}.\nEsperamos por você!`;
+                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
                     }}
-                  >
-                    Contagem regressiva
-                  </Typography>
-                  <Typography
-                    variant="h2"
                     sx={{
-                      fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                      borderColor: 'rgba(255, 255, 255, 0.4)',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
                       fontWeight: 700,
-                      lineHeight: 1,
+                      borderRadius: 1.5,
+                      '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255, 255, 255, 0.1)' },
                     }}
                   >
-                    {countdownDays ?? '--'}
-                  </Typography>
-                  <Typography
-                    variant="body2"
+                    WhatsApp
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        </Grid>
+
+        {/* COL 2, LINHA 1: Caixa / Mini-Razão Contábil */}
+        <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
+          <Box
+            sx={{
+              bgcolor: '#f7efdd',
+              color: '#2a1420',
+              borderRadius: '16px',
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
+              border: '1px solid rgba(211, 163, 76, 0.25)',
+            }}
+          >
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: 'uppercase',
+                  color: '#4a3227',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  fontSize: '0.72rem',
+                }}
+              >
+                CAIXA ATUAL
+              </Typography>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  fontWeight: 700,
+                  color: '#2a1420',
+                  my: 0.5,
+                  fontSize: { xs: '1.6rem', sm: '1.9rem' },
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {stats?.balance != null
+                  ? stats.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                  : '—'}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#7fa176', fontWeight: 700, display: 'block', mb: 2 }}>
+                ● Saldo disponível na tesouraria
+              </Typography>
+
+              {stats?.expensesWithoutReceiptTotal != null && stats.expensesWithoutReceiptTotal > 0 && (
+                <Typography variant="caption" sx={{ color: '#c15c71', fontWeight: 700, display: 'block', mt: 1 }}>
+                  ⚠ {stats.expensesWithoutReceiptTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} sem comprovante
+                </Typography>
+              )}
+            </Box>
+
+            <Button
+              size="small"
+              onClick={() => navigate('/admin/finance')}
+              endIcon={<ArrowIcon sx={{ fontSize: 14 }} />}
+              sx={{ color: '#9a3450', fontWeight: 700, p: 0, justifyContent: 'flex-start', mt: 2 }}
+            >
+              Ver tesouraria completa
+            </Button>
+          </Box>
+        </Grid>
+
+        {/* COL 3, LINHA 1: Jovens do Grupo */}
+        <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
+          <Box
+            sx={{
+              bgcolor: '#f7efdd',
+              color: '#2a1420',
+              borderRadius: '16px',
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
+              border: '1px solid rgba(211, 163, 76, 0.25)',
+            }}
+          >
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: 'uppercase',
+                  color: '#4a3227',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  fontSize: '0.72rem',
+                }}
+              >
+                JOVENS DO GRUPO
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, my: 0.5 }}>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontFamily: '"Fraunces", Georgia, serif',
+                    fontWeight: 700,
+                    color: '#2a1420',
+                    fontSize: { xs: '2.2rem', sm: '2.6rem' },
+                    lineHeight: 1,
+                  }}
+                >
+                  {stats?.totalPeople ?? '—'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#4a3227', fontWeight: 600 }}>
+                  cadastrados
+                </Typography>
+              </Box>
+
+              <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                {stats?.activePeople != null && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#4f6b4f', fontWeight: 600 }}>
+                      ● {stats.activePeople} ativos no mês
+                    </Typography>
+                    {stats.totalPeople ? (
+                      <Typography variant="caption" sx={{ color: '#4a3227' }}>
+                        {Math.round((stats.activePeople / stats.totalPeople) * 100)}%
+                      </Typography>
+                    ) : null}
+                  </Box>
+                )}
+                {stats?.newPeople != null && stats.newPeople > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#d3a34c', fontWeight: 600 }}>
+                      ● {stats.newPeople} recém-chegados
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#4a3227' }}>novos</Typography>
+                  </Box>
+                )}
+                {stats?.awayPeople != null && stats.awayPeople > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#c15c71', fontWeight: 600 }}>
+                      ● {stats.awayPeople} sem presença (+30d)
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#9a3450', fontWeight: 700 }}>procurar</Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            <Button
+              size="small"
+              onClick={() => navigate('/admin/people')}
+              endIcon={<ArrowIcon sx={{ fontSize: 14 }} />}
+              sx={{ color: '#9a3450', fontWeight: 700, p: 0, justifyContent: 'flex-start', mt: 2 }}
+            >
+              Ver cadastro de pessoas
+            </Button>
+          </Box>
+        </Grid>
+
+        {/* COL 1-2, LINHA 2: Linha do Tempo / Próximos Eventos */}
+        <Grid size={{ xs: 12, md: 7.5 }}>
+          <Box
+            sx={{
+              bgcolor: '#2f1522',
+              color: '#f4e6e9',
+              borderRadius: '16px',
+              p: 3,
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              border: '1px solid rgba(211, 163, 76, 0.15)',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontFamily: '"Fraunces", serif',
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  color: '#f4e6e9',
+                }}
+              >
+                Linha do Tempo do Semestre
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => navigate('/admin/events')}
+                sx={{ color: '#d3a34c', fontSize: '0.75rem', fontWeight: 700 }}
+              >
+                Ver todos os eventos →
+              </Button>
+            </Box>
+
+            {upcomingEvents.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'space-between' }}>
+                {upcomingEvents.slice(0, 4).map((evt, idx) => (
+                  <Box
+                    key={evt.id}
+                    onClick={() => navigate('/admin/events')}
                     sx={{
-                      mb: { xs: 2, md: 2.5 },
-                      color: 'rgba(255,255,255,0.82)',
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      flex: 1,
+                      bgcolor: '#241019',
+                      p: 2,
+                      borderRadius: 2,
+                      border: idx === 0 ? '1px solid #c15c71' : '1px solid rgba(211, 163, 76, 0.15)',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease',
+                      '&:hover': { transform: 'translateY(-2px)' },
                     }}
                   >
-                    {countdownDays === 1 ? 'dia para o próximo encontro' : 'dias para o próximo encontro'}
-                  </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Box
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          bgcolor: idx === 0 ? '#c15c71' : '#d3a34c',
+                        }}
+                      />
+                      <Typography variant="caption" sx={{ color: '#e2cad2', fontWeight: 700, fontSize: '0.72rem' }}>
+                        {evt.date
+                          ? new Date(evt.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                          : ''}
+                        {evt.startTime ? ` • ${evt.startTime}` : ''}
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontFamily: '"Fraunces", serif',
+                        fontWeight: 600,
+                        color: '#f4e6e9',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.2,
+                        mb: 0.5,
+                      }}
+                    >
+                      {evt.title.split('—')[0]}
+                    </Typography>
+                    {evt.location && (
+                      <Typography variant="caption" sx={{ color: '#e2cad2', fontSize: '0.72rem' }}>
+                        {evt.location.split('—')[0]}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ color: '#f4e6e9', opacity: 0.5 }}>
+                Nenhum evento cadastrado ainda.
+              </Typography>
+            )}
+          </Box>
+        </Grid>
 
-                  <Stack spacing={{ xs: 1, md: 1.25 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.25 } }}>
-                      <ScheduleIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#f1d27a', flexShrink: 0 }} />
+        {/* COL 3, LINHA 2: Avisos e Pendências da Coordenação */}
+        <Grid size={{ xs: 12, md: 4.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+              height: '100%',
+              justifyContent: 'space-between',
+            }}
+          >
+            {/* Card 1: Tarefas atrasadas */}
+            <Box
+              sx={{
+                bgcolor: '#2f1522',
+                color: '#f4e6e9',
+                p: 2,
+                borderRadius: '10px',
+                borderLeft: '4px solid #d3a34c',
+                borderTop: '1px solid rgba(211, 163, 76, 0.12)',
+                borderRight: '1px solid rgba(211, 163, 76, 0.12)',
+                borderBottom: '1px solid rgba(211, 163, 76, 0.12)',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                '&:hover': { bgcolor: '#381c2b' },
+              }}
+              onClick={() => navigate('/admin/tasks')}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <WarningIcon sx={{ color: '#d3a34c', fontSize: 18 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f4e6e9', fontSize: '0.88rem' }}>
+                  {overdueTasks.length > 0
+                    ? `${overdueTasks.length} tarefa${overdueTasks.length > 1 ? 's' : ''} atrasada${overdueTasks.length > 1 ? 's' : ''}`
+                    : 'Nenhuma tarefa atrasada'}
+                </Typography>
+              </Box>
+              {overdueTasks.length > 0 && (
+                <Typography variant="caption" sx={{ color: '#e2cad2', display: 'block', mt: 0.4 }}>
+                  {overdueTasks.slice(0, 2).map((t) => t.title).join(' • ')}
+                  {overdueTasks.length > 2 ? ` e mais ${overdueTasks.length - 2}` : ''}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Card 2: Pendências financeiras */}
+            <Box
+              sx={{
+                bgcolor: '#2f1522',
+                color: '#f4e6e9',
+                p: 2,
+                borderRadius: '10px',
+                borderLeft: '4px solid #c15c71',
+                borderTop: '1px solid rgba(211, 163, 76, 0.12)',
+                borderRight: '1px solid rgba(211, 163, 76, 0.12)',
+                borderBottom: '1px solid rgba(211, 163, 76, 0.12)',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                '&:hover': { bgcolor: '#381c2b' },
+              }}
+              onClick={() => navigate('/admin/finance')}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <WarningIcon sx={{ color: '#c15c71', fontSize: 18 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f4e6e9', fontSize: '0.88rem' }}>
+                  {stats?.expensesWithoutReceiptTotal != null && stats.expensesWithoutReceiptTotal > 0
+                    ? `${stats.expensesWithoutReceiptTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} sem comprovante`
+                    : 'Sem pendências financeiras'}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Card 3: Próximo evento — inscrições */}
+            {nextEvent && (
+              <Box
+                sx={{
+                  bgcolor: '#2f1522',
+                  color: '#f4e6e9',
+                  p: 2,
+                  borderRadius: '10px',
+                  borderLeft: '4px solid #7fa176',
+                  borderTop: '1px solid rgba(211, 163, 76, 0.12)',
+                  borderRight: '1px solid rgba(211, 163, 76, 0.12)',
+                  borderBottom: '1px solid rgba(211, 163, 76, 0.12)',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s ease',
+                  '&:hover': { bgcolor: '#381c2b' },
+                }}
+                onClick={() => navigate('/admin/events')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckIcon sx={{ color: '#7fa176', fontSize: 18 }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f4e6e9', fontSize: '0.88rem' }}>
+                    {nextEvent.title}
+                    {nextEvent.maxParticipants != null
+                      ? ` • ${nextEvent.maxParticipants} vagas`
+                      : ''}
+                  </Typography>
+                </Box>
+                {nextEvent.date && (
+                  <Typography variant="caption" sx={{ color: '#e2cad2', display: 'block', mt: 0.4 }}>
+                    {new Date(nextEvent.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                    {nextEvent.startTime ? ` • ${nextEvent.startTime}` : ''}
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </Box>
+        </Grid>
+
+        {/* LINHA INFERIOR (2 COLUNAS): Checklist do Próximo Evento + Última Reunião */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box
+            sx={{
+              bgcolor: '#f7efdd',
+              color: '#2a1420',
+              p: 3,
+              borderRadius: '16px',
+              border: '1px solid rgba(211, 163, 76, 0.25)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              height: '100%',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, color: '#2a1420' }}>
+                {nextEvent?.title ? `Organização — ${nextEvent.title}` : 'Organização'}
+              </Typography>
+              <Chip label="Checklist" size="small" sx={{ bgcolor: '#efe2c4', fontWeight: 700, color: '#4a3227' }} />
+            </Box>
+
+            {nextEvent?.checklist && nextEvent.checklist.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {nextEvent.checklist.map((item) => (
+                  <Box
+                    key={item.id}
+                    onClick={() => handleToggleEventChecklist(nextEvent.id, item.id)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 0.8,
+                      borderRadius: 1.5,
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: '#efe2c4' },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Checkbox
+                        size="small"
+                        checked={item.completed}
+                        sx={{
+                          color: '#4a3227',
+                          p: 0,
+                          '&.Mui-checked': { color: '#7fa176' },
+                        }}
+                      />
                       <Typography
                         variant="body2"
                         sx={{
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                          lineHeight: 1.4,
+                          color: item.completed ? '#4a3227' : '#2a1420',
+                          textDecoration: item.completed ? 'line-through' : 'none',
+                          fontWeight: item.completed ? 400 : 600,
+                          fontSize: '0.88rem',
                         }}
                       >
-                        {format(stats.nextEvent.date, "EEEE, dd 'de' MMMM", { locale: ptBR })} • {stats.nextEvent.startTime}
+                        {item.title}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.25 } }}>
-                      <LocationOnIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#f1d27a', flexShrink: 0 }} />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        {stats.nextEvent.location}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Box>
-              </Grid>
-            </Grid>
-          </Paper>
-        ) : (
-          <Paper sx={{ borderRadius: 3 }}>
-            <EmptyState
-              title="Nenhum encontro agendado"
-              description="Quando um novo evento for criado, ele ganhará destaque aqui no painel principal."
-            />
-          </Paper>
-        )}
-
-        <Grid container columnSpacing={{ xs: 2, md: 3.5 }} rowSpacing={{ xs: 2.5, md: 3 }}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Stack spacing={2.5}>
-              <Paper sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 2.5 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Atividades recentes
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Últimos movimentos do sistema
-                  </Typography>
-                </Box>
-
-                {recentActivities.length > 0 ? (
-                  <Stack spacing={0.5}>
-                    {recentActivities.map((activity, index) => (
-                      <Box
-                        key={activity.id}
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: '44px 1fr',
-                          gap: 1.5,
-                          pb: index === recentActivities.length - 1 ? 0 : 2.25,
-                          position: 'relative',
-                        }}
-                      >
-                        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                          <Avatar
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              bgcolor: alpha('#1a4731', index % 2 === 0 ? 0.1 : 0.16),
-                            }}
-                          >
-                            {getActivityIcon(activity.icon)}
-                          </Avatar>
-                          {index !== recentActivities.length - 1 && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 38,
-                                width: 2,
-                                bottom: -4,
-                                bgcolor: alpha('#1a4731', 0.16),
-                              }}
-                            />
-                          )}
-                        </Box>
-
-                        <Box
-                          sx={{
-                            pt: 0.2,
-                            pb: 1.6,
-                            borderBottom:
-                              index === recentActivities.length - 1 ? 'none' : `1px dashed ${alpha('#1a4731', 0.14)}`,
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.4 }}>
-                            {activity.description}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {format(activity.timestamp, "dd/MM/yyyy 'às' HH:mm", {
-                              locale: ptBR,
-                            })}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <EmptyState
-                    title="Sem atividades recentes"
-                    description="Assim que houver alterações em membros, eventos ou finanças, elas aparecerão aqui."
-                  />
-                )}
-              </Paper>
-
-              <Paper
-                sx={{
-                  p: { xs: 2, md: 2.75 },
-                  borderRadius: 3.5,
-                  background: 'linear-gradient(135deg, rgba(184,134,11,0.08) 0%, rgba(255,255,255,1) 60%)',
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2.25 }}>
-                  Próximos encontros
-                </Typography>
-                {upcomingEvents.length > 0 ? (
-                  <Stack spacing={2}>
-                    {upcomingEvents.map((event, index) => (
-                      <Box key={event.id} sx={{ ml: index === 1 ? { md: 1.5 } : 0, mr: index === 2 ? { md: 2 } : 0 }}>
-                        <EventCard event={event} />
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <EmptyState
-                    title="Agenda vazia por enquanto"
-                    description="Cadastre novos encontros para montar a programação dos próximos dias."
-                  />
-                )}
-              </Paper>
-            </Stack>
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Stack spacing={2}>
-              <Paper
-                sx={{
-                  p: { xs: 2, md: 2.5 },
-                  borderRadius: 3,
-                  transform: { md: 'translateY(14px)' },
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                  Aniversariantes do mês
-                </Typography>
-
-                {birthdayMembers.length > 0 ? (
-                  <Stack spacing={1.5}>
-                    {birthdayMembers.map((member, index) => (
-                      <Box
-                        key={member.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          p: 1.5,
-                          borderRadius: 2.5,
-                          bgcolor: index % 2 === 0 ? alpha('#d4af37', 0.08) : alpha('#1a4731', 0.05),
-                        }}
-                      >
-                        <Avatar sx={{ bgcolor: alpha('#7a4b1f', 0.12), color: '#7a4b1f', fontWeight: 700 }}>
-                          {member.name?.slice(0, 1).toUpperCase()}
-                        </Avatar>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
-                            {member.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {member.birthDate
-                              ? format(new Date(member.birthDate), "dd 'de' MMMM", { locale: ptBR })
-                              : 'Data não informada'}
-                          </Typography>
-                        </Box>
-                        <CakeIcon sx={{ color: '#c69214' }} />
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <EmptyState
-                    title="Sem aniversariantes cadastrados"
-                    description="Os aniversariantes do mês aparecerão aqui automaticamente."
-                  />
-                )}
-              </Paper>
-
-              <Paper
-                sx={{
-                  p: { xs: 2, md: 2.5 },
-                  borderRadius: 3,
-                  background: 'linear-gradient(180deg, rgba(26,71,49,0.04) 0%, rgba(26,71,49,0.01) 100%)',
-                }}
-              >
-                <Typography variant="body2" sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', mb: 1 }}>
-                  Resumo rápido
-                </Typography>
-                <Stack spacing={1.5}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Encontro mais próximo
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {stats.nextEvent ? stats.nextEvent.title : 'Nenhum encontro agendado'}
-                    </Typography>
+                    {item.assignedTo && (
+                      <Chip
+                        label={item.assignedTo}
+                        size="small"
+                        sx={{ bgcolor: '#efe2c4', color: '#4a3227', fontSize: '0.7rem', height: 20 }}
+                      />
+                    )}
                   </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Data
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ color: '#4a3227', opacity: 0.6 }}>
+                Nenhum item no checklist deste evento.
+              </Typography>
+            )}
+          </Box>
+        </Grid>
+
+        {/* ÚLTIMA REUNIÃO DE LIDERANÇA */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box
+            sx={{
+              bgcolor: '#f7efdd',
+              color: '#2a1420',
+              p: 3,
+              borderRadius: '16px',
+              border: '1px solid rgba(211, 163, 76, 0.25)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              height: '100%',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, color: '#2a1420' }}>
+                Última Reunião da Coordenação
+              </Typography>
+              <Button size="small" onClick={() => navigate('/admin/meetings')} sx={{ color: '#9a3450', fontSize: '0.75rem', fontWeight: 700 }}>
+                Ver atas →
+              </Button>
+            </Box>
+
+            {lastMeeting ? (
+              <>
+                <Typography variant="caption" sx={{ color: '#4a3227', fontWeight: 700, display: 'block', mb: 1.5 }}>
+                  {lastMeeting.date
+                    ? new Date(lastMeeting.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : ''}
+                  {lastMeeting.attendees?.length
+                    ? ` • Presenças: ${lastMeeting.attendees.join(', ')}`
+                    : ''}
+                </Typography>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {lastMeeting.decisions?.map((d, i) => (
+                    <Typography key={i} variant="body2" sx={{ color: '#2a1420', fontSize: '0.88rem' }}>
+                      <strong>Decidido:</strong> {d.text}
                     </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {nextEventDate}
-                    </Typography>
-                  </Box>
-                  {user?.role !== 'member' && (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Caixa atual
+                  ))}
+                  {lastMeeting.generatedTasks && lastMeeting.generatedTasks.length > 0 && (
+                    <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid rgba(107, 83, 71, 0.15)' }}>
+                      <Typography variant="caption" sx={{ color: '#4a3227', fontWeight: 700, display: 'block', mb: 0.5 }}>
+                        TAREFAS GERADAS:
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 700, color: stats.balance >= 0 ? 'success.main' : 'error.main' }}>
-                        {formatCurrency(stats.balance)}
-                      </Typography>
+                      {lastMeeting.generatedTasks.map((t, i) => (
+                        <Typography key={i} variant="caption" sx={{ color: '#2a1420', display: 'block' }}>
+                          • <strong>{t.assignedTo}:</strong> {t.taskTitle}
+                        </Typography>
+                      ))}
                     </Box>
                   )}
-                </Stack>
-              </Paper>
-            </Stack>
-          </Grid>
+                </Box>
+              </>
+            ) : (
+              <Typography variant="body2" sx={{ color: '#4a3227', opacity: 0.6 }}>
+                Nenhuma reunião registrada ainda.
+              </Typography>
+            )}
+          </Box>
         </Grid>
-      </Box>
-    </Container>
+      </Grid>
+    </Box>
   );
 };
 
 export default Dashboard;
-

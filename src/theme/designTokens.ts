@@ -1,4 +1,25 @@
 export const designTokens = {
+  colors: {
+    bg: '#241019',
+    bgSoft: '#2f1522',
+    onBg: '#ffffff',
+    onBgDim: '#e2cad2',
+    surface: '#f7efdd',
+    surface2: '#efe2c4',
+    ink: '#1c0c15',
+    inkDim: '#4a3227',
+    rose: '#c15c71',
+    roseDeep: '#9a3450',
+    gold: '#d3a34c',
+    sage: '#7fa176',
+    sageDeep: '#4f6b4f',
+  },
+
+  fonts: {
+    serif: '"Fraunces", Georgia, serif',
+    sans: '"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+
   spacing: {
     xs: 4,
     sm: 8,
@@ -8,23 +29,17 @@ export const designTokens = {
     xxl: 48,
   },
 
-  borderWidth: {
-    thin: 1,
-    medium: 2,
-    thick: 3,
-  },
-
-  iconSizes: {
-    sm: 20,
-    md: 24,
-    lg: 32,
-    xl: 48,
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
   },
 
   elevation: {
-    low: '0 2px 4px rgba(26, 71, 49, 0.08)',
-    medium: '0 4px 8px rgba(26, 71, 49, 0.12)',
-    high: '0 8px 16px rgba(26, 71, 49, 0.16)',
+    card: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    raised: '0 4px 16px rgba(0, 0, 0, 0.2)',
   },
 };
 

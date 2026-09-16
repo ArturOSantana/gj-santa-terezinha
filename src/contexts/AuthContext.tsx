@@ -25,11 +25,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } else {
             // Se getCurrentUser retorna null, significa que o documento não existe
             // Não definir role automaticamente - deixar o sistema criar o documento primeiro
-            console.warn('⚠️ Documento do usuário não encontrado no Firestore:', firebaseUser.uid);
+            console.warn('[AuthContext] Documento do usuário não encontrado no Firestore:', firebaseUser.uid);
             setUser(null);
           }
         } catch (error) {
-          console.error('❌ Erro ao carregar dados do usuário:', error);
+          console.error('[AuthContext] Erro ao carregar dados do usuário:', error);
           // Em caso de erro, não assumir role - deixar null para forçar recriação
           setUser(null);
         }
@@ -55,25 +55,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: string,
     password: string,
     displayName: string,
-    phone: string,
-    birthDate: Date,
-    gender: 'male' | 'female',
-    whatsappConsent: boolean = true,
-    emailConsent: boolean = true
+    _phone?: string,
+    _birthDate?: Date,
+    _gender?: 'male' | 'female',
+    _whatsappConsent: boolean = true,
+    _emailConsent: boolean = true
   ): Promise<void> => {
     try {
-      const authUser = await authService.signUp(
-        email,
-        password,
-        displayName,
-        phone,
-        birthDate,
-        gender,
-        'member',
-        whatsappConsent,
-        emailConsent
-      );
-      setUser(authUser);
+      // Auto-cadastro cria conta com role 'pending' — sem acesso ao painel até aprovação por Admin
+      const created = await authService.createOperatorUser(email, password, displayName, 'pending');
+      const operatorDoc = await authService.getUserOperatorDoc(created.uid);
+      if (operatorDoc) {
+        setUser({
+          uid: created.uid,
+          email,
+          displayName,
+          role: operatorDoc.role,
+        });
+      }
     } catch (error) {
       throw error;
     }

@@ -43,8 +43,10 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
         height: '100%',
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: { xs: 2, md: 2.5 },
-        background: `linear-gradient(135deg, ${alpha(cardColor, 0.02)} 0%, transparent 100%)`,
+        borderRadius: 3,
+        bgcolor: '#f7efdd',
+        border: '1px solid rgba(211, 163, 76, 0.3)',
+        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
         transition: 'all 0.3s ease',
         '&::before': {
           content: '""',
@@ -52,7 +54,7 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
           top: 0,
           left: 0,
           right: 0,
-          height: { xs: 3, md: 4 },
+          height: 4,
           background: `linear-gradient(90deg, ${cardColor} 0%, ${colorLight} 100%)`,
         },
         '&::after': {
@@ -65,28 +67,27 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
           backgroundImage: 'url(/src/assets/brasao-gj.png)',
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.03,
+          opacity: 0.05,
           pointerEvents: 'none',
         },
         '&:hover': {
-          transform: { xs: 'none', md: 'translateY(-4px)' },
-          boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
+          transform: { xs: 'none', md: 'translateY(-3px)' },
+          boxShadow: '0 8px 20px rgba(0, 0, 0, 0.22)',
         },
       }}
     >
-      <CardContent sx={{ p: { xs: 1.75, sm: 2.25, md: 2.5 }, position: 'relative', zIndex: 1 }}>
+      <CardContent sx={{ p: { xs: 2, sm: 2.25, md: 2.5 }, position: 'relative', zIndex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: { xs: 1.5, sm: 2 } }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="body2"
-              color="text.secondary"
               gutterBottom
               sx={{
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.72rem' },
+                fontSize: { xs: '0.68rem', sm: '0.72rem' },
                 letterSpacing: '0.08em',
-                fontFamily: 'Montserrat, sans-serif',
+                color: '#6b5347',
                 lineHeight: 1.3,
               }}
             >
@@ -96,13 +97,13 @@ const StatCard = ({ title, value, icon, color = 'primary', trend }: StatCardProp
               variant="h4"
               component="div"
               sx={{
-                fontWeight: 700,
-                color: 'text.primary',
+                fontWeight: 800,
+                color: '#2a1420',
                 mb: trend ? { xs: 0.75, md: 1 } : 0,
-                fontSize: { xs: '1.35rem', sm: '1.6rem', md: '2rem' },
+                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2.1rem' },
                 lineHeight: 1.15,
                 wordBreak: 'break-word',
-                fontFamily: 'Merriweather, serif',
+                fontFamily: '"Fraunces", Georgia, serif',
               }}
             >
               {value}

@@ -13,63 +13,53 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  Chip,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
+  Home as HomeIcon,
   CalendarMonth as CalendarIcon,
-  AttachMoney as MoneyIcon,
+  ConfirmationNumber as EventsIcon,
   People as PeopleIcon,
-  ManageAccounts as ManageAccountsIcon,
-  Favorite as FavoriteIcon,
-  Campaign as CampaignIcon,
+  CheckCircle as AttendanceIcon,
+  Groups as TeamsIcon,
+  AccountBalanceWallet as FinanceIcon,
+  FormatListNumbered as TasksIcon,
+  Description as MeetingsIcon,
+  FolderOpen as DocumentsIcon,
+  BarChart as ReportsIcon,
+  OpenInNew as ExternalIcon,
+  Church as ChurchIcon,
+  TuneRounded as PublicPageIcon,
+  ManageAccounts as UsersIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserMenu } from './UserMenu';
-import { UserRole } from '../../types';
-import brasaoGJ from '../../assets/brasao-gj.png';
 
-const drawerWidth = 264;
+const drawerWidth = 260;
 
-const menuItemsByRole: Record<UserRole, Array<{
-  text: string;
-  icon: ReactElement;
-  path: string;
-}>> = {
-  admin: [
-    { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },
-    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
-    { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
-    { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
-    { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
-    { text: 'Boa Nova', icon: <CampaignIcon />, path: '/boanova' },
-    { text: 'Usuários', icon: <ManageAccountsIcon />, path: '/users' },
-  ],
-  coordinator: [
-    { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },
-    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
-    { text: 'Finanças', icon: <MoneyIcon />, path: '/finance' },
-    { text: 'Membros', icon: <PeopleIcon />, path: '/members' },
-    { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
-    { text: 'Boa Nova', icon: <CampaignIcon />, path: '/boanova' },
-  ],
-  member: [
-    { text: 'Visão Geral', icon: <DashboardIcon />, path: '/' },
-    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
-    { text: 'Contribuições', icon: <FavoriteIcon />, path: '/contributions' },
-  ],
-};
+const menuItems = [
+  { text: 'Início', icon: <HomeIcon />, path: '/admin', adminOnly: false },
+  { text: 'Agenda', icon: <CalendarIcon />, path: '/admin/calendar', adminOnly: false },
+  { text: 'Eventos', icon: <EventsIcon />, path: '/admin/events', adminOnly: false },
+  { text: 'Jovens', icon: <PeopleIcon />, path: '/admin/people', adminOnly: false },
+  { text: 'Presenças', icon: <AttendanceIcon />, path: '/admin/attendance', adminOnly: false },
+  { text: 'Equipes & Escalas', icon: <TeamsIcon />, path: '/admin/schedules', adminOnly: false },
+  { text: 'Financeiro', icon: <FinanceIcon />, path: '/admin/finance', adminOnly: false },
+  { text: 'Tarefas', icon: <TasksIcon />, path: '/admin/tasks', adminOnly: false },
+  { text: 'Reuniões', icon: <MeetingsIcon />, path: '/admin/meetings', adminOnly: false },
+  { text: 'Documentos', icon: <DocumentsIcon />, path: '/admin/documents', adminOnly: false },
+  { text: 'Relatórios', icon: <ReportsIcon />, path: '/admin/reports', adminOnly: false },
+  { text: 'Usuários', icon: <UsersIcon />, path: '/admin/users', adminOnly: true },
+  { text: 'Página Pública', icon: <PublicPageIcon />, path: '/admin/public-page', adminOnly: true },
+];
 
-const Layout = () => {
+export const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-
-  const menuItems = useMemo(() => {
-    if (!user) return [];
-    return menuItemsByRole[user.role] || [];
-  }, [user]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -86,223 +76,222 @@ const Layout = () => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#1a4731',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.05,
-          pointerEvents: 'none',
-          background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.03) 10px, rgba(255, 255, 255, 0.03) 20px)',
-        },
+        bgcolor: '#241019',
+        borderRight: '1px solid rgba(211, 163, 76, 0.15)',
       }}
     >
+      {/* Brand Header */}
       <Box
         sx={{
-          background: 'linear-gradient(180deg, #1a4731 0%, #2d6b4a 100%)',
-          p: 3,
+          p: 2.5,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          position: 'relative',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            inset: 0,
-            opacity: 0.05,
-            pointerEvents: 'none',
-            background: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.03) 10px, rgba(255, 255, 255, 0.03) 20px)',
-          },
+          gap: 1.5,
+          borderBottom: '1px solid rgba(211, 163, 76, 0.12)',
         }}
       >
         <Box
           sx={{
-            p: 1,
-            border: '2px solid',
-            borderColor: 'secondary.main',
-            borderRadius: 2,
-            background: 'rgba(255, 255, 255, 0.1)',
-            mb: 2,
-            position: 'relative',
-            zIndex: 1,
+            width: 38,
+            height: 38,
+            borderRadius: '10px',
+            bgcolor: 'rgba(193, 92, 113, 0.2)',
+            border: '1px solid rgba(193, 92, 113, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
-          <img
-            src={brasaoGJ}
-            alt="Brasão GJ"
-            style={{
-              width: 80,
-              height: 80,
-              objectFit: 'contain',
-            }}
-          />
+          <ChurchIcon sx={{ color: '#c15c71', fontSize: 20 }} />
         </Box>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            textAlign: 'center',
-            color: 'white',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          GJ Santa Terezinha
-        </Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: '1.15rem',
+              fontWeight: 700,
+              color: '#f4e6e9',
+              lineHeight: 1.1,
+            }}
+          >
+            GJ Santa Terezinha
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#e2cad2',
+              fontSize: '0.75rem',
+              display: 'block',
+              mt: 0.2,
+            }}
+          >
+            Painel da Coordenação
+          </Typography>
+        </Box>
       </Box>
 
-      <List sx={{ pt: 2, px: 2, flexGrow: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-              sx={{
-                minHeight: 48,
-                px: 2,
-                py: 1.5,
-                borderRadius: 1,
-                border: '1px solid transparent',
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.08)',
-                  borderColor: 'rgba(184, 134, 11, 0.3)',
-                  transform: 'translateX(4px)',
-                },
-                '&.Mui-selected': {
-                  bgcolor: 'rgba(184, 134, 11, 0.15)',
-                  borderLeftWidth: '4px',
-                  borderLeftStyle: 'solid',
-                  borderLeftColor: 'secondary.main',
-                  background: 'linear-gradient(90deg, rgba(184, 134, 11, 0.2) 0%, rgba(184, 134, 11, 0.05) 100%)',
-                  '& .MuiListItemIcon-root': {
-                    color: 'secondary.main',
-                  },
-                  '& .MuiListItemText-primary': {
-                    fontWeight: 700,
-                    color: 'white',
-                  },
+
+      {/* Menu Principal */}
+      <List sx={{ pt: 1.5, px: 1.5, flexGrow: 1, overflowY: 'auto' }}>
+        {menuItems.filter((item) => !item.adminOnly || user?.role === 'admin').map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                selected={isActive}
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  minHeight: 40,
+                  px: 1.5,
+                  py: 0.8,
+                  borderRadius: '8px',
+                  position: 'relative',
+                  transition: 'all 0.18s ease',
+                  bgcolor: isActive ? '#2f1522' : 'transparent',
+                  borderLeft: isActive ? '3px solid #d3a34c' : '3px solid transparent',
                   '&:hover': {
-                    bgcolor: 'rgba(184, 134, 11, 0.2)',
-                    transform: 'translateX(4px)',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'rgba(255, 255, 255, 0.7)', transition: 'color 0.3s ease' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                slotProps={{
-                  primary: {
-                    sx: {
-                      fontSize: '0.95rem',
-                      fontWeight: location.pathname === item.path ? 700 : 500,
-                      color: location.pathname === item.path ? 'white' : 'rgba(255, 255, 255, 0.85)',
-                    },
+                    bgcolor: '#2f1522',
                   },
                 }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 34,
+                    color: isActive ? '#d3a34c' : '#e2cad2',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  slotProps={{
+                    primary: {
+                      sx: {
+                        fontSize: '0.88rem',
+                        fontWeight: isActive ? 700 : 500,
+                        color: isActive ? '#f4e6e9' : '#e2cad2',
+                      },
+                    },
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
+
+      {/* Footer Info Paróquia */}
+      <Box
+        sx={{
+          p: 2,
+          borderTop: '1px solid rgba(211, 163, 76, 0.1)',
+          bgcolor: '#1d0b14',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box>
+          <Typography variant="caption" sx={{ color: '#e2cad2', display: 'block', fontWeight: 600 }}>
+            GJ Santa Terezinha
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#7fa176', fontSize: '0.7rem' }}>
+            ● Google Agenda Conectado
+          </Typography>
+        </Box>
+        <Chip label="v2.0" size="small" sx={{ bgcolor: 'rgba(211, 163, 76, 0.15)', color: '#d3a34c', height: 20, fontSize: '0.65rem' }} />
+      </Box>
     </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#241019' }}>
       <CssBaseline />
 
+      {/* TopBar */}
       <AppBar
         position="fixed"
-        color="inherit"
         elevation={0}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          bgcolor: 'background.paper',
-          boxShadow: '0 2px 8px rgba(26, 71, 49, 0.08)',
-          borderBottom: '1px solid',
-          borderColor: 'rgba(26, 71, 49, 0.1)',
+          bgcolor: '#241019',
+          borderBottom: '1px solid rgba(211, 163, 76, 0.15)',
         }}
       >
-        <Toolbar
-          sx={{
-            minHeight: { xs: 64, sm: 72 },
-            px: { xs: 2, sm: 3 },
-          }}
-        >
+        <Toolbar sx={{ minHeight: { xs: 58, sm: 64 }, px: { xs: 2, sm: 3 } }}>
           <IconButton
-            color="primary"
-            aria-label="Abrir menu"
+            color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{
-              mr: 2,
-              display: { sm: 'none' },
-              border: '1px solid',
-              borderColor: 'primary.main',
-              '&:hover': {
-                bgcolor: 'rgba(26, 71, 49, 0.08)',
-              },
-            }}
+            sx={{ mr: 2, display: { sm: 'none' }, color: '#e2cad2' }}
           >
             <MenuIcon />
           </IconButton>
 
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography
-              variant="h6"
-              noWrap
-              component="div"
+              variant="subtitle1"
               sx={{
-                fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                fontWeight: 700,
-                color: 'primary.main',
-                letterSpacing: '0.02em',
+                fontWeight: 600,
+                color: '#f4e6e9',
+                display: { xs: 'none', md: 'block' },
+                fontSize: '0.9rem',
               }}
             >
-              GJ Santa Terezinha
+              Paróquia Santa Terezinha
             </Typography>
-            <Typography
-              variant="body2"
-              noWrap
+          </Box>
+
+          {/* Links Públicos rápidos para WhatsApp */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1.5, mr: 2 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => window.open('/p/agenda', '_blank')}
+              endIcon={<ExternalIcon sx={{ fontSize: 14 }} />}
               sx={{
-                display: { xs: 'none', sm: 'block' },
-                color: 'text.secondary',
-                fontSize: '0.875rem',
+                borderColor: 'rgba(211, 163, 76, 0.3)',
+                color: '#d3a34c',
+                fontSize: '0.75rem',
+                textTransform: 'none',
               }}
             >
-              Sistema de Gestão
-            </Typography>
+              Agenda Pública
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => window.open('/', '_blank')}
+              endIcon={<ExternalIcon sx={{ fontSize: 14 }} />}
+              sx={{
+                borderColor: 'rgba(193, 92, 113, 0.4)',
+                color: '#f4e6e9',
+                bgcolor: 'rgba(193, 92, 113, 0.15)',
+                fontSize: '0.75rem',
+                textTransform: 'none',
+              }}
+            >
+              Página Pública
+            </Button>
           </Box>
 
           <UserMenu />
         </Toolbar>
       </AppBar>
 
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
+      {/* Drawers */}
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              borderRight: 'none',
-            },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
         >
           {drawer}
@@ -312,13 +301,7 @@ const Layout = () => {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              backgroundImage: 'none',
-            },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
           open
         >
@@ -326,21 +309,20 @@ const Layout = () => {
         </Drawer>
       </Box>
 
+      {/* Main Container */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          bgcolor: 'background.default',
+          bgcolor: '#241019',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: 64, sm: 72 } }} />
-        <Box
-          sx={{
-            px: { xs: 2, sm: 3, md: 4 },
-            py: { xs: 2.5, sm: 3 },
-          }}
-        >
+        <Toolbar sx={{ minHeight: { xs: 58, sm: 64 } }} />
+        <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, flexGrow: 1 }}>
           <Outlet />
         </Box>
       </Box>
@@ -349,4 +331,3 @@ const Layout = () => {
 };
 
 export default Layout;
-

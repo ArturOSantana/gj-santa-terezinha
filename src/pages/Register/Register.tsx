@@ -22,6 +22,8 @@ import {
 import {
   Visibility,
   VisibilityOff,
+  Campaign as CampaignIcon,
+  Lightbulb as LightbulbIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -138,56 +140,24 @@ export const Register: React.FC = () => {
         px: { xs: 2, sm: 3 },
         py: { xs: 3, sm: 4 },
         position: 'relative',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #efe7d8 0%, #e4d7bf 50%, #d9c7aa 100%)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url(${brasaoGJ})`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          backgroundSize: { xs: '300px', sm: '380px', md: '460px' },
-          opacity: 0.03,
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'radial-gradient(circle at 18% 16%, rgba(26,71,49,0.08) 0, transparent 22%), radial-gradient(circle at 82% 72%, rgba(184,134,11,0.12) 0, transparent 18%), linear-gradient(to right, rgba(30,30,30,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(30,30,30,0.035) 1px, transparent 1px)',
-          backgroundSize: 'auto, auto, 30px 30px, 30px 30px',
-        },
+        background: '#f8f4ec',
       }}
     >
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center' }}>
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 2.5, sm: 3.5, md: 4.5 },
+            width: '100%',
+            p: { xs: 3, sm: 4 },
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            borderRadius: { xs: 3, md: 4 },
-            maxWidth: 520,
-            mr: { md: 2 },
-            ml: 'auto',
-            bgcolor: 'rgba(253, 249, 242, 0.95)',
+            borderRadius: 3,
+            maxWidth: 500,
+            bgcolor: '#ffffff',
             border: '1px solid rgba(122, 75, 31, 0.14)',
-            boxShadow: '0 20px 48px rgba(122, 75, 31, 0.12)',
-            backdropFilter: 'blur(14px)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
             position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: -34,
-              bottom: -42,
-              width: 140,
-              height: 140,
-              borderRadius: '50%',
-              background: 'rgba(184, 134, 11, 0.08)',
-            },
           }}
         >
           <Box sx={{ width: '100%', position: 'relative', zIndex: 1 }}>
@@ -456,10 +426,10 @@ export const Register: React.FC = () => {
                     mb: 1,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 0.5,
+                    gap: 0.75,
                   }}
                 >
-                  📢 Comunicação do GJ
+                  <CampaignIcon sx={{ fontSize: 18 }} /> Comunicação do GJ
                 </Typography>
 
                 <Typography
@@ -527,9 +497,9 @@ export const Register: React.FC = () => {
                   variant="caption"
                   component="div"
                   color="text.secondary"
-                  sx={{ mt: 1.5, fontSize: '0.75rem', fontStyle: 'italic' }}
+                  sx={{ mt: 1.5, fontSize: '0.75rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 0.5 }}
                 >
-                  💡 Você pode alterar essas preferências a qualquer momento no seu perfil.
+                  <LightbulbIcon sx={{ fontSize: 14, color: 'text.secondary' }} /> Você pode alterar essas preferências a qualquer momento no seu perfil.
                 </Typography>
               </Box>
 
@@ -538,14 +508,15 @@ export const Register: React.FC = () => {
                 fullWidth
                 variant="contained"
                 sx={{
-                  mt: 3.5,
-                  mb: 2.25,
-                  py: 1.5,
-                  borderRadius: 2.75,
-                  background: 'linear-gradient(135deg, #7a4b1f 0%, #b8860b 100%)',
-                  boxShadow: '0 12px 28px rgba(122, 75, 31, 0.18)',
+                  mt: 3,
+                  mb: 2,
+                  py: 1.25,
+                  borderRadius: 2,
+                  bgcolor: '#7a4b1f',
+                  boxShadow: 'none',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #633b17 0%, #9c7107 100%)',
+                    bgcolor: '#633b17',
+                    boxShadow: 'none',
                   },
                 }}
                 disabled={loading}

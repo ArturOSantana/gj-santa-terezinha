@@ -38,9 +38,9 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
     const color = categoryInfo?.color || '#757575';
     
     let CategoryIcon = EventIcon;
-    if (category === EventCategory.SOLEMNITY) CategoryIcon = CelebrationIcon;
-    else if (category === EventCategory.SAINT_DAY || category === EventCategory.NOVENA) CategoryIcon = ChurchIcon;
-    else if (category === EventCategory.GJ_MEETING || category === EventCategory.PARISH_EVENT) CategoryIcon = GroupsIcon;
+    if (category === EventCategory.MASS) CategoryIcon = ChurchIcon;
+    else if (category === EventCategory.RETREAT) CategoryIcon = CelebrationIcon;
+    else if (category === EventCategory.GJ_MEETING || category === EventCategory.MEETING || category === EventCategory.LEADERSHIP_MEETING) CategoryIcon = GroupsIcon;
     
     return {
       label: categoryInfo?.label || 'Evento',
@@ -77,19 +77,22 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
     <Card
       sx={{
         height: '100%',
-        borderRadius: { xs: 2, md: 2.5 },
+        borderRadius: '12px',
+        bgcolor: '#ffffff',
+        border: '1px solid rgba(211, 163, 76, 0.25)',
         overflow: 'hidden',
-        transition: 'all 0.3s ease',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
         '&:hover': {
           transform: { xs: 'none', md: 'translateY(-2px)' },
-          boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.12)}`,
+          boxShadow: '0 6px 14px rgba(0, 0, 0, 0.14)',
         },
       }}
     >
       <Box
         sx={{
-          background: `linear-gradient(135deg, ${categoryConfig.color} 0%, ${alpha(categoryConfig.color, 0.7)} 100%)`,
-          p: { xs: 1.5, sm: 2 },
+          background: `linear-gradient(135deg, ${categoryConfig.color} 0%, ${alpha(categoryConfig.color, 0.85)} 100%)`,
+          p: { xs: 1.5, sm: 1.75 },
           display: 'flex',
           alignItems: 'center',
           gap: { xs: 1.5, sm: 2 },
@@ -98,32 +101,32 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
       >
         <Box
           sx={{
-            width: { xs: 40, sm: 48 },
-            height: { xs: 40, sm: 48 },
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
+            width: { xs: 38, sm: 44 },
+            height: { xs: 38, sm: 44 },
+            borderRadius: '10px',
+            background: 'rgba(255, 255, 255, 0.22)',
+            backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
           }}
         >
-          <CategoryIconComponent sx={{ fontSize: { xs: 22, sm: 28 }, color: 'white' }} />
+          <CategoryIconComponent sx={{ fontSize: { xs: 20, sm: 24 }, color: '#ffffff' }} />
         </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
             variant="h6"
             sx={{
-              color: 'white',
+              color: '#ffffff',
               fontWeight: 700,
-              fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.1rem' },
+              fontSize: { xs: '0.95rem', sm: '1.05rem' },
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              fontFamily: 'Merriweather, serif',
-              lineHeight: 1.3,
+              fontFamily: '"Fraunces", Georgia, serif',
+              lineHeight: 1.2,
             }}
           >
             {event.title}
@@ -133,9 +136,9 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
             size="small"
             sx={{
               mt: 0.5,
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              color: 'white',
-              fontWeight: 600,
+              backgroundColor: 'rgba(255, 255, 255, 0.28)',
+              color: '#ffffff',
+              fontWeight: 700,
               fontSize: { xs: '0.65rem', sm: '0.7rem' },
               height: { xs: 18, sm: 20 },
             }}
@@ -149,10 +152,10 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
                 size="small"
                 onClick={() => onEdit?.(event)}
                 sx={{
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
                   },
                 }}
               >
@@ -164,10 +167,10 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
                 size="small"
                 onClick={() => onDelete?.(event.id)}
                 sx={{
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
                   },
                 }}
               >
@@ -178,111 +181,114 @@ const EventCard = ({ event, onEdit, onDelete, showActions = false }: EventCardPr
         )}
       </Box>
 
-      <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{
-            mb: { xs: 1.5, sm: 2 },
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            minHeight: '2.5em',
-            fontSize: { xs: '0.8rem', sm: '0.875rem' },
-            lineHeight: 1.5,
-          }}
-        >
-          {event.description}
-        </Typography>
+      <Box sx={{ p: { xs: 1.5, sm: 1.75 } }}>
+        {event.description && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#6b5347',
+              mb: 1.5,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              fontSize: { xs: '0.8rem', sm: '0.85rem' },
+              lineHeight: 1.4,
+            }}
+          >
+            {event.description}
+          </Typography>
+        )}
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box
               sx={{
-                width: { xs: 28, sm: 32 },
-                height: { xs: 28, sm: 32 },
-                borderRadius: '50%',
-                backgroundColor: alpha(categoryConfig.color, 0.1),
+                width: 28,
+                height: 28,
+                borderRadius: '6px',
+                backgroundColor: alpha(categoryConfig.color, 0.12),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              <TimeIcon sx={{ fontSize: { xs: 14, sm: 16 }, color: categoryConfig.color }} />
+              <TimeIcon sx={{ fontSize: 15, color: categoryConfig.color }} />
             </Box>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Box sx={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
               <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                variant="body2"
+                sx={{ fontWeight: 700, color: '#2a1420', fontSize: { xs: '0.8rem', sm: '0.85rem' }, textTransform: 'capitalize' }}
               >
-                {dayOfWeek}
+                {dayOfWeek},
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                sx={{ fontWeight: 600, color: '#2a1420', fontSize: { xs: '0.8rem', sm: '0.85rem' } }}
               >
                 {formattedDate}
               </Typography>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box
               sx={{
-                width: { xs: 28, sm: 32 },
-                height: { xs: 28, sm: 32 },
-                borderRadius: '50%',
-                backgroundColor: alpha(categoryConfig.color, 0.1),
+                width: 28,
+                height: 28,
+                borderRadius: '6px',
+                backgroundColor: alpha(categoryConfig.color, 0.12),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              <TimeIcon sx={{ fontSize: { xs: 14, sm: 16 }, color: categoryConfig.color }} />
+              <TimeIcon sx={{ fontSize: 15, color: categoryConfig.color }} />
             </Box>
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+              sx={{ fontWeight: 600, color: '#2a1420', fontSize: { xs: '0.8rem', sm: '0.85rem' } }}
             >
-              {event.startTime} - {event.endTime}
+              {event.startTime} {event.endTime ? `às ${event.endTime}` : ''}
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 } }}>
-            <Box
-              sx={{
-                width: { xs: 28, sm: 32 },
-                height: { xs: 28, sm: 32 },
-                borderRadius: '50%',
-                backgroundColor: alpha(categoryConfig.color, 0.1),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <LocationIcon sx={{ fontSize: { xs: 14, sm: 16 }, color: categoryConfig.color }} />
+          {event.location && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '6px',
+                  backgroundColor: alpha(categoryConfig.color, 0.12),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <LocationIcon sx={{ fontSize: 15, color: categoryConfig.color }} />
+              </Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: '#2a1420',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {event.location}
+              </Typography>
             </Box>
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 600,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              {event.location}
-            </Typography>
-          </Box>
+          )}
         </Box>
       </Box>
     </Card>

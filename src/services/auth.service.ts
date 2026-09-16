@@ -12,84 +12,35 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
-import { User, Member, UserRole, AuthUser, MemberStatus } from '../types';
+import { UserRole, AuthUser } from '../types';
 
-const MAIN_ADMIN_EMAIL = 'admin@gj.com';
-
-const getDefaultRoleByEmail = (email: string | null | undefined): UserRole => {
-  return email?.toLowerCase() === MAIN_ADMIN_EMAIL ? 'admin' : 'member';
-};
-
-const ensureMemberDocument = async (user: {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL?: string | null;
-}): Promise<{ role: UserRole; gender?: 'male' | 'female' }> => {
-  const memberRef = doc(db, 'members', user.uid);
-  const memberDoc = await getDoc(memberRef);
-
-  if (memberDoc.exists()) {
-    const memberData = memberDoc.data() as Member;
-    return {
-      role: memberData.role,
-      gender: memberData.gender,
-    };
-  }
-
-  const fallbackRole = getDefaultRoleByEmail(user.email);
-  const now = serverTimestamp();
-
-  await setDoc(memberRef, {
-    id: user.uid,
-    name: user.displayName || user.email?.split('@')[0] || 'Usuário',
-    email: user.email,
-    phone: '',
-    birthDate: null,
-    gender: null,
-    joinDate: now,
-    status: MemberStatus.ACTIVE,
-    role: fallbackRole,
-    photoUrl: user.photoURL || null,
-    createdAt: now,
-    updatedAt: now,
-    lastLogin: now,
-  });
-
-  return {
-    role: fallbackRole,
-    gender: undefined,
-  };
-};
-
-const isFirestoreAvailable = async (): Promise<boolean> => {
+/**
+ * Busca o registro de usuário operador em `users/{uid}`.
+ * Princípio fail-closed: Se o documento não existir, acesso é negado (sem auto-criação de conta).
+ */
+export const getUserOperatorDoc = async (uid: string): Promise<{
+  role: UserRole;
+  personId?: string;
+  name: string;
+  email: string;
+} | null> => {
   try {
-    return !!db;
-  } catch (error: any) {
-    console.warn('Firestore não disponível:', error.message);
-    return false;
-  }
-};
-
-const getUserRole = async (uid: string): Promise<UserRole | null> => {
-  try {
-    const memberDoc = await getDoc(doc(db, 'members', uid));
-    
-    if (memberDoc.exists()) {
-      const role = memberDoc.data().role as UserRole;
-      console.log(`✅ Role obtido do Firestore para ${uid}:`, role);
-      return role;
+    const userDocRef = doc(db, 'users', uid);
+    const snap = await getDoc(userDocRef);
+    if (!snap.exists()) {
+      return null;
     }
-    
-    // Se o documento não existe, retorna null para indicar que não há role definido
-    console.warn(`⚠️ Documento não encontrado para ${uid}, role não definido`);
-    return null;
+    const data = snap.data();
+    return {
+      role: data.role as UserRole,
+      personId: data.personId,
+      name: data.name || 'Operador',
+      email: data.email || '',
+    };
   } catch (error) {
-    console.error('❌ Erro ao obter role do Firestore:', error);
-    // Em caso de erro, retorna null para indicar falha
+    console.error('Erro ao buscar operador em users/{uid}:', error);
     return null;
   }
 };
@@ -106,48 +57,35 @@ export const signIn = async (
     );
 
     const user = userCredential.user;
-    let role: UserRole | null = null;
-    let gender: 'male' | 'female' | undefined;
+    const operatorDoc = await getUserOperatorDoc(user.uid);
 
-    if (await isFirestoreAvailable()) {
-      try {
-        const ensuredMember = await ensureMemberDocument({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-        });
-
-        role = ensuredMember.role;
-        gender = ensuredMember.gender;
-
-        await updateDoc(doc(db, 'members', user.uid), {
-          lastLogin: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      } catch (error) {
-        console.error('Erro ao buscar Firestore:', error);
-        throw error;
-      }
-    } else {
-      const fetchedRole = await getUserRole(user.uid);
-      if (!fetchedRole) {
-        throw new Error('Não foi possível obter as permissões do usuário.');
-      }
-      role = fetchedRole;
+    if (!operatorDoc || !operatorDoc.role) {
+      // Se não há documento de usuário provisionado na liderança, encerra a sessão imediatamente (fail-closed)
+      await firebaseSignOut(auth);
+      throw new Error('Acesso restrito à liderança do Grupo de Jovens. Solicite seu cadastro à coordenação geral.');
     }
 
-    if (!role) {
-      throw new Error('Role do usuário não definido.');
+    if (operatorDoc.role === 'pending') {
+      // Conta criada mas ainda não aprovada por um Admin
+      await firebaseSignOut(auth);
+      throw new Error('Sua conta aguarda aprovação da coordenação. Aguarde o contato da liderança.');
+    }
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        lastLogin: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.warn('Não foi possível atualizar lastLogin do operador:', e);
     }
 
     return {
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName || email.split('@')[0],
+      displayName: operatorDoc.name || user.displayName || email.split('@')[0],
       photoURL: user.photoURL,
-      role: role,
-      gender: gender,
+      role: operatorDoc.role,
     };
   } catch (error: any) {
     console.error('Erro ao fazer login:', error);
@@ -155,94 +93,37 @@ export const signIn = async (
   }
 };
 
-export const signUp = async (
+/**
+ * Criação de novo operador administrativo no painel do grupo.
+ * Exclusivo para ser invocado por administradores.
+ */
+export const createOperatorUser = async (
   email: string,
-  password: string,
-  displayName: string,
-  phone: string,
-  birthDate: Date,
-  gender: 'male' | 'female',
-  role: UserRole = 'member',
-  whatsappConsent: boolean = true,
-  emailConsent: boolean = true
-): Promise<AuthUser> => {
-  try {
-    const userCredential: UserCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+  pass: string,
+  name: string,
+  role: UserRole,
+  personId?: string
+): Promise<{ uid: string }> => {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+  const uid = userCredential.user.uid;
 
-    await updateProfile(userCredential.user, {
-      displayName,
-    });
+  await updateProfile(userCredential.user, {
+    displayName: name,
+  });
 
-    const user = userCredential.user;
-    
-    // Todos os novos usuários entram como 'member' por padrão
-    const finalRole = role;
+  const now = serverTimestamp();
+  await setDoc(doc(db, 'users', uid), {
+    id: uid,
+    personId: personId || null,
+    name,
+    email,
+    role,
+    createdAt: now,
+    updatedAt: now,
+    lastLogin: null,
+  });
 
-    if (await isFirestoreAvailable()) {
-      try {
-        // Converter birthDate para Timestamp do Firestore
-        const birthDateTimestamp = Timestamp.fromDate(birthDate);
-        const now = serverTimestamp();
-        
-        // Criar documento na coleção 'members' (não 'users')
-        await setDoc(doc(db, 'members', user.uid), {
-          id: user.uid,
-          name: displayName,
-          email: email,
-          phone: phone,
-          birthDate: birthDateTimestamp,
-          gender: gender,
-          joinDate: now,
-          status: MemberStatus.ACTIVE,
-          role: finalRole, // Role define permissões (admin/coordinator/member)
-          photoUrl: null,
-          // Boa Nova - Consentimentos de comunicação
-          whatsappConsent: {
-            accepted: whatsappConsent,
-            acceptedAt: whatsappConsent ? now : null,
-            revokedAt: null,
-          },
-          emailConsent: {
-            accepted: emailConsent,
-            acceptedAt: emailConsent ? now : null,
-            revokedAt: null,
-          },
-          createdAt: now,
-          updatedAt: now,
-          lastLogin: now,
-        });
-        
-        console.log('✅ Membro criado no Firestore com sucesso:', user.uid);
-      } catch (error) {
-        console.error('❌ ERRO ao salvar membro no Firestore:', error);
-        console.error('Detalhes do erro:', {
-          code: (error as any)?.code,
-          message: (error as any)?.message,
-          userId: user.uid,
-          email: email
-        });
-        // Não bloqueia o registro, mas loga o erro completo
-      }
-    } else {
-      console.warn('⚠️ Firestore não está disponível. Usuário criado apenas no Authentication.');
-    }
-
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: displayName,
-      photoURL: null,
-      role: finalRole,
-      gender: gender,
-    };
-  } catch (error: any) {
-    console.error('Erro ao registrar usuário:', error);
-    throw handleAuthError(error);
-  }
+  return { uid };
 };
 
 export const signOut = async (): Promise<void> => {
@@ -278,16 +159,14 @@ export const updateUserProfile = async (
       photoURL: photoURL || null,
     });
 
-    if (await isFirestoreAvailable()) {
-      try {
-        await updateDoc(doc(db, 'members', user.uid), {
-          name: displayName,
-          photoUrl: photoURL || null,
-          updatedAt: serverTimestamp(),
-        });
-      } catch (error) {
-        console.warn('Firestore indisponível, perfil atualizado apenas no Auth');
-      }
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        name: displayName,
+        photoUrl: photoURL || null,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.warn('Atualização persistida no Auth, aguardando sincronização no users/{uid}');
     }
   } catch (error: any) {
     console.error('Erro ao atualizar perfil:', error);
@@ -302,62 +181,20 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
       return null;
     }
 
-    let role: UserRole | null = null;
-    let gender: 'male' | 'female' | undefined;
-
-    if (await isFirestoreAvailable()) {
-      try {
-        const ensuredMember = await ensureMemberDocument({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-        });
-
-        role = ensuredMember.role;
-        gender = ensuredMember.gender;
-      } catch (error) {
-        console.error('Erro ao buscar Firestore:', error);
-        return null;
-      }
-    } else {
-      const fetchedRole = await getUserRole(user.uid);
-      if (!fetchedRole) {
-        return null;
-      }
-      role = fetchedRole;
-    }
-
-    if (!role) {
-      console.warn('⚠️ Role não definido para usuário:', user.uid);
+    const operatorDoc = await getUserOperatorDoc(user.uid);
+    if (!operatorDoc || !operatorDoc.role) {
       return null;
     }
 
     return {
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName || user.email?.split('@')[0] || 'Usuário',
+      displayName: operatorDoc.name || user.displayName || user.email?.split('@')[0] || 'Líder',
       photoURL: user.photoURL,
-      role: role,
-      gender: gender,
+      role: operatorDoc.role,
     };
   } catch (error: any) {
-    console.error('Erro ao obter usuário atual:', error);
-    return null;
-  }
-};
-
-export const getUserData = async (uid: string): Promise<User | null> => {
-  try {
-    const memberDoc = await getDoc(doc(db, 'members', uid));
-
-    if (!memberDoc.exists()) {
-      return null;
-    }
-
-    return memberDoc.data() as User;
-  } catch (error: any) {
-    console.error('Erro ao obter dados do usuário:', error);
+    console.error('Erro ao obter operador atual:', error);
     return null;
   }
 };
@@ -367,12 +204,12 @@ export const updateUserRole = async (
   role: UserRole
 ): Promise<void> => {
   try {
-    await updateDoc(doc(db, 'members', uid), {
+    await updateDoc(doc(db, 'users', uid), {
       role,
       updatedAt: serverTimestamp(),
     });
   } catch (error: any) {
-    console.error('Erro ao atualizar role do usuário:', error);
+    console.error('Erro ao atualizar papel do operador:', error);
     throw handleAuthError(error);
   }
 };

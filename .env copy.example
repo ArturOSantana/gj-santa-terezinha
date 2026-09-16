@@ -1,0 +1,28 @@
+# Firebase Configuration
+
+VITE_FIREBASE_API_KEY=your-api-key-here
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+
+# Google Calendar API
+
+# Frontend
+VITE_GOOGLE_CLIENT_ID=seu_client_id_aqui
+VITE_GOOGLE_CALENDAR_ID=seu_calendar_id_aqui
+VITE_API_BASE_URL=/api
+
+# Backend / Serverless
+# Cole o JSON completo da service account em uma única linha
+GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"seu-projeto","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"seu-service-account@seu-projeto.iam.gserviceaccount.com","client_id":"..."}
+GOOGLE_CALENDAR_ID=seu_calendar_id_aqui
+
+
+# Gmail SMTP Configuration for Boa Nova System
+# Para gerar senha de app: https://myaccount.google.com/apppasswords
+GMAIL_USER=seu-email@gmail.com
+GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
+
+

@@ -62,52 +62,22 @@ export const ForgotPassword: React.FC = () => {
         px: { xs: 2, sm: 3 },
         py: { xs: 3, sm: 4 },
         position: 'relative',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #faf8f3 0%, #ece5d8 55%, #e0d6c6 100%)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url(${brasaoGJ})`,
-          backgroundSize: { xs: '280px', md: '400px' },
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          opacity: 0.03,
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'radial-gradient(circle at 15% 18%, rgba(26, 71, 49, 0.08) 0, transparent 20%), radial-gradient(circle at 84% 76%, rgba(184, 134, 11, 0.10) 0, transparent 18%)',
-        },
+        background: '#f8f4ec',
       }}
     >
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center' }}>
         <Paper
           elevation={0}
           sx={{
             maxWidth: 450,
             mx: 'auto',
             width: '100%',
-            p: { xs: 2.5, sm: 3.5, md: 4 },
-            borderRadius: { xs: 3, md: 4 },
+            p: { xs: 3, sm: 4 },
+            borderRadius: 3,
             border: '1px solid rgba(26, 71, 49, 0.10)',
-            bgcolor: 'rgba(252, 249, 243, 0.94)',
-            backdropFilter: 'blur(14px)',
-            boxShadow: '0 16px 38px rgba(26, 71, 49, 0.14)',
+            bgcolor: '#ffffff',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
             position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: -36,
-              right: -30,
-              width: 120,
-              height: 120,
-              borderRadius: '50%',
-              background: 'rgba(26, 71, 49, 0.06)',
-            },
           }}
         >
           <Box sx={{ position: 'relative', zIndex: 1 }}>
@@ -190,14 +160,15 @@ export const ForgotPassword: React.FC = () => {
                 fullWidth
                 variant="contained"
                 sx={{
-                  mt: 3.25,
+                  mt: 3,
                   mb: 2,
-                  py: 1.5,
-                  borderRadius: 2.75,
-                  background: 'linear-gradient(135deg, #1a4731 0%, #2d6b4a 100%)',
-                  boxShadow: '0 12px 28px rgba(26, 71, 49, 0.2)',
+                  py: 1.25,
+                  borderRadius: 2,
+                  bgcolor: '#1a4731',
+                  boxShadow: 'none',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #143726 0%, #24553d 100%)',
+                    bgcolor: '#143726',
+                    boxShadow: 'none',
                   },
                 }}
                 disabled={loading || success}

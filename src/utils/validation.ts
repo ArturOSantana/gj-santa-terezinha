@@ -5,23 +5,27 @@ export const isValidEmail = (email: string): boolean => {
 };
 
 export const isValidPassword = (password: string): boolean => {
-  if (password.length < 6) return false;
-  
+  if (password.length < 8) return false;
+
   const hasLetter = /[a-zA-Z]/.test(password);
   const hasNumber = /\d/.test(password);
-  
-  return hasLetter && hasNumber;
+  const hasSpecial = /[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  return hasLetter && hasNumber && hasSpecial;
 };
 
 export const getPasswordErrorMessage = (password: string): string => {
-  if (password.length < 6) {
-    return 'A senha deve ter no mínimo 6 caracteres';
+  if (password.length < 8) {
+    return 'A senha deve ter no mínimo 8 caracteres';
   }
   if (!/[a-zA-Z]/.test(password)) {
     return 'A senha deve conter pelo menos uma letra';
   }
   if (!/\d/.test(password)) {
     return 'A senha deve conter pelo menos um número';
+  }
+  if (!/[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return 'A senha deve conter pelo menos um caractere especial (ex: !@#$%)';
   }
   return '';
 };

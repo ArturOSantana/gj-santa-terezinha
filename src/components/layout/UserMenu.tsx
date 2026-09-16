@@ -35,7 +35,7 @@ export const UserMenu: React.FC = () => {
   };
 
   const handleProfile = () => {
-    navigate('/profile');
+    navigate('/admin/profile');
     handleClose();
   };
 

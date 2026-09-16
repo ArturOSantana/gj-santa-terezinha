@@ -78,7 +78,11 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       fullScreen={fullScreen}
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: fullScreen ? 0 : 2,
+          borderRadius: fullScreen ? 0 : 3,
+          bgcolor: '#f7efdd',
+          color: '#2a1420',
+          border: '1px solid rgba(211, 163, 76, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
         },
       }}
     >
@@ -90,25 +94,25 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
           pb: 1,
         }}
       >
-        <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 700, fontFamily: '"Fraunces", Georgia, serif', color: '#2a1420' }}>
           Detalhes do Evento
         </Typography>
         <IconButton
           edge="end"
-          color="inherit"
           onClick={onClose}
           aria-label="fechar"
           size="small"
+          sx={{ color: '#6b5347' }}
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(211, 163, 76, 0.2)' }} />
 
       <DialogContent sx={{ pt: 3 }}>
         {/* Título do Evento */}
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, fontFamily: '"Fraunces", Georgia, serif', color: '#2a1420', mb: 1.5 }}>
           {event.title}
         </Typography>
 
@@ -117,22 +121,22 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
           <Chip
             label={categoryInfo.label}
             sx={{
-              backgroundColor: categoryInfo.color + '20',
-              color: categoryInfo.color,
-              fontWeight: 500,
-              fontSize: '0.875rem',
+              backgroundColor: categoryInfo.color,
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '0.85rem',
             }}
           />
         </Box>
 
         {/* Data */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <CalendarIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
+          <CalendarIcon sx={{ mr: 1.5, color: '#c15c71' }} />
           <Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="caption" sx={{ color: '#6b5347', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>
               Data
             </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600, color: '#2a1420', textTransform: 'capitalize' }}>
               {formattedDate}
             </Typography>
           </Box>
@@ -140,25 +144,25 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
         {/* Horário */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <TimeIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
+          <TimeIcon sx={{ mr: 1.5, color: '#c15c71' }} />
           <Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="caption" sx={{ color: '#6b5347', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>
               Horário
             </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {event.startTime} - {event.endTime}
+            <Typography variant="body1" sx={{ fontWeight: 600, color: '#2a1420' }}>
+              {event.startTime} {event.endTime ? `às ${event.endTime}` : ''}
             </Typography>
           </Box>
         </Box>
 
         {/* Local */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <LocationIcon sx={{ mr: 1.5, color: 'text.secondary' }} />
+          <LocationIcon sx={{ mr: 1.5, color: '#c15c71' }} />
           <Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="caption" sx={{ color: '#6b5347', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>
               Local
             </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600, color: '#2a1420' }}>
               {event.location}
             </Typography>
           </Box>
@@ -199,21 +203,21 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         )}
       </DialogContent>
 
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(211, 163, 76, 0.2)' }} />
 
       <DialogActions sx={{ p: 2, gap: 1 }}>
         {canDelete && (
           <Button
             onClick={handleDelete}
-            color="error"
             startIcon={<DeleteIcon />}
             variant="outlined"
+            sx={{ color: '#c15c71', borderColor: '#c15c71', '&:hover': { borderColor: '#9a3450' } }}
           >
             Excluir
           </Button>
         )}
         <Box sx={{ flex: 1 }} />
-        <Button onClick={onClose} color="inherit">
+        <Button onClick={onClose} sx={{ color: '#2a1420' }}>
           Fechar
         </Button>
         {canEdit && (
@@ -221,6 +225,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             onClick={() => onEdit(event)}
             variant="contained"
             startIcon={<EditIcon />}
+            sx={{ bgcolor: '#c15c71', color: '#fff', '&:hover': { bgcolor: '#9a3450' }, fontWeight: 700 }}
           >
             Editar
           </Button>

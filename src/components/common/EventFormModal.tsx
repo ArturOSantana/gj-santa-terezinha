@@ -14,7 +14,12 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  People as PeopleIcon,
+  Male as MaleIcon,
+  Female as FemaleIcon,
+} from '@mui/icons-material';
 import { Event, EventCategory, ActivityType, Gender } from '../../types';
 import { EVENT_CATEGORY_OPTIONS, ACTIVITY_TYPE_OPTIONS } from '../../utils/constants';
 import { format } from 'date-fns';
@@ -51,7 +56,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
     startTime: '18:00',
     endTime: '21:15',
     location: 'Paróquia Santa Terezinha',
-    category: EventCategory.SATURDAY,
+    category: EventCategory.MEETING,
     activityType: undefined as ActivityType | undefined,
     targetGender: Gender.MIXED as Gender | undefined,
     notes: '',
@@ -183,7 +188,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       startTime: '18:00',
       endTime: '21:15',
       location: 'Paróquia Santa Terezinha',
-      category: EventCategory.SATURDAY,
+      category: EventCategory.MEETING,
       activityType: undefined,
       targetGender: Gender.MIXED,
       notes: '',
@@ -201,7 +206,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
       fullScreen={fullScreen}
       sx={{
         '& .MuiDialog-paper': {
-          borderRadius: fullScreen ? 0 : 2,
+          borderRadius: fullScreen ? 0 : 3,
+          bgcolor: '#f7efdd',
+          color: '#2a1420',
+          border: '1px solid rgba(211, 163, 76, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
         },
       }}
     >
@@ -213,21 +222,21 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
           pb: 1,
         }}
       >
-        <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 700, fontFamily: '"Fraunces", Georgia, serif', color: '#2a1420' }}>
           {isEditing ? 'Editar Evento' : 'Novo Evento'}
         </Typography>
         <IconButton
           edge="end"
-          color="inherit"
           onClick={handleClose}
           aria-label="fechar"
           size="small"
+          sx={{ color: '#6b5347' }}
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(211, 163, 76, 0.2)' }} />
 
       <DialogContent sx={{ pt: 3 }}>
         <Box component="form" noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -332,16 +341,16 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             ))}
           </TextField>
 
-          {/* Tipo de Atividade (apenas para Sábados) */}
-          {formData.category === EventCategory.SATURDAY && (
+          {/* Tipo de Atividade */}
+          {(formData.category === EventCategory.MEETING || formData.category === EventCategory.GJ_MEETING || formData.category === EventCategory.FORMATION) && (
             <TextField
               label="Tipo de Atividade"
               select
               value={formData.activityType || ''}
-              onChange={(e) => setFormData({ ...formData, activityType: e.target.value as ActivityType })}
+              onChange={(e) => setFormData({ ...formData, activityType: (e.target.value || undefined) as ActivityType | undefined })}
               disabled={readOnly}
               fullWidth
-              helperText="Selecione o tipo de atividade para este sábado"
+              helperText="Selecione o tipo de atividade (opcional)"
             >
               <MenuItem value="">
                 <em>Nenhum</em>
@@ -365,13 +374,22 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             helperText="Selecione o público-alvo deste evento"
           >
             <MenuItem value={Gender.MIXED}>
-              👥 Misto (Todos)
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PeopleIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                Misto (Todos)
+              </Box>
             </MenuItem>
             <MenuItem value={Gender.MALE}>
-              👨 Rapazes
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <MaleIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                Rapazes
+              </Box>
             </MenuItem>
             <MenuItem value={Gender.FEMALE}>
-              👩 Moças
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FemaleIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                Moças
+              </Box>
             </MenuItem>
           </TextField>
 
@@ -389,14 +407,18 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         </Box>
       </DialogContent>
 
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(211, 163, 76, 0.2)' }} />
 
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button onClick={handleClose} color="inherit">
+        <Button onClick={handleClose} sx={{ color: '#2a1420' }}>
           Cancelar
         </Button>
         {!readOnly && (
-          <Button onClick={handleSubmit} variant="contained" color="primary">
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            sx={{ bgcolor: '#c15c71', color: '#fff', '&:hover': { bgcolor: '#9a3450' }, fontWeight: 700 }}
+          >
             {isEditing ? 'Salvar Alterações' : 'Criar Evento'}
           </Button>
         )}

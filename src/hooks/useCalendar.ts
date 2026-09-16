@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Event, EventCategory } from '../types';
 import { View } from 'react-big-calendar';
-import { firestoreService } from '../services/firestore.service';
+import { TerezinhaService } from '../services/firestore.service';
 import { GoogleCalendarService } from '../services/googleCalendar.service';
 import { useAuth } from '../contexts/AuthContext';
 import { canCreate, canDelete, canEdit } from '../utils/permissions';
@@ -19,12 +19,18 @@ export const useCalendar = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [filters, setFilters] = useState<EventCategory[]>([
-    EventCategory.SATURDAY,
-    EventCategory.SOLEMNITY,
-    EventCategory.SAINT_DAY,
-    EventCategory.BIRTHDAY,
-    EventCategory.PARISH_EVENT,
-    EventCategory.NOVENA,
+    EventCategory.FORMATION,
+    EventCategory.MASS,
+    EventCategory.MEETING,
+    EventCategory.RETREAT,
+    EventCategory.OUTING,
+    EventCategory.LEADERSHIP_MEETING,
+    EventCategory.PASTORAL,
+    EventCategory.PARISH,
+    EventCategory.SCHEDULE,
+    EventCategory.DEADLINE,
+    EventCategory.GJ_MEETING,
+    EventCategory.OTHER,
   ]);
   const [view, setView] = useState<View>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -46,22 +52,28 @@ export const useCalendar = () => {
     setLoading(true);
     setError(null);
 
-    let unsubscribe: (() => void) | undefined;
+    let isMounted = true;
 
-    try {
-      unsubscribe = firestoreService.getEvents(user.role, (firestoreEvents) => {
-        console.log('[Firestore] Atualizado:', firestoreEvents.length, 'eventos');
-        // Mesclar eventos do Firestore com eventos do Google Calendar
-        setEvents([...firestoreEvents, ...googleCalendarEvents.current]);
-        setLoading(false);
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar eventos');
-      setLoading(false);
-    }
+    const loadFirestoreEvents = async () => {
+      try {
+        const firestoreEvents = await TerezinhaService.getEvents();
+        if (isMounted) {
+          console.log('[Firestore] Carregado:', firestoreEvents.length, 'eventos');
+          setEvents([...firestoreEvents, ...googleCalendarEvents.current]);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar eventos');
+          setLoading(false);
+        }
+      }
+    };
+
+    loadFirestoreEvents();
 
     return () => {
-      unsubscribe?.();
+      isMounted = false;
     };
   }, [user]);
 
@@ -199,11 +211,14 @@ export const useCalendar = () => {
           ? { ...eventData, googleCalendarId: googleEventId }
           : eventData;
         
-        const eventId = await firestoreService.createEvent(eventDataWithGoogle, user.role);
+        const created = await TerezinhaService.createEvent(eventDataWithGoogle);
         
+        // Atualizar lista local
+        setEvents((prevEvents) => [...prevEvents, created]);
+
         setIsFormModalOpen(false);
         setEditingEvent(null);
-        return { ...eventDataWithGoogle, id: eventId, createdAt: new Date(), updatedAt: new Date() };
+        return created;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao criar evento';
         setError(errorMessage);
@@ -251,13 +266,13 @@ export const useCalendar = () => {
             ? { ...fullEventData, googleCalendarId: googleEventId }
             : fullEventData;
           
-          await firestoreService.createEvent(eventDataWithGoogle, user.role);
+          const created = await TerezinhaService.createEvent(eventDataWithGoogle);
           
-          // Remover o evento temporário da lista local
-          setEvents(prevEvents => prevEvents.filter(e => e.id !== id));
+          // Substituir o evento temporário da lista local pelo criado no Firestore
+          setEvents(prevEvents => prevEvents.map(e => e.id === id ? created : e));
         } else {
           // Evento normal do Firestore - atualizar normalmente
-          await firestoreService.updateEvent(id, eventData, user.role);
+          await TerezinhaService.updateEvent(id, eventData);
           
           // Se o evento tem googleCalendarId, atualizar no Google Calendar também
           if (event?.googleCalendarId) {
@@ -270,6 +285,9 @@ export const useCalendar = () => {
               console.warn('Não foi possível atualizar no Google Calendar:', error);
             }
           }
+
+          // Atualizar estado local
+          setEvents(prevEvents => prevEvents.map(e => e.id === id ? { ...e, ...eventData, updatedAt: new Date() } : e));
         }
         
         setIsFormModalOpen(false);
@@ -326,14 +344,17 @@ export const useCalendar = () => {
               await GoogleCalendarService.deleteEvent(event.googleCalendarId);
               // Limpar cache do Google Calendar para forçar atualização
               localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
-              console.log('🗑️ Cache do Google Calendar limpo (evento deletado)');
+              console.log('[useCalendar] Cache do Google Calendar limpo (evento deletado)');
             } catch (error) {
               console.warn('Não foi possível deletar do Google Calendar:', error);
             }
           }
 
           // Deletar do Firestore
-          await firestoreService.deleteEvent(id, user.role);
+          await TerezinhaService.deleteEvent(id);
+
+          // Remover da lista local
+          setEvents(prevEvents => prevEvents.filter(e => e.id !== id));
         }
         
         setIsDetailsModalOpen(false);
@@ -420,17 +441,25 @@ export const useCalendar = () => {
    * Alterna todos os filtros
    */
   const handleToggleAllFilters = useCallback(() => {
-    if (filters.length === 6) {
+    const allCategories = [
+      EventCategory.FORMATION,
+      EventCategory.MASS,
+      EventCategory.MEETING,
+      EventCategory.RETREAT,
+      EventCategory.OUTING,
+      EventCategory.LEADERSHIP_MEETING,
+      EventCategory.PASTORAL,
+      EventCategory.PARISH,
+      EventCategory.SCHEDULE,
+      EventCategory.DEADLINE,
+      EventCategory.GJ_MEETING,
+      EventCategory.OTHER,
+    ];
+
+    if (filters.length === allCategories.length) {
       setFilters([]);
     } else {
-      setFilters([
-        EventCategory.SATURDAY,
-        EventCategory.SOLEMNITY,
-        EventCategory.SAINT_DAY,
-        EventCategory.BIRTHDAY,
-        EventCategory.PARISH_EVENT,
-        EventCategory.NOVENA,
-      ]);
+      setFilters(allCategories);
     }
   }, [filters]);
 

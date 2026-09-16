@@ -3,27 +3,25 @@ import { Box, Typography } from '@mui/material';
 
 interface PageHeaderProps {
   title: string;
-  subtitle?: string;
   action?: React.ReactNode;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action }) => {
+export const PageHeader: React.FC<PageHeaderProps> = ({ title, action }) => {
   return (
     <Box
       sx={{
         mb: { xs: 3, md: 4 },
-        pb: { xs: 2, md: 3 },
-        borderBottom: '2px solid',
-        borderColor: 'divider',
+        pb: { xs: 2, md: 2.5 },
+        borderBottom: '1px solid rgba(211, 163, 76, 0.2)',
         position: 'relative',
         '&::after': {
           content: '""',
           position: 'absolute',
-          bottom: -2,
+          bottom: -1,
           left: 0,
           width: { xs: 40, md: 60 },
           height: 2,
-          background: 'linear-gradient(90deg, #b8860b 0%, #d4a843 100%)',
+          background: 'linear-gradient(90deg, #c15c71 0%, #d3a34c 100%)',
         },
       }}
     >
@@ -40,29 +38,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action 
           <Typography
             variant="h1"
             sx={{
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+              fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' },
               fontWeight: 700,
-              color: 'primary.main',
-              mb: subtitle ? { xs: 0.5, md: 1 } : 0,
-              fontFamily: 'Merriweather, serif',
+              color: '#f4e6e9',
+              mb: 0,
+              fontFamily: '"Fraunces", Georgia, serif',
+              letterSpacing: '-0.01em',
               lineHeight: 1.2,
             }}
           >
             {title}
           </Typography>
-          {subtitle && (
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{
-                fontFamily: 'Montserrat, sans-serif',
-                fontSize: { xs: '0.875rem', md: '1rem' },
-                lineHeight: 1.5,
-              }}
-            >
-              {subtitle}
-            </Typography>
-          )}
         </Box>
         {action && (
           <Box

@@ -3,14 +3,16 @@ import { UserRole } from '../types';
 const ROLE_HIERARCHY: Record<UserRole, number> = {
   admin: 3,
   coordinator: 2,
-  member: 1,
+  leader: 1,
+  member: 0,
+  pending: -1,
 };
 
 export const hasPermission = (
   userRole: UserRole,
   requiredRole: UserRole
 ): boolean => {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+  return (ROLE_HIERARCHY[userRole] ?? 0) >= (ROLE_HIERARCHY[requiredRole] ?? 0);
 };
 
 export const canEdit = (
@@ -47,6 +49,10 @@ export const canCreate = (
   
   if (userRole === 'coordinator') {
     return resourceType === 'event' || resourceType === 'transaction';
+  }
+
+  if (userRole === 'leader') {
+    return resourceType === 'event';
   }
   
   return false;
@@ -97,7 +103,8 @@ export const canDemoteUser = (userRole: UserRole, targetRole: UserRole): boolean
 
 export const canRemoveUser = (userRole: UserRole, targetRole: UserRole): boolean => {
   if (userRole === 'admin') return true;
-  if (userRole === 'coordinator' && targetRole !== 'admin') return true;
+  // Coordenador pode remover apenas líderes e membros, nunca outros coordenadores ou admins
+  if (userRole === 'coordinator' && (targetRole === 'leader' || targetRole === 'member' || targetRole === 'pending')) return true;
   return false;
 };
 
@@ -133,7 +140,9 @@ export const getRolePermissions = (userRole: UserRole) => {
 export const PERMISSIONS = {
   ADMIN_ONLY: ['admin'] as UserRole[],
   COORDINATOR_AND_ABOVE: ['admin', 'coordinator'] as UserRole[],
-  ALL_USERS: ['admin', 'coordinator', 'member'] as UserRole[],
+  LEADER_AND_ABOVE: ['admin', 'coordinator', 'leader'] as UserRole[],
+  ALL_USERS: ['admin', 'coordinator', 'leader', 'member'] as UserRole[],
+  PENDING_ONLY: ['pending'] as UserRole[],
 } as const;
 
 export const hasAnyRole = (

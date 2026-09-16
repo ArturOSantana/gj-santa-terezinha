@@ -14,18 +14,31 @@ import Layout from './components/layout/Layout';
 // Auth Components
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
-// Pages
-import Dashboard from './pages/Dashboard';
-import Calendar from './pages/Calendar';
-import Finance from './pages/Finance';
-import Members from './pages/Members';
-import Users from './pages/Users';
-import Contributions from './pages/Contributions';
+// Pages - Liderança
+import Dashboard from './pages/Dashboard/Dashboard';
+import Calendar from './pages/Calendar/Calendar';
+import EventsPage from './pages/Events/Events';
+import PeoplePage from './pages/People/People';
+import AttendancePage from './pages/Attendance/Attendance';
+import SchedulesPage from './pages/Schedules/Schedules';
+import FinancePage from './pages/Finance/Finance';
+import TasksPage from './pages/Tasks/Tasks';
+import MeetingsPage from './pages/Meetings/Meetings';
+import DocumentsPage from './pages/Documents/Documents';
 import { Profile } from './pages/Profile';
+import ReportsPage from './pages/Reports/Reports';
+import UsersPage from './pages/Users/Users';
+import PublicHomeConfigPage from './pages/PublicHome/PublicHomeConfigPage';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
-import { BoaNova } from './pages/BoaNova';
+
+// Pages - Públicas / Jovens (Sem login)
+import PublicHomePage from './pages/PublicHome/PublicHomePage';
+import PublicEventInvitation from './pages/PublicEventInvitation/PublicEventInvitation';
+import PublicCalendar from './pages/PublicCalendar/PublicCalendar';
+import PublicAttendanceCheckin from './pages/PublicAttendanceCheckin/PublicAttendanceCheckin';
+import PublicScheduleResponse from './pages/PublicScheduleResponse/PublicScheduleResponse';
 
 // Permissions
 import { PERMISSIONS } from './utils/permissions';
@@ -37,119 +50,89 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Rotas Públicas */}
+            {/* ========================================================= */}
+            {/* ROTAS PÚBLICAS PARA OS JOVENS (SEM LOGIN)                 */}
+            {/* ========================================================= */}
+            {/* Página Inicial Pública do Grupo de Jovens */}
+            <Route path="/" element={<PublicHomePage />} />
+            <Route path="/p/agenda" element={<PublicCalendar />} />
+            <Route path="/p/checkin" element={<PublicAttendanceCheckin />} />
+            <Route path="/p/escala/:token" element={<PublicScheduleResponse />} />
+            {/* Qualquer evento público por slug — inclui /p/retiro-fiat-2026 e outros */}
+            <Route path="/p/:slug" element={<PublicEventInvitation />} />
+
+            {/* Rotas de Autenticação */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* Rotas Protegidas */}
+            {/* ========================================================= */}
+            {/* ROTAS PROTEGIDAS - PAINEL DA COORDENAÇÃO (/admin)        */}
+            {/* ========================================================= */}
             <Route
-              path="/"
+              path="/admin"
               element={
                 <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
                   <Layout />
                 </ProtectedRoute>
               }
             >
-              {/* Visão Geral - Todos os usuários autenticados */}
-              <Route
-                index
-                element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Painel de Comando / Início */}
+              <Route index element={<Dashboard />} />
 
-              {/* Calendário - Todos os usuários autenticados */}
-              <Route
-                path="calendar"
-                element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
-                    <Calendar />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Agenda (Sincronizada Google Calendar) */}
+              <Route path="calendar" element={<Calendar />} />
 
-              {/* Finanças - Admin e Coordinator */}
-              <Route
-                path="finance"
-                element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.COORDINATOR_AND_ABOVE}>
-                    <Finance />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Módulo Principal: Eventos 360° & Inscrições */}
+              <Route path="events" element={<EventsPage />} />
 
-              {/* Membros - Admin e Coordinator podem visualizar */}
-              <Route
-                path="members"
-                element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.COORDINATOR_AND_ABOVE}>
-                    <Members />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Pessoas & Jovens */}
+              <Route path="people" element={<PeoplePage />} />
 
-              {/* Contribuições - Todos os usuários autenticados */}
-              <Route
-                path="contributions"
-                element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
-                    <Contributions />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Presenças & Frequência Pastoral */}
+              <Route path="attendance" element={<AttendancePage />} />
 
-              {/* Perfil - Todos os usuários autenticados */}
-              <Route
-                path="profile"
-                element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.ALL_USERS}>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Equipes & Escalas */}
+              <Route path="schedules" element={<SchedulesPage />} />
 
-              {/* Usuários - Apenas Admin */}
+              {/* Caixa & Tesouraria */}
+              <Route path="finance" element={<FinancePage />} />
+
+              {/* Tarefas da Coordenação */}
+              <Route path="tasks" element={<TasksPage />} />
+
+              {/* Reuniões & Atas */}
+              <Route path="meetings" element={<MeetingsPage />} />
+
+              {/* Documentos & Drive */}
+              <Route path="documents" element={<DocumentsPage />} />
+
+              {/* Relatório de Calendário e Atividades */}
+              <Route path="reports" element={<ReportsPage />} />
+
+              {/* Gerenciamento de Usuários — ADM apenas */}
               <Route
                 path="users"
                 element={
                   <ProtectedRoute allowedRoles={PERMISSIONS.ADMIN_ONLY}>
-                    <Users />
+                    <UsersPage />
                   </ProtectedRoute>
                 }
               />
 
-              {/* Boa Nova - Admin e Coordinator */}
+              {/* Configuração da Página Pública — ADM apenas */}
               <Route
-                path="boanova"
+                path="public-page"
                 element={
-                  <ProtectedRoute allowedRoles={PERMISSIONS.COORDINATOR_AND_ABOVE}>
-                    <BoaNova />
+                  <ProtectedRoute allowedRoles={PERMISSIONS.ADMIN_ONLY}>
+                    <PublicHomeConfigPage />
                   </ProtectedRoute>
                 }
               />
-            </Route>
 
-            {/* Rota de Não Autorizado */}
-            <Route
-              path="/unauthorized"
-              element={
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '100vh',
-                  flexDirection: 'column',
-                  gap: '1rem'
-                }}>
-                  <h1>Acesso Negado</h1>
-                  <p>Você não tem permissão para acessar esta página.</p>
-                  <a href="/">Voltar à Visão Geral</a>
-                </div>
-              }
-            />
+              {/* Perfil */}
+              <Route path="profile" element={<Profile />} />
+            </Route>
 
             {/* Rota 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -161,4 +144,3 @@ function App() {
 }
 
 export default App;
-

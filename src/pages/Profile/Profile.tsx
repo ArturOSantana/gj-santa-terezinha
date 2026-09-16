@@ -38,13 +38,28 @@ import {
 } from '../../utils/validation';
 import { PageHeader } from '../../components/common';
 
+const darkFieldSx = {
+  '& .MuiInputBase-input': { color: '#f4e6e9' },
+  '& .MuiInputBase-input.Mui-disabled': { color: '#e2cad2', WebkitTextFillColor: '#e2cad2' },
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': { borderColor: 'rgba(211, 163, 76, 0.25)' },
+    '&:hover fieldset': { borderColor: 'rgba(211, 163, 76, 0.5)' },
+    '&.Mui-focused fieldset': { borderColor: '#d3a34c' },
+    '&.Mui-disabled fieldset': { borderColor: 'rgba(211, 163, 76, 0.15)' },
+  },
+  '& .MuiInputLabel-root': { color: '#b09aa5' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#d3a34c' },
+  '& .MuiInputLabel-root.Mui-disabled': { color: '#8a7080' },
+  '& .MuiFormHelperText-root': { color: '#b09aa5' },
+};
+
 const sectionCardSx = {
   height: '100%',
   p: { xs: 2, md: 2.75 },
   borderRadius: { xs: 3, md: 3.5 },
-  border: '1px solid rgba(26, 71, 49, 0.08)',
-  background: 'linear-gradient(135deg, rgba(26, 71, 49, 0.045) 0%, rgba(184, 134, 11, 0.03) 100%)',
-  boxShadow: '0 10px 24px rgba(26, 71, 49, 0.06)',
+  border: '1px solid rgba(211, 163, 76, 0.18)',
+  background: 'rgba(47, 21, 34, 0.7)',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
 };
 
 export const Profile: React.FC = () => {
@@ -209,8 +224,8 @@ export const Profile: React.FC = () => {
           mb: 3,
           p: { xs: 2, md: 3 },
           borderRadius: { xs: 3, md: 4 },
-          border: '1px solid rgba(26, 71, 49, 0.10)',
-          background: 'linear-gradient(135deg, rgba(26, 71, 49, 0.04) 0%, rgba(184, 134, 11, 0.02) 100%)',
+          border: '1px solid rgba(211, 163, 76, 0.18)',
+          background: 'rgba(47, 21, 34, 0.7)',
           position: 'relative',
           overflow: 'hidden',
           '&::after': {
@@ -258,14 +273,14 @@ export const Profile: React.FC = () => {
               variant="h4"
               sx={{
                 fontFamily: 'Merriweather, serif',
-                color: 'primary.main',
+                color: '#f4e6e9',
                 fontWeight: 700,
                 fontSize: { xs: '1.5rem', md: '2rem' },
               }}
             >
               {formData.displayName || 'Usuário'}
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.75, mb: 1.5 }}>
+            <Typography variant="body1" sx={{ color: '#e2cad2', mt: 0.75, mb: 1.5 }}>
               {formData.email}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -294,14 +309,14 @@ export const Profile: React.FC = () => {
                     variant="h6"
                     sx={{
                       fontFamily: 'Merriweather, serif',
-                      color: 'primary.main',
+                      color: '#c15c71',
                       fontWeight: 700,
                       mb: 0.75,
                     }}
                   >
                     Dados Pessoais
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#e2cad2' }}>
                     Atualize as informações principais do seu cadastro.
                   </Typography>
                 </Box>
@@ -313,6 +328,7 @@ export const Profile: React.FC = () => {
                   value={formData.displayName}
                   onChange={handleChange}
                   disabled={!editing || loading}
+                  sx={darkFieldSx}
                 />
 
                 <TextField
@@ -328,6 +344,7 @@ export const Profile: React.FC = () => {
                       shrink: true,
                     },
                   }}
+                  sx={darkFieldSx}
                 />
               </Stack>
             </Paper>
@@ -341,14 +358,14 @@ export const Profile: React.FC = () => {
                     variant="h6"
                     sx={{
                       fontFamily: 'Merriweather, serif',
-                      color: 'primary.main',
+                      color: '#c15c71',
                       fontWeight: 700,
                       mb: 0.75,
                     }}
                   >
                     Contato
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#e2cad2' }}>
                     Mantenha seus canais de comunicação sempre atualizados.
                   </Typography>
                 </Box>
@@ -364,9 +381,10 @@ export const Profile: React.FC = () => {
                   helperText={editing ? 'Alterar o email requer confirmação com senha' : ''}
                   slotProps={{
                     input: {
-                      startAdornment: <EmailIcon sx={{ color: 'text.secondary', mr: 1 }} />,
+                      startAdornment: <EmailIcon sx={{ color: '#e2cad2', mr: 1 }} />,
                     },
                   }}
+                  sx={darkFieldSx}
                 />
 
                 <TextField
@@ -380,9 +398,10 @@ export const Profile: React.FC = () => {
                   helperText="Formato: (11) 99999-9999"
                   slotProps={{
                     input: {
-                      startAdornment: <PhoneIcon sx={{ color: 'text.secondary', mr: 1 }} />,
+                      startAdornment: <PhoneIcon sx={{ color: '#e2cad2', mr: 1 }} />,
                     },
                   }}
+                  sx={darkFieldSx}
                 />
               </Stack>
             </Paper>
@@ -406,14 +425,14 @@ export const Profile: React.FC = () => {
                       variant="h6"
                       sx={{
                         fontFamily: 'Merriweather, serif',
-                        color: 'primary.main',
+                        color: '#c15c71',
                         fontWeight: 700,
                       }}
                     >
                       Segurança
                     </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#e2cad2' }}>
                     Revise seus dados antes de salvar. Alterações no email exigem confirmação adicional.
                   </Typography>
                 </Box>
@@ -455,9 +474,9 @@ export const Profile: React.FC = () => {
                     </>
                   ) : (
                     <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                      <Chip icon={<CakeIcon />} label="Dados pessoais protegidos" variant="outlined" />
-                      <Chip icon={<EmailIcon />} label="Email verificado manualmente" variant="outlined" />
-                      <Chip icon={<PhoneIcon />} label="Contato em dia" variant="outlined" />
+                      <Chip icon={<CakeIcon sx={{ color: '#d3a34c !important' }} />} label="Dados pessoais protegidos" variant="outlined" sx={{ color: '#e2cad2', borderColor: 'rgba(211,163,76,0.35)' }} />
+                      <Chip icon={<EmailIcon sx={{ color: '#d3a34c !important' }} />} label="Email verificado manualmente" variant="outlined" sx={{ color: '#e2cad2', borderColor: 'rgba(211,163,76,0.35)' }} />
+                      <Chip icon={<PhoneIcon sx={{ color: '#d3a34c !important' }} />} label="Contato em dia" variant="outlined" sx={{ color: '#e2cad2', borderColor: 'rgba(211,163,76,0.35)' }} />
                     </Box>
                   )}
                 </Box>

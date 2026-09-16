@@ -113,19 +113,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         },
         '& .rbc-header': {
           padding: '10px 3px',
-          fontWeight: 600,
+          fontWeight: 700,
           fontSize: '0.875rem',
-          color: 'text.primary',
+          color: '#2a1420',
+          borderColor: 'rgba(211, 163, 76, 0.25)',
         },
         '& .rbc-today': {
-          backgroundColor: 'rgba(25, 118, 210, 0.08)',
+          backgroundColor: 'rgba(193, 92, 113, 0.12)',
         },
         '& .rbc-off-range-bg': {
-          backgroundColor: 'rgba(0, 0, 0, 0.03)',
+          backgroundColor: 'rgba(74, 50, 39, 0.05)',
         },
         '& .rbc-event': {
           padding: '4px 6px',
           fontSize: '0.875rem',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
         },
         '& .rbc-event-label': {
           fontSize: '0.75rem',
@@ -136,52 +138,61 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           flexWrap: 'wrap',
           gap: '10px',
         },
+        '& .rbc-toolbar-label': {
+          fontWeight: 700,
+          fontFamily: '"Fraunces", Georgia, serif',
+          color: '#2a1420',
+          fontSize: '1.1rem',
+        },
         '& .rbc-toolbar button': {
-          color: 'primary.main',
-          border: '1px solid',
-          borderColor: 'divider',
+          color: '#2a1420',
+          border: '1px solid rgba(211, 163, 76, 0.35)',
           borderRadius: '8px',
           padding: '6px 12px',
           fontSize: '0.875rem',
-          fontWeight: 500,
+          fontWeight: 600,
           '&:hover': {
-            backgroundColor: 'action.hover',
+            backgroundColor: '#efe2c4',
+            borderColor: '#d3a34c',
           },
           '&:active, &.rbc-active': {
-            backgroundColor: 'primary.main',
-            color: 'white',
-            borderColor: 'primary.main',
+            backgroundColor: '#c15c71',
+            color: '#ffffff',
+            borderColor: '#c15c71',
           },
         },
         '& .rbc-month-view': {
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: '8px',
+          border: '1px solid rgba(211, 163, 76, 0.25)',
+          borderRadius: '10px',
           overflow: 'hidden',
+          backgroundColor: '#ffffff',
         },
         '& .rbc-day-bg': {
-          borderColor: 'divider',
+          borderColor: 'rgba(211, 163, 76, 0.18)',
         },
         '& .rbc-month-row': {
-          borderColor: 'divider',
+          borderColor: 'rgba(211, 163, 76, 0.18)',
         },
         '& .rbc-header + .rbc-header': {
-          borderColor: 'divider',
+          borderColor: 'rgba(211, 163, 76, 0.25)',
         },
         '& .rbc-agenda-view': {
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: '8px',
+          border: '1px solid rgba(211, 163, 76, 0.25)',
+          borderRadius: '10px',
           overflow: 'hidden',
+          backgroundColor: '#ffffff',
         },
         '& .rbc-agenda-table': {
-          borderColor: 'divider',
+          borderColor: 'rgba(211, 163, 76, 0.25)',
         },
         '& .rbc-agenda-date-cell, & .rbc-agenda-time-cell': {
           padding: '8px 10px',
+          color: '#2a1420',
+          fontWeight: 600,
         },
         '& .rbc-agenda-event-cell': {
           padding: '8px 10px',
+          color: '#2a1420',
         },
       }}
     >

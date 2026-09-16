@@ -31,22 +31,23 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, acti
       <Typography
         variant="h3"
         sx={{
-          mb: 2,
-          color: 'text.secondary',
-          fontWeight: 600,
-          fontFamily: 'Merriweather, serif',
+          mb: 1.5,
+          color: '#2a1420',
+          fontWeight: 700,
+          fontFamily: '"Fraunces", Georgia, serif',
           fontSize: '1.5rem',
         }}
       >
         {title}
       </Typography>
       {description && (
-        <Typography 
-          variant="body1" 
-          color="text.secondary" 
-          sx={{ 
+        <Typography
+          variant="body1"
+          sx={{
             mb: 3,
-            fontFamily: 'Montserrat, sans-serif',
+            color: '#6b5347',
+            maxWidth: 500,
+            mx: 'auto',
           }}
         >
           {description}

@@ -43,13 +43,15 @@ export const storage = getStorage(app);
 export const functions = getFunctions(app, 'us-central1');
 
 // Conectar aos Firebase Emulators em desenvolvimento
-if (import.meta.env.DEV) {
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  console.log('🔧 Usando Firebase Emulators:');
-  console.log('   - Functions: http://127.0.0.1:5001');
-  console.log('   - Firestore: http://127.0.0.1:8080');
-  console.log('   - UI: http://127.0.0.1:4000');
-}
+// Emuladores desabilitados — conectando direto ao Firebase em nuvem
+// Para reativar, descomente o bloco abaixo e rode: firebase emulators:start
+// if (import.meta.env.DEV) {
+//   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+//   connectFirestoreEmulator(db, '127.0.0.1', 8080);
+//   console.log('🔧 Usando Firebase Emulators:');
+//   console.log('   - Functions: http://127.0.0.1:5001');
+//   console.log('   - Firestore: http://127.0.0.1:8080');
+//   console.log('   - UI: http://127.0.0.1:4000');
+// }
 
 export default app;

@@ -40,14 +40,20 @@ const convertToGoogleEvent = (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt
 /**
  * Converte evento do Google Calendar para formato do sistema
  */
+const parseLocalDate = (dateStr: string): Date => {
+  // "YYYY-MM-DD" deve ser interpretado como data local, não UTC
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 const convertFromGoogleEvent = (gEvent: GoogleCalendarEvent): Omit<Event, 'id' | 'createdAt' | 'updatedAt'> => {
   const startDate = gEvent.start.dateTime
     ? new Date(gEvent.start.dateTime)
-    : new Date(gEvent.start.date!);
+    : parseLocalDate(gEvent.start.date!);
   
   const endDate = gEvent.end.dateTime
     ? new Date(gEvent.end.dateTime)
-    : new Date(gEvent.end.date!);
+    : parseLocalDate(gEvent.end.date!);
 
   // Extrair horários
   const startTime = gEvent.start.dateTime
@@ -96,7 +102,7 @@ const detectEventCategory = (gEvent: GoogleCalendarEvent): EventCategory => {
   ];
 
   if (birthdayKeywords.some(keyword => combined.includes(keyword))) {
-    return EventCategory.BIRTHDAY;
+    return EventCategory.OTHER;
   }
 
   // Detectar encontros do GJ
@@ -139,7 +145,7 @@ const detectEventCategory = (gEvent: GoogleCalendarEvent): EventCategory => {
   }
 
   // Padrão: evento paroquial
-  return EventCategory.PARISH_EVENT;
+  return EventCategory.PARISH;
 };
 
 export const GoogleCalendarService = {
@@ -180,10 +186,10 @@ export const GoogleCalendarService = {
       const result = await createCalendarEvent({ event: googleEvent });
       const data = result.data as { success: boolean; event: { id: string } };
       
-      console.log('✅ Evento criado no Google Calendar:', data.event.id);
+      console.log('[GoogleCalendarService] Evento criado no Google Calendar:', data.event.id);
       return data.event.id;
     } catch (error) {
-      console.error('❌ Erro ao criar evento no Google Calendar:', error);
+      console.error('[GoogleCalendarService] Erro ao criar evento no Google Calendar:', error);
       return null;
     }
   },
@@ -201,9 +207,9 @@ export const GoogleCalendarService = {
         event: googleEvent,
       });
 
-      console.log('✅ Evento atualizado no Google Calendar:', googleEventId);
+      console.log('[GoogleCalendarService] Evento atualizado no Google Calendar:', googleEventId);
     } catch (error) {
-      console.error('❌ Erro ao atualizar evento no Google Calendar:', error);
+      console.error('[GoogleCalendarService] Erro ao atualizar evento no Google Calendar:', error);
       throw error;
     }
   },
@@ -217,9 +223,9 @@ export const GoogleCalendarService = {
       
       await deleteCalendarEvent({ eventId: googleEventId });
 
-      console.log('✅ Evento deletado do Google Calendar:', googleEventId);
+      console.log('[GoogleCalendarService] Evento deletado do Google Calendar:', googleEventId);
     } catch (error) {
-      console.error('❌ Erro ao deletar evento do Google Calendar:', error);
+      console.error('[GoogleCalendarService] Erro ao deletar evento do Google Calendar:', error);
       throw error;
     }
   },

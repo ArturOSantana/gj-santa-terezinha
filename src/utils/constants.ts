@@ -76,21 +76,33 @@ export const PERIOD_OPTIONS = [
 
 
 export const EVENT_CATEGORIES = {
-  saturday: { label: 'Sábado', color: '#2c5f2d' },
-  solemnity: { label: 'Solenidade', color: '#d4af37' },
-  saint_day: { label: 'Dia de Santo', color: '#9c27b0' },
-  birthday: { label: 'Aniversário', color: '#ff9800' },
-  parish_event: { label: 'Evento Paroquial', color: '#2196f3' },
-  novena: { label: 'Novena', color: '#e91e63' },
+  formation: { label: 'Formação', color: '#2c5f2d' },
+  mass: { label: 'Missa', color: '#d4af37' },
+  meeting: { label: 'Encontro', color: '#9c27b0' },
+  retreat: { label: 'Retiro', color: '#ff9800' },
+  outing: { label: 'Passeio', color: '#4caf50' },
+  leadership_meeting: { label: 'Reunião de Liderança', color: '#3f51b5' },
+  pastoral: { label: 'Pastoral', color: '#009688' },
+  parish: { label: 'Paróquia', color: '#2196f3' },
+  schedule: { label: 'Escala', color: '#795548' },
+  deadline: { label: 'Prazo', color: '#f44336' },
+  gj_meeting: { label: 'Encontro GJ', color: '#e91e63' },
+  other: { label: 'Outro', color: '#607d8b' },
 } as const;
 
 export const EVENT_CATEGORY_OPTIONS = [
-  { value: 'saturday', label: 'Sábado' },
-  { value: 'solemnity', label: 'Solenidade' },
-  { value: 'saint_day', label: 'Dia de Santo' },
-  { value: 'birthday', label: 'Aniversário' },
-  { value: 'parish_event', label: 'Evento Paroquial' },
-  { value: 'novena', label: 'Novena' },
+  { value: 'formation', label: 'Formação' },
+  { value: 'mass', label: 'Missa' },
+  { value: 'meeting', label: 'Encontro' },
+  { value: 'retreat', label: 'Retiro' },
+  { value: 'outing', label: 'Passeio' },
+  { value: 'leadership_meeting', label: 'Reunião de Liderança' },
+  { value: 'pastoral', label: 'Pastoral' },
+  { value: 'parish', label: 'Paróquia' },
+  { value: 'schedule', label: 'Escala' },
+  { value: 'deadline', label: 'Prazo' },
+  { value: 'gj_meeting', label: 'Encontro GJ' },
+  { value: 'other', label: 'Outro' },
 ] as const;
 
 export const ACTIVITY_TYPES = {

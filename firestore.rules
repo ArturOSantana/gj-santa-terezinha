@@ -2,118 +2,242 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
+
+    // Funções auxiliares de autenticação e RBAC
+    function isAuthenticated() {
       return request.auth != null;
     }
 
-    function currentUserDoc() {
-      return get(/databases/$(database)/documents/members/$(request.auth.uid));
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function currentUserExists() {
-      return isSignedIn() && currentUserDoc().data != null;
-    }
-
-    function currentUserRole() {
-      return currentUserExists() ? currentUserDoc().data.role : null;
+    function getUserRole() {
+      return isAuthenticated() ? getUserData().role : null;
     }
 
     function isAdmin() {
-      return currentUserRole() == 'admin';
+      return getUserRole() == 'admin';
     }
 
     function isCoordinator() {
-      return currentUserRole() == 'coordinator';
+      return getUserRole() == 'coordinator' || isAdmin();
     }
 
-    function isCoordinatorOrAdmin() {
-      return isCoordinator() || isAdmin();
+    function isLeader() {
+      return getUserRole() == 'leader' || isCoordinator();
     }
 
-    function isMainAdminEmail(email) {
-      return email == 'admin@gj.com';
+    // =========================================================================
+    // 1. Coleção: users (Operadores e Líderes com Login)
+    // =========================================================================
+    match /users/{userId} {
+      // Usuário SEMPRE pode ler seu próprio documento (necessário para resolver o role no login)
+      // Admins e Coordenadores podem ler qualquer documento de usuário
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isCoordinator();
+      
+      // Somente Admin pode criar/atualizar cargos (RBAC) ou excluir usuários
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'email']));
     }
 
-    function isSelf(memberId) {
-      return isSignedIn() && request.auth.uid == memberId;
+    // =========================================================================
+    // 2. Coleção: people (Cadastro Geral de Jovens / Pessoas sem login obrigatório)
+    // =========================================================================
+    match /people/{personId} {
+      // Leitura: Líderes, Coordenadores e Admins
+      allow read: if isLeader();
+      
+      // Criação e Edição: Coordenação e Admin
+      allow create, update: if isCoordinator();
+      
+      // Exclusão: Apenas Admin
+      allow delete: if isAdmin();
     }
 
-    function creatingOwnProfile(memberId) {
-      return isSelf(memberId)
-        && !exists(/databases/$(database)/documents/members/$(memberId));
-    }
-
-    function updatingOwnProfileWithoutRoleChange() {
-      return request.resource.data.role == resource.data.role;
-    }
-
-    match /members/{memberId} {
-      allow read: if isSignedIn();
-
-      allow create: if isSignedIn() && (
-        isAdmin() ||
-        (
-          creatingOwnProfile(memberId) &&
-          request.resource.data.id == request.auth.uid &&
-          request.resource.data.email is string &&
-          (
-            request.resource.data.role == 'member' ||
-            (
-              isMainAdminEmail(request.resource.data.email) &&
-              request.resource.data.role == 'admin'
-            )
-          )
-        )
-      );
-
-      allow update: if isSignedIn() && (
-        isAdmin() ||
-        (
-          isCoordinator() &&
-          resource.data.role == 'member' &&
-          request.resource.data.role == 'member' &&
-          resource.data.email != 'admin@gj.com'
-        ) ||
-        (
-          isSelf(memberId) &&
-          updatingOwnProfileWithoutRoleChange()
-        )
-      );
-
-      allow delete: if isSignedIn() && (
-        (isAdmin() && resource.data.email != 'admin@gj.com') ||
-        (isCoordinator() && resource.data.role == 'member' && resource.data.email != 'admin@gj.com')
-      );
-    }
-
+    // =========================================================================
+    // 3. Coleção: events (Eventos, Retiros, Formações e Encontros)
+    // =========================================================================
     match /events/{eventId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isCoordinatorOrAdmin();
+      // Leitura: Pública se visibility == 'public', ou membros da liderança autenticados
+      allow read: if resource.data.visibility == 'public' || isLeader();
+      
+      // Criação e Edição: Coordenação e Admin
+      allow create, update: if isCoordinator();
+      
+      // Exclusão: Somente Admin
+      allow delete: if isAdmin();
+
+      // Subcoleção: registrations (Inscrições do evento)
+      match /registrations/{registrationId} {
+        // Leitura: Coordenação/Admin ou o próprio jovem via token/consulta
+        allow read: if isCoordinator() || (isAuthenticated() && resource.data.personId == request.auth.uid);
+        
+        // Criação: Coordenação ou formulário público validado (campos obrigatórios + source correto)
+        allow create: if isCoordinator()
+          || (
+            request.resource.data.keys().hasAll(['name', 'phone', 'eventId', 'source'])
+            && request.resource.data.source == 'public_page'
+            && request.resource.data.name is string
+            && request.resource.data.name.size() >= 3
+            && request.resource.data.name.size() <= 100
+            && request.resource.data.phone is string
+            && request.resource.data.phone.size() >= 8
+            && request.resource.data.phone.size() <= 25
+          );
+        
+        // Atualização e Exclusão: Coordenação e Admin
+        allow update, delete: if isCoordinator();
+      }
     }
 
+    // =========================================================================
+    // 4. Coleção: transactions (Tesouraria e Caixa)
+    // =========================================================================
     match /transactions/{transactionId} {
-      allow read, create, update, delete: if isCoordinatorOrAdmin();
+      // Apenas Coordenação e Admin acessam o financeiro
+      allow read, create, update: if isCoordinator();
+      allow delete: if isAdmin();
     }
 
-    match /contributions/{contributionId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isCoordinatorOrAdmin();
+    // =========================================================================
+    // 5. Coleção: tasks (Tarefas e Planejamento)
+    // =========================================================================
+    match /tasks/{taskId} {
+      // Leitura: Qualquer membro da liderança
+      allow read: if isLeader();
+      
+      // Criação: Coordenação e Admin
+      allow create: if isCoordinator();
+      
+      // Atualização: Responsável pela tarefa (assignedToId), Coordenação ou Admin
+      allow update: if isCoordinator() || (isLeader() && resource.data.assignedToId == request.auth.uid);
+      
+      // Exclusão: Somente Admin ou Coordenação
+      allow delete: if isCoordinator();
     }
 
-    // Boa Nova - Sistema de envio de mensagens
+    // =========================================================================
+    // 6. Coleção: schedules (Escalas de Serviços e Equipes)
+    // =========================================================================
+    match /schedules/{scheduleId} {
+      // Leitura: Membros da liderança ou leitura pública de escala específica caso possua publicToken
+      allow read: if isLeader() || resource.data.publicToken != null;
+      
+      // Criação e Exclusão: Coordenação e Admin
+      allow create, delete: if isCoordinator();
+      
+      // Atualização de confirmação: Coordenação ou portador do token público válido
+      // Apenas os campos status, tokenUsed e updatedAt podem ser alterados via token
+      allow update: if isCoordinator()
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'tokenUsed', 'updatedAt'])
+          && resource.data.publicToken != null
+          && request.resource.data.publicToken == resource.data.publicToken
+          && resource.data.get('tokenUsed', false) == false
+        );
+    }
+
+    // =========================================================================
+    // 7. Coleção: attendances (Registros e Listas de Presença)
+    // =========================================================================
+    match /attendances/{attendanceId} {
+      // Leitura: Membros da liderança
+      allow read: if isLeader();
+      
+      // Criação (Checkin via QR / Formulário): Líder ou checkin público validado
+      allow create: if isLeader()
+        || (
+          request.resource.data.keys().hasAll(['eventId', 'eventTitle', 'personName', 'method'])
+          && request.resource.data.personName is string
+          && request.resource.data.personName.size() >= 3
+          && request.resource.data.personName.size() <= 100
+          && request.resource.data.method in ['qr_code', 'self_checkin']
+        );
+      
+      // Atualização e Exclusão: Coordenação e Admin
+      allow update, delete: if isCoordinator();
+    }
+
+    // =========================================================================
+    // 8. Coleção: meetings (Reuniões de Liderança, Pautas e Atas)
+    // =========================================================================
+    match /meetings/{meetingId} {
+      // Leitura: Líderes, Coordenadores e Admins
+      allow read: if isLeader();
+      
+      // Criação e Edição: Coordenação e Admin
+      allow create, update: if isCoordinator();
+      
+      // Exclusão: Somente Admin
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 9. Coleção: documents (Documentos, Atas e Fichas)
+    // =========================================================================
+    match /documents/{documentId} {
+      // Leitura: Pública se isPublic == true, ou membros da liderança
+      allow read: if resource.data.isPublic == true || isLeader();
+      
+      // Criação e Edição: Coordenação e Admin
+      allow create, update: if isCoordinator();
+      
+      // Exclusão: Somente Admin
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 10. Coleção: audit_logs (Logs de Auditoria e Segurança)
+    // =========================================================================
+    match /audit_logs/{logId} {
+      // Somente Admin lê logs de auditoria
+      allow read: if isAdmin();
+      
+      // Criação: Usuários autenticados no sistema podem gravar logs de suas ações
+      allow create: if isAuthenticated();
+      
+      // Imutabilidade de auditoria: Ninguém pode alterar ou apagar logs
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // 11. Coleção: system_settings (Configurações Gerais e Google Calendar)
+    // =========================================================================
+    match /system_settings/{settingId} {
+      allow read: if isLeader();
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 12. Coleção: settings (Configurações da Página Pública)
+    // =========================================================================
+    match /settings/{settingId} {
+      // Leitura pública — a home pública precisa ler sem autenticação
+      allow read: if true;
+      // Escrita: apenas Admin
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 13. Coleção: publicCards (Cards Customizados da Página Pública)
+    // =========================================================================
+    match /publicCards/{cardId} {
+      // Leitura pública — a home pública exibe os cards sem autenticação
+      allow read: if true;
+      // Criação, edição e exclusão: apenas Admin
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 14. Coleção: boanova_broadcasts (Transmissões de Mensagens da Boa Nova)
+    // =========================================================================
     match /boanova_broadcasts/{broadcastId} {
-      allow read: if isCoordinatorOrAdmin();
-      allow create: if isCoordinatorOrAdmin();
-      allow update, delete: if isCoordinatorOrAdmin();
-    }
-    
-    // WhatsApp Sessions - Apenas coordenadores e admins
-    match /boanova_whatsapp_sessions/{sessionId} {
-      allow read, write: if isCoordinatorOrAdmin();
-    }
-
-    match /{document=**} {
-      allow read, write: if isAdmin();
+      // Leitura, criação e edição: Apenas Coordenação e Admin
+      allow read, create, update: if isCoordinator();
+      // Exclusão: Somente Admin
+      allow delete: if isAdmin();
     }
   }
 }

@@ -194,8 +194,9 @@ const Users: React.FC = () => {
           p: { xs: 2, md: 2.5 },
           mb: 3,
           borderRadius: { xs: 3, md: 3.5 },
-          border: '1px solid rgba(26, 71, 49, 0.08)',
-          background: 'linear-gradient(135deg, rgba(26, 71, 49, 0.03) 0%, rgba(184, 134, 11, 0.02) 100%)',
+          bgcolor: '#f7efdd',
+          border: '1px solid rgba(211, 163, 76, 0.3)',
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
         }}
       >
         <Grid container spacing={2}>
@@ -205,11 +206,21 @@ const Users: React.FC = () => {
               placeholder="Buscar por nome ou email..."
               value={searchQuery}
               onChange={handleSearchChange}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#ffffff',
+                  color: '#2a1420',
+                  borderRadius: 2,
+                  '& fieldset': { borderColor: 'rgba(211, 163, 76, 0.35)' },
+                  '&:hover fieldset': { borderColor: '#c15c71' },
+                  '&.Mui-focused fieldset': { borderColor: '#c15c71' },
+                },
+              }}
               slotProps={{
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon sx={{ color: '#8a6b75' }} />
                     </InputAdornment>
                   ),
                 },
@@ -223,6 +234,18 @@ const Users: React.FC = () => {
               label="Filtrar perfil"
               value={selectedRole}
               onChange={(event) => setSelectedRole(event.target.value as UserRole | 'all')}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#ffffff',
+                  color: '#2a1420',
+                  borderRadius: 2,
+                  '& fieldset': { borderColor: 'rgba(211, 163, 76, 0.35)' },
+                  '&:hover fieldset': { borderColor: '#c15c71' },
+                  '&.Mui-focused fieldset': { borderColor: '#c15c71' },
+                },
+                '& .MuiInputLabel-root': { color: '#6b5347' },
+                '& .MuiInputLabel-root.Mui-focused': { color: '#c15c71' },
+              }}
             >
               <MenuItem value="all">Todos os perfis</MenuItem>
               <MenuItem value="admin">Administradores</MenuItem>
@@ -238,10 +261,20 @@ const Users: React.FC = () => {
               scrollButtons="auto"
               sx={{
                 minHeight: 44,
+                borderBottom: '1px solid rgba(211, 163, 76, 0.2)',
                 '& .MuiTab-root': {
                   minHeight: 44,
                   textTransform: 'none',
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  color: '#6b5347',
+                  '&.Mui-selected': {
+                    color: '#c15c71',
+                  },
+                },
+                '& .MuiTabs-indicator': {
+                  bgcolor: '#c15c71',
+                  height: 3,
+                  borderRadius: '3px 3px 0 0',
                 },
               }}
             >
@@ -267,8 +300,10 @@ const Users: React.FC = () => {
           elevation={0}
           sx={{
             borderRadius: { xs: 3, md: 4 },
-            border: '1px solid rgba(26, 71, 49, 0.08)',
-            background: 'linear-gradient(135deg, rgba(26, 71, 49, 0.025) 0%, rgba(184, 134, 11, 0.02) 100%)',
+            bgcolor: '#f7efdd',
+            color: '#2a1420',
+            border: '1px solid rgba(211, 163, 76, 0.3)',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
           }}
         >
           <EmptyState
@@ -279,7 +314,17 @@ const Users: React.FC = () => {
                 : 'Adicione o primeiro usuário do sistema para começar o controle de acesso.'
             }
             action={
-              <Button variant="contained" startIcon={<PersonAddIcon />} onClick={handleAddUser}>
+              <Button
+                variant="contained"
+                startIcon={<PersonAddIcon />}
+                onClick={handleAddUser}
+                sx={{
+                  bgcolor: '#c15c71',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: '#9a3450' },
+                }}
+              >
                 Adicionar Usuário
               </Button>
             }
@@ -302,7 +347,7 @@ const Users: React.FC = () => {
       )}
 
       {!loading && filteredUsers.length > 0 && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5 }}>
+        <Typography variant="body2" sx={{ color: '#caa2ae', mt: 2.5, fontWeight: 500 }}>
           Exibindo {filteredUsers.length} usuário(s) com os filtros atuais.
         </Typography>
       )}
@@ -319,22 +364,30 @@ const Users: React.FC = () => {
         onClose={handleCancelDelete}
         aria-labelledby="delete-dialog-title"
         aria-describedby="delete-dialog-description"
+        PaperProps={{
+          sx: {
+            bgcolor: '#f7efdd',
+            color: '#2a1420',
+            borderRadius: 3,
+            border: '1px solid rgba(211, 163, 76, 0.3)',
+          },
+        }}
       >
-        <DialogTitle id="delete-dialog-title">
+        <DialogTitle id="delete-dialog-title" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700 }}>
           Confirmar Exclusão
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="delete-dialog-description">
+          <DialogContentText id="delete-dialog-description" sx={{ color: '#4a3227' }}>
             Tem certeza que deseja deletar o usuário <strong>{userToDelete?.name}</strong>?
             <br />
             Esta ação não pode ser desfeita.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="inherit">
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={handleCancelDelete} sx={{ color: '#4a3227' }}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus sx={{ fontWeight: 700 }}>
             Deletar
           </Button>
         </DialogActions>

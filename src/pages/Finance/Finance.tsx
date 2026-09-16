@@ -1,586 +1,322 @@
+import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Container,
   Typography,
+  Grid,
   Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Paper,
-  Stack,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Pagination,
-  InputAdornment,
-  Divider,
-  Grid,
-  alpha,
+  TextField,
+  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Search as SearchIcon,
-  FileDownload as FileDownloadIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  AccountBalance as AccountBalanceIcon,
-  Insights as InsightsIcon,
-  Timeline as TimelineIcon,
+  AttachFile as FileIcon,
+  Download as DownloadIcon,
+  CheckCircle as CheckIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
-import { useMemo } from 'react';
-import { useFinance } from '../../hooks/useFinance';
-import FinancialSummaryCard from '../../components/common/FinancialSummaryCard';
-import TransactionCard from '../../components/common/TransactionCard';
-import TransactionFormModal from '../../components/common/TransactionFormModal';
-import PageHeader from '../../components/common/PageHeader';
-import EmptyState from '../../components/common/EmptyState';
-import { TRANSACTION_CATEGORIES, PERIOD_OPTIONS, CATEGORY_LABELS, TRANSACTION_COLORS } from '../../utils/constants';
-import { TransactionType } from '../../types';
+import { TerezinhaService } from '../../services/firestore.service';
+import { Transaction, TransactionType, TransactionCategory } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { hasPermission } from '../../utils/permissions';
 
-const Finance = () => {
-  const {
-    transactions,
-    allTransactions,
-    summary,
-    chartData,
-    isFormOpen,
-    selectedTransaction,
-    isDeleteDialogOpen,
-    filters,
-    page,
-    rowsPerPage,
-    totalTransactions,
-    handleOpenCreateForm,
-    handleOpenEditForm,
-    handleCloseForm,
-    handleSaveTransaction,
-    handleOpenDeleteDialog,
-    handleCloseDeleteDialog,
-    handleConfirmDelete,
-    handleFilterChange,
-    handlePageChange,
-    handleExportCSV,
-    permissions,
-  } = useFinance();
+export const FinancePage = () => {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [openModal, setOpenModal] = useState(false);
 
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
+  // Form
+  const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<TransactionCategory>(TransactionCategory.MEETING_SNACK);
+  const [personName, setPersonName] = useState('');
+  const [hasReceipt, setHasReceipt] = useState(false);
+
+  const canCreate = user ? hasPermission(user.role, 'coordinator') : false;
+
+  useEffect(() => {
+    if (user) setPersonName(user.displayName || '');
+    loadTransactions();
+  }, [user]);
+
+  const loadTransactions = async () => {
+    const list = await TerezinhaService.getTransactions();
+    setTransactions(list);
   };
 
-  const getAvailableCategories = () => {
-    if (filters.type === TransactionType.INCOME) {
-      return TRANSACTION_CATEGORIES.income;
-    } else if (filters.type === TransactionType.EXPENSE) {
-      return TRANSACTION_CATEGORIES.expense;
-    }
-    return [...TRANSACTION_CATEGORIES.income, ...TRANSACTION_CATEGORIES.expense];
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || !description) return;
+
+    await TerezinhaService.createTransaction({
+      type,
+      category,
+      amount: Number(amount) || 0,
+      description,
+      date: new Date(),
+      personName,
+      hasReceipt,
+    });
+
+    setAmount('');
+    setDescription('');
+    setOpenModal(false);
+    await loadTransactions();
   };
 
-  const maxMonthlyValue = useMemo(() => {
-    return Math.max(
-      ...chartData.monthlyComparison.flatMap((item) => [item.income, item.expense]),
-      1
-    );
-  }, [chartData.monthlyComparison]);
+  const handleExportPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const rows = transactions.map((tx) => {
+      const isIncome = tx.type === TransactionType.INCOME;
+      return `<tr>
+        <td>${new Date(tx.date).toLocaleDateString('pt-BR')}</td>
+        <td>${tx.description}</td>
+        <td>${tx.personName || 'Coordenação'}</td>
+        <td style="color:${isIncome ? '#4f6b4f' : '#9a3450'};font-weight:700;">${isIncome ? '+' : '−'} R$ ${tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+        <td>${tx.hasReceipt ? '✔ OK' : '⚠ Pendente'}</td>
+      </tr>`;
+    }).join('');
+    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Extrato — GJ Santa Terezinha</title>
+    <style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;color:#2a1420}h1{font-size:1.4rem}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#241019;color:#f4e6e9;padding:8px 10px;text-align:left}td{padding:8px 10px;border-bottom:1px solid #e5e7eb}tfoot td{font-weight:700;background:#f7efdd}@media print{button{display:none}}</style>
+    </head><body>
+    <h1>Extrato do Caixa — GJ Santa Terezinha</h1>
+    <p>Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+    <table><thead><tr><th>Data</th><th>Descrição</th><th>Responsável</th><th>Valor</th><th>Comprovante</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="3">Saldo Final</td><td style="color:${balance >= 0 ? '#4f6b4f' : '#9a3450'}">R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td></td></tr></tfoot>
+    </table>
+    <br/><button onclick="window.print()">Imprimir / Salvar PDF</button>
+    </body></html>`);
+    printWindow.document.close();
+  };
 
-  const periodLabel =
-    PERIOD_OPTIONS.find((option) => option.value === filters.period)?.label ?? 'Período selecionado';
-
-  const headerAction = (
-    <Stack direction="row" spacing={1.25} sx={{ flexWrap: 'wrap' }}>
-      <Button
-        variant="outlined"
-        startIcon={<FileDownloadIcon />}
-        onClick={handleExportCSV}
-        sx={{ borderRadius: 2.5 }}
-      >
-        Exportar
-      </Button>
-      {permissions.canCreateTransaction && (
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreateForm}
-          sx={{ borderRadius: 2.5, px: 2.25 }}
-        >
-          Nova Transação
-        </Button>
-      )}
-    </Stack>
-  );
+  const totalIncome = transactions.filter((t) => t.type === TransactionType.INCOME).reduce((acc, t) => acc + t.amount, 0);
+  const totalExpense = transactions.filter((t) => t.type === TransactionType.EXPENSE).reduce((acc, t) => acc + t.amount, 0);
+  const balance = totalIncome - totalExpense;
+  const withoutReceipt = transactions.filter((t) => t.type === TransactionType.EXPENSE && !t.hasReceipt).reduce((acc, t) => acc + t.amount, 0);
+  const withoutReceiptCount = transactions.filter((t) => t.type === TransactionType.EXPENSE && !t.hasReceipt).length;
 
   return (
-    <Container maxWidth="xl" disableGutters>
-      <Box sx={{ py: { xs: 1.5, sm: 2.5 }, display: 'grid', gap: { xs: 2.5, md: 3.5 } }}>
-        <PageHeader
-          title="Controle Financeiro"
-          action={headerAction}
-        />
-
-        <Grid container columnSpacing={{ xs: 2, md: 3 }} rowSpacing={{ xs: 2, md: 2.5 }}>
-          <Grid size={{ xs: 12, md: 3.5 }}>
-            <FinancialSummaryCard
-              title="Total de Receitas"
-              value={summary.totalIncome}
-              type="income"
-              icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box sx={{ mt: { md: 1.2 } }}>
-              <FinancialSummaryCard
-                title="Total de Despesas"
-                value={summary.totalExpense}
-                type="expense"
-                icon={<TrendingDownIcon sx={{ fontSize: 32 }} />}
-              />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
-            <FinancialSummaryCard
-              title="Saldo Atual"
-              value={summary.balance}
-              type="balance"
-              icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 2 }}>
-            <Paper
-              sx={{
-                p: 2.25,
-                borderRadius: 3,
-                height: '100%',
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(255,255,255,0.96) 100%)',
-              }}
+    <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, color: '#f4e6e9' }}>
+            Caixa & Tesouraria
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          {canCreate && (
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleExportPDF}
+              sx={{ borderColor: '#d3a34c', color: '#d3a34c', fontWeight: 700, textTransform: 'none' }}
             >
-              <Typography variant="body2" color="text.secondary">
-                Resultado
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{
-                  mt: 1,
-                  fontWeight: 700,
-                  color: summary.balance >= 0 ? 'success.main' : 'error.main',
-                }}
-              >
-                {summary.balance >= 0 ? 'Positivo' : 'Ajustar gastos'}
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
-
-        <Grid container columnSpacing={{ xs: 2, md: 3 }} rowSpacing={{ xs: 2.5, md: 3 }}>
-          <Grid size={{ xs: 12, lg: 4.5 }}>
-            <Paper
-              sx={{
-                p: { xs: 1.75, sm: 2, md: 2.75 },
-                borderRadius: { xs: 3, md: 3.5 },
-                height: '100%',
-              }}
+              Exportar PDF
+            </Button>
+          )}
+          {canCreate && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenModal(true)}
+              sx={{ bgcolor: '#c15c71', color: '#fff', '&:hover': { bgcolor: '#9a3450' }, fontWeight: 700 }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 }, mb: { xs: 1.75, md: 2 } }}>
-                <InsightsIcon sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
-                  }}
-                >
-                  Filtros
-                </Typography>
-              </Box>
+              Novo Lançamento
+            </Button>
+          )}
+        </Box>
+      </Box>
 
-              <Stack spacing={2.25}>
-                <TextField
-                  fullWidth
-                  placeholder="Buscar transação..."
-                  value={filters.searchTerm}
-                  onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2.5,
-                    },
-                  }}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-                    gap: 1.75,
-                  }}
-                >
-                  <FormControl fullWidth>
-                    <InputLabel>Tipo</InputLabel>
-                    <Select
-                      value={filters.type}
-                      label="Tipo"
-                      onChange={(e) => handleFilterChange({ type: e.target.value as any, category: 'all' })}
-                      sx={{ borderRadius: 2.5 }}
-                    >
-                      <MenuItem value="all">Todos</MenuItem>
-                      <MenuItem value={TransactionType.INCOME}>Entradas</MenuItem>
-                      <MenuItem value={TransactionType.EXPENSE}>Saídas</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth>
-                    <InputLabel>Categoria</InputLabel>
-                    <Select
-                      value={filters.category}
-                      label="Categoria"
-                      onChange={(e) => handleFilterChange({ category: e.target.value })}
-                      sx={{ borderRadius: 2.5 }}
-                    >
-                      <MenuItem value="all">Todas</MenuItem>
-                      {getAvailableCategories().map((cat) => (
-                        <MenuItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ gridColumn: { md: '1 / -1' } }}>
-                    <InputLabel>Período</InputLabel>
-                    <Select
-                      value={filters.period}
-                      label="Período"
-                      onChange={(e) => handleFilterChange({ period: e.target.value })}
-                      sx={{ borderRadius: 2.5 }}
-                    >
-                      {PERIOD_OPTIONS.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-
-                {(filters.type !== 'all' || filters.category !== 'all' || filters.searchTerm) && (
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {filters.type !== 'all' && (
-                      <Chip
-                        label={`Tipo: ${filters.type === TransactionType.INCOME ? 'Entradas' : 'Saídas'}`}
-                        onDelete={() => handleFilterChange({ type: 'all' })}
-                        size="small"
-                        sx={{ bgcolor: alpha(TRANSACTION_COLORS.income.main, 0.1) }}
-                      />
-                    )}
-                    {filters.category !== 'all' && (
-                      <Chip
-                        label={`Categoria: ${CATEGORY_LABELS[filters.category] || filters.category}`}
-                        onDelete={() => handleFilterChange({ category: 'all' })}
-                        size="small"
-                        sx={{ bgcolor: alpha(TRANSACTION_COLORS.expense.main, 0.1) }}
-                      />
-                    )}
-                    {filters.searchTerm && (
-                      <Chip
-                        label={`Busca: "${filters.searchTerm}"`}
-                        onDelete={() => handleFilterChange({ searchTerm: '' })}
-                        size="small"
-                      />
-                    )}
-                  </Box>
-                )}
-
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 3,
-                    background: 'linear-gradient(135deg, rgba(26,71,49,0.05) 0%, rgba(26,71,49,0.01) 100%)',
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    Transações no recorte atual
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {totalTransactions}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Paper>
-          </Grid>
-
-          <Grid size={{ xs: 12, lg: 7.5 }}>
-            <Stack spacing={2.5}>
-              <Paper
-                sx={{
-                  p: { xs: 1.75, sm: 2, md: 2.75 },
-                  borderRadius: { xs: 3, md: 3.5 },
-                  background: 'linear-gradient(135deg, rgba(248,245,238,1) 0%, rgba(255,255,255,1) 100%)',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, md: 1 }, mb: { xs: 2, md: 2.25 } }}>
-                  <TimelineIcon sx={{ color: 'secondary.main', fontSize: { xs: 20, sm: 24 } }} />
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
-                    }}
-                  >
-                    Receitas vs Despesas
-                  </Typography>
-                </Box>
-
-                <Stack spacing={{ xs: 1.25, md: 1.5 }}>
-                  {chartData.monthlyComparison.map((item, index) => (
-                    <Box
-                      key={item.month}
-                      sx={{
-                        p: { xs: 1.25, sm: 1.5 },
-                        borderRadius: { xs: 2, md: 2.5 },
-                        ml: index % 2 === 0 ? 0 : { md: 1.5 },
-                        bgcolor: index % 2 === 0 ? alpha('#1a4731', 0.03) : alpha('#8b5e34', 0.04),
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: { xs: 0.75, md: 1 }, flexWrap: 'wrap', gap: 0.5 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: { xs: '0.85rem', sm: '0.875rem' },
-                          }}
-                        >
-                          {item.month}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-                        >
-                          Comparativo mensal
-                        </Typography>
-                      </Box>
-
-                      <Stack spacing={1.1}>
-                        <Box>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Receitas
-                            </Typography>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: TRANSACTION_COLORS.income.main }}>
-                              {formatCurrency(item.income)}
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              height: 10,
-                              borderRadius: 999,
-                              bgcolor: alpha(TRANSACTION_COLORS.income.main, 0.12),
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: `${(item.income / maxMonthlyValue) * 100}%`,
-                                height: '100%',
-                                background: `linear-gradient(90deg, ${TRANSACTION_COLORS.income.main} 0%, ${TRANSACTION_COLORS.income.light} 100%)`,
-                              }}
-                            />
-                          </Box>
-                        </Box>
-
-                        <Box>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Despesas
-                            </Typography>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: TRANSACTION_COLORS.expense.main }}>
-                              {formatCurrency(item.expense)}
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              height: 10,
-                              borderRadius: 999,
-                              bgcolor: alpha(TRANSACTION_COLORS.expense.main, 0.12),
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: `${(item.expense / maxMonthlyValue) * 100}%`,
-                                height: '100%',
-                                background: `linear-gradient(90deg, ${TRANSACTION_COLORS.expense.main} 0%, ${TRANSACTION_COLORS.expense.light} 100%)`,
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
-              </Paper>
-
-              <Paper
-                sx={{
-                  p: { xs: 2, md: 2.5 },
-                  borderRadius: 3.5,
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                  Despesas por categoria
-                </Typography>
-
-                {chartData.expensesByCategory.length > 0 ? (
-                  <Stack spacing={1.25}>
-                    {chartData.expensesByCategory.map((item, index) => (
-                      <Box
-                        key={item.name}
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr auto',
-                          gap: 1,
-                          p: 1.5,
-                          borderRadius: 2.5,
-                          mr: index === 1 ? { md: 2 } : 0,
-                          bgcolor: alpha('#8b5e34', 0.05),
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            {CATEGORY_LABELS[item.name] || item.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Participação no período filtrado
-                          </Typography>
-                        </Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                          {formatCurrency(item.value)}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <EmptyState
-                    title="Sem despesas categorizadas"
-                    description="Quando houver saídas registradas no período, o resumo por categoria aparecerá aqui."
-                  />
-                )}
-              </Paper>
-            </Stack>
-          </Grid>
-        </Grid>
-
-        <Paper sx={{ p: { xs: 2, md: 2.75 }, borderRadius: 3.5 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: { xs: 'flex-start', md: 'center' },
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 1,
-              mb: 2.5,
-            }}
-          >
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Transações
+      {/* Cartões de Resumo */}
+      <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Box sx={{ p: 2.5, bgcolor: '#f7efdd', color: '#2a1420', borderRadius: '14px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)' }}>
+            <Typography variant="caption" sx={{ color: '#4a3227', fontWeight: 700 }}>SALDO ATUAL</Typography>
+            <Typography variant="h4" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, fontVariantNumeric: 'tabular-nums', my: 0.5 }}>
+              R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {totalTransactions} {totalTransactions === 1 ? 'transação' : 'transações'}
+            <Typography variant="caption" sx={{ color: balance >= 0 ? '#7fa176' : '#c15c71', fontWeight: 700 }}>
+              ● {balance >= 0 ? 'Saldo positivo' : 'Saldo negativo'}
             </Typography>
           </Box>
-          <Divider sx={{ mb: 3 }} />
+        </Grid>
 
-          {transactions.length > 0 ? (
-            <>
-              <Stack spacing={2}>
-                {transactions.map((transaction, index) => (
-                  <Box key={transaction.id} sx={{ ml: index % 2 === 0 ? 0 : { md: 1.5 } }}>
-                    <TransactionCard
-                      transaction={transaction}
-                      onEdit={handleOpenEditForm}
-                      onDelete={handleOpenDeleteDialog}
-                      canEdit={permissions.canEditTransaction}
-                      canDelete={permissions.canDeleteTransaction}
-                    />
-                  </Box>
-                ))}
-              </Stack>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Box sx={{ p: 2.5, bgcolor: '#f7efdd', color: '#2a1420', borderRadius: '14px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)' }}>
+            <Typography variant="caption" sx={{ color: '#4f6b4f', fontWeight: 700 }}>TOTAL ENTRADAS</Typography>
+            <Typography variant="h4" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, color: '#4f6b4f', fontVariantNumeric: 'tabular-nums', my: 0.5 }}>
+              + R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#4a3227' }}>Total de receitas registradas</Typography>
+          </Box>
+        </Grid>
 
-              {totalTransactions > rowsPerPage && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3.5 }}>
-                  <Pagination
-                    count={Math.ceil(totalTransactions / rowsPerPage)}
-                    page={page + 1}
-                    onChange={(_, newPage) => handlePageChange(newPage - 1)}
-                    color="primary"
-                  />
-                </Box>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Box sx={{ p: 2.5, bgcolor: '#f7efdd', color: '#2a1420', borderRadius: '14px', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', border: withoutReceipt > 0 ? '2px solid #c15c71' : 'none' }}>
+            <Typography variant="caption" sx={{ color: '#c15c71', fontWeight: 700 }}>SEM COMPROVANTE</Typography>
+            <Typography variant="h4" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, color: '#c15c71', fontVariantNumeric: 'tabular-nums', my: 0.5 }}>
+              R$ {withoutReceipt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </Typography>
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+              {withoutReceiptCount > 0 ? (
+                <>
+                  <WarningIcon sx={{ fontSize: 13, color: '#9a3450' }} />
+                  <Typography variant="caption" sx={{ color: '#9a3450', fontWeight: 700 }}>
+                    {`${withoutReceiptCount} despesa${withoutReceiptCount > 1 ? 's' : ''} pendente${withoutReceiptCount > 1 ? 's' : ''} de nota`}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <CheckIcon sx={{ fontSize: 13, color: '#4f6b4f' }} />
+                  <Typography variant="caption" sx={{ color: '#4f6b4f', fontWeight: 700 }}>
+                    Todas com comprovante
+                  </Typography>
+                </>
               )}
-            </>
-          ) : (
-            <EmptyState
-              title="Nenhuma transação encontrada"
-              description="Os filtros atuais não retornaram resultados. Ajuste os critérios ou registre uma nova movimentação."
-              action={
-                permissions.canCreateTransaction ? (
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleOpenCreateForm}
-                    sx={{ borderRadius: 2.5 }}
-                  >
-                    Nova Transação
-                  </Button>
-                ) : undefined
-              }
-            />
-          )}
-        </Paper>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
 
-        <TransactionFormModal
-          open={isFormOpen}
-          transaction={selectedTransaction}
-          onClose={handleCloseForm}
-          onSave={handleSaveTransaction}
-          readOnly={!permissions.canCreateTransaction && !permissions.canEditTransaction}
-        />
+      {/* Livro Caixa / Tabela de Lançamentos */}
+      <Box sx={{ bgcolor: '#f7efdd', color: '#2a1420', p: 3, borderRadius: '16px', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+        <Typography variant="subtitle1" sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700, mb: 2 }}>
+          Extrato Detalhado do Caixa
+        </Typography>
 
-        {permissions.canDeleteTransaction && (
-          <Dialog open={isDeleteDialogOpen} onClose={handleCloseDeleteDialog}>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogContent>
-              <Typography>
-                Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
-              </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDeleteDialog} color="inherit">
-                Cancelar
-              </Button>
-              <Button onClick={handleConfirmDelete} color="error" variant="contained">
-                Excluir
-              </Button>
-            </DialogActions>
-          </Dialog>
+        {transactions.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 5, color: '#4a3227' }}>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              Nenhuma transação registrada no caixa.
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#6b5347' }}>
+              Utilize o botão &quot;Novo Lançamento&quot; para registrar entradas e saídas.
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {transactions.map((tx) => {
+              const isIncome = tx.type === TransactionType.INCOME;
+              return (
+                <Box
+                  key={tx.id}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    border: '1px solid rgba(107, 83, 71, 0.12)',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        bgcolor: isIncome ? '#efe2c4' : '#f4e6e9',
+                        color: isIncome ? '#4f6b4f' : '#9a3450',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {isIncome ? '+' : '−'}
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2a1420' }}>
+                        {tx.description}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#4a3227' }}>
+                        {new Date(tx.date).toLocaleDateString('pt-BR')} • {tx.personName || 'Coordenação'}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {tx.hasReceipt ? (
+                      <Chip icon={<CheckIcon sx={{ fontSize: 14 }} />} label="Comprovante OK" size="small" sx={{ bgcolor: '#efe2c4', color: '#4f6b4f', fontWeight: 700, fontSize: '0.7rem' }} />
+                    ) : (
+                      <Chip icon={<WarningIcon sx={{ fontSize: 14 }} />} label="Sem Comprovante" size="small" sx={{ bgcolor: '#f4e6e9', color: '#c15c71', fontWeight: 700, fontSize: '0.7rem' }} />
+                    )}
+
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontFamily: '"Fraunces", serif',
+                        fontWeight: 700,
+                        color: isIncome ? '#4f6b4f' : '#9a3450',
+                        fontVariantNumeric: 'tabular-nums',
+                        minWidth: 90,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {isIncome ? '+' : '−'} R$ {tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
         )}
       </Box>
-    </Container>
+
+      {/* Modal Lançamento */}
+      {canCreate && (
+        <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: '#f7efdd', color: '#2a1420', borderRadius: 3 } }}>
+          <form onSubmit={handleCreate}>
+            <DialogTitle sx={{ fontFamily: '"Fraunces", serif', fontWeight: 700 }}>Novo Lançamento no Caixa</DialogTitle>
+            <DialogContent sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  fullWidth
+                  variant={type === TransactionType.EXPENSE ? 'contained' : 'outlined'}
+                  onClick={() => setType(TransactionType.EXPENSE)}
+                  sx={{ bgcolor: type === TransactionType.EXPENSE ? '#c15c71' : 'transparent', color: type === TransactionType.EXPENSE ? '#fff' : '#c15c71' }}
+                >
+                  Saída / Despesa
+                </Button>
+                <Button
+                  fullWidth
+                  variant={type === TransactionType.INCOME ? 'contained' : 'outlined'}
+                  onClick={() => setType(TransactionType.INCOME)}
+                  sx={{ bgcolor: type === TransactionType.INCOME ? '#7fa176' : 'transparent', color: type === TransactionType.INCOME ? '#fff' : '#7fa176' }}
+                >
+                  Entrada / Receita
+                </Button>
+              </Box>
+              <TextField label="Valor (R$)" required fullWidth type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" />
+              <TextField label="Descrição" required fullWidth value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Material da formação" />
+              <TextField label="Responsável" fullWidth value={personName} onChange={(e) => setPersonName(e.target.value)} />
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={hasReceipt ? <CheckIcon sx={{ color: '#4f6b4f' }} /> : <FileIcon />}
+                sx={{ borderColor: '#4a3227', color: '#2a1420' }}
+                onClick={() => setHasReceipt(true)}
+              >
+                {hasReceipt ? 'Comprovante anexado (foto/PDF)' : 'Anexar Foto do Comprovante'}
+              </Button>
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5 }}>
+              <Button onClick={() => setOpenModal(false)} sx={{ color: '#4a3227' }}>Cancelar</Button>
+              <Button type="submit" variant="contained" sx={{ bgcolor: '#c15c71', color: '#fff', fontWeight: 700 }}>Salvar Lançamento</Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      )}
+    </Box>
   );
 };
 
-export default Finance;
-
+export default FinancePage;
