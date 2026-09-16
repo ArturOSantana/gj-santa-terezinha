@@ -26,8 +26,11 @@ import {
   EventAvailable as EventAvailableIcon,
   CalendarMonth as CalendarMonthIcon,
   AutoAwesomeMotion as AutoAwesomeMotionIcon,
+  Print as PrintIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { printBeautifulCalendar, generateFullCalendarICS } from '../../utils/calendarExport';
 import { ptBR } from 'date-fns/locale';
 import CalendarView from '../../components/common/CalendarView';
 import EventCard from '../../components/common/EventCard';
@@ -214,6 +217,33 @@ const Calendar: React.FC = () => {
         sx={{ borderRadius: 2.5 }}
       >
         Hoje
+      </Button>
+
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => printBeautifulCalendar(filteredEvents)}
+        size={isMobile ? 'small' : 'medium'}
+        sx={{ borderRadius: 2.5 }}
+      >
+        Imprimir / PDF
+      </Button>
+
+      <Button
+        variant="outlined"
+        startIcon={<DownloadIcon />}
+        onClick={() => {
+          generateFullCalendarICS(filteredEvents);
+          setSnackbar({
+            open: true,
+            message: 'Arquivo .ics do calendário baixado com sucesso!',
+            severity: 'success',
+          });
+        }}
+        size={isMobile ? 'small' : 'medium'}
+        sx={{ borderRadius: 2.5 }}
+      >
+        Baixar .ICS
       </Button>
 
       {isMobile && (

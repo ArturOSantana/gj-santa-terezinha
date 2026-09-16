@@ -14,11 +14,14 @@ import {
   AccessTime as TimeIcon,
   CalendarToday as CalendarAddIcon,
   CalendarMonth as CalendarMonthIcon,
+  Print as PrintIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { TerezinhaService } from '../../services/firestore.service';
 import { GoogleCalendarService } from '../../services/googleCalendar.service';
 import { Event } from '../../types';
+import { printBeautifulCalendar, generateFullCalendarICS } from '../../utils/calendarExport';
 
 /** Gera e faz download de um arquivo .ics para o evento */
 function downloadICS(evt: Event) {
@@ -150,15 +153,38 @@ export const PublicCalendar = () => {
           >
             Início
           </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<ShareIcon />}
-            onClick={handleShare}
-            sx={{ borderColor: '#7fa176', color: '#7fa176', textTransform: 'none', borderRadius: 2 }}
-          >
-            WhatsApp
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<PrintIcon />}
+              onClick={() => printBeautifulCalendar(events, 'Agenda Oficial — Grupo de Jovens Santa Terezinha')}
+              sx={{ borderColor: '#d3a34c', color: '#d3a34c', textTransform: 'none', borderRadius: 2 }}
+            >
+              Imprimir / PDF
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={() => {
+                generateFullCalendarICS(events, 'Agenda GJ Santa Terezinha');
+                setSnackOpen(true);
+              }}
+              sx={{ borderColor: '#e2cad2', color: '#e2cad2', textTransform: 'none', borderRadius: 2 }}
+            >
+              Baixar .ICS
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<ShareIcon />}
+              onClick={handleShare}
+              sx={{ borderColor: '#7fa176', color: '#7fa176', textTransform: 'none', borderRadius: 2 }}
+            >
+              WhatsApp
+            </Button>
+          </Box>
         </Box>
 
         {/* Hero Card */}

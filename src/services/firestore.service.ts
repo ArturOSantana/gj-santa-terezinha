@@ -284,13 +284,17 @@ export const TerezinhaService = {
   async createEvent(event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event> {
     try {
       const now = serverTimestamp();
-      const payload: any = {
+      const rawPayload: any = {
         ...event,
         date: Timestamp.fromDate(new Date(event.date)),
         endDate: event.endDate ? Timestamp.fromDate(new Date(event.endDate)) : null,
         createdAt: now,
         updatedAt: now,
       };
+      // Firestore rejeita campos com valor undefined
+      const payload = Object.fromEntries(
+        Object.entries(rawPayload).filter(([, v]) => v !== undefined)
+      );
 
       const docRef = await addDoc(collection(db, 'events'), payload);
       await logAuditEvent('create', 'events', docRef.id, { title: event.title });
@@ -309,16 +313,20 @@ export const TerezinhaService = {
 
   async updateEvent(id: string, updates: Partial<Event>): Promise<void> {
     try {
-      const payload: any = {
+      const rawPayload: any = {
         ...updates,
         updatedAt: serverTimestamp(),
       };
       if (updates.date) {
-        payload.date = Timestamp.fromDate(new Date(updates.date));
+        rawPayload.date = Timestamp.fromDate(new Date(updates.date));
       }
       if (updates.endDate) {
-        payload.endDate = Timestamp.fromDate(new Date(updates.endDate));
+        rawPayload.endDate = Timestamp.fromDate(new Date(updates.endDate));
       }
+      // Firestore rejeita campos com valor undefined
+      const payload = Object.fromEntries(
+        Object.entries(rawPayload).filter(([, v]) => v !== undefined)
+      );
 
       await updateDoc(doc(db, 'events', id), payload);
       await logAuditEvent('update', 'events', id, updates);
