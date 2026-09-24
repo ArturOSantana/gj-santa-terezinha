@@ -61,7 +61,7 @@ export interface AgendaBirthday {
   m: number;
 }
 
-export type AgendaFilter = 'all' | AgendaCategory | 'novena';
+export type AgendaFilter = 'all' | AgendaCategory;
 export type AgendaView = 'list' | 'calendar';
 export type AdminTab = 'notices';
 
@@ -72,7 +72,6 @@ export const CATEGORY_LABELS: Record<AgendaFilter, string> = {
   crisma: 'Crisma',
   tlc: 'TLC',
   outros: 'Outros',
-  novena: 'Novena',
 };
 
 export const WEEKDAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'] as const;

@@ -381,6 +381,60 @@
   border-color: var(--tab-color, var(--ag-navy));
 }
 
+/* Checkbox "Novenas" na barra de filtros */
+.ag-tab-novena-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 10px 0 8px;
+  color: var(--ag-mute);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 4px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  /* Separa visualmente do último filtro */
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--ag-line);
+}
+.ag-tab-novena-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--ag-line);
+  border-radius: 3px;
+  background: var(--ag-card);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ag-tab-novena-check input[type="checkbox"]:checked {
+  background: var(--accent, var(--ag-gold));
+  border-color: var(--accent, var(--ag-gold));
+}
+.ag-tab-novena-check input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+.ag-tab-novena-check:has(input:checked) {
+  color: var(--accent, var(--ag-gold));
+  border-bottom-color: var(--accent, var(--ag-gold));
+}
+
 .ag-view-toggle {
   display: flex;
   gap: 6px;

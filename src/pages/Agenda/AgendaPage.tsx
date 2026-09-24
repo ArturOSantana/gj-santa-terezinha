@@ -129,6 +129,7 @@ const AgendaPage: React.FC = () => {
   const today = todayStr();
   const now = new Date();
   const [filter, setFilter] = useState<AgendaFilter>('all');
+  const [showNovenas, setShowNovenas] = useState(false);
   const [view, setView] = useState<AgendaView>('list');
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth()); // 0-based
@@ -197,7 +198,8 @@ const AgendaPage: React.FC = () => {
 
   // Itens de novena a mostrar na lista do calendário — expandidos por dia, filtrados pelo mês visível
   const calNovenaItems = React.useMemo(() => {
-    if (filter !== 'all') return [];
+    // Só mostra se o checkbox está ativo E um dia foi selecionado no calendário
+    if (!showNovenas || !selectedDay) return [];
     const items: { slug: string; nome: string; dateStr: string }[] = [];
     for (const n of novenaCalItems) {
       const start = new Date(n.inicio + 'T00:00:00');
@@ -205,7 +207,7 @@ const AgendaPage: React.FC = () => {
       for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dateStr = d.toISOString().slice(0, 10);
         if (!dateStr.startsWith(calMonthStr)) continue;
-        if (selectedDay && +dateStr.slice(8) !== selectedDay) continue;
+        if (+dateStr.slice(8) !== selectedDay) continue;
         items.push({ slug: `${n.slug}-${dateStr}`, nome: n.nome, dateStr });
       }
     }
@@ -419,6 +421,15 @@ const AgendaPage: React.FC = () => {
                 {label}
               </button>
             ))}
+            {/* Checkbox Novenas — separado dos filtros de categoria */}
+            <label className="ag-tab-novena-check" aria-label="Mostrar novenas no calendário">
+              <input
+                type="checkbox"
+                checked={showNovenas}
+                onChange={(e) => setShowNovenas(e.target.checked)}
+              />
+              Novenas
+            </label>
           </div>
           <div className="ag-view-toggle" role="group" aria-label="Modo de visualização">
             <button
@@ -449,9 +460,7 @@ const AgendaPage: React.FC = () => {
           /* ── LISTA ─────────────────────────────────────────────────────── */
           upcomingFiltered.length === 0 ? (
             <p className="ag-empty">
-              {filter === 'novena'
-                ? 'As novenas aparecem no calendário. Mude para "Mês" para vê-las.'
-                : 'Nenhum evento nesta categoria. Escolha outra aba para ver mais.'}
+              {'Nenhum evento nesta categoria. Escolha outra aba para ver mais.'}
             </p>
           ) : (
             (() => {
@@ -522,7 +531,7 @@ const AgendaPage: React.FC = () => {
                 );
                 const isToday = dateStr === today;
                 const isSelected = selectedDay === dayNum;
-                const isNovenaDay = novenaDateSet.has(dateStr);
+                const isNovenaDay = showNovenas && novenaDateSet.has(dateStr);
                 const isFrassatiFeast = activeTheme?.theme.saintKey === 'frassati' && dateStr === activeTheme.theme.feastDate;
 
                 const classes = [
