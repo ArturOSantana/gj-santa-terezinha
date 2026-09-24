@@ -662,7 +662,7 @@ const AgendaPage: React.FC = () => {
         <footer className="ag-footer">
           <p>Paróquia Santa Terezinha do Menino Jesus</p>
           <a
-            href="https://www.instagram.com/gjstaterezinha"
+            href="https://www.instagram.com/juventude_terezinha/"
             target="_blank"
             rel="noopener noreferrer"
             className="ag-instagram-link"

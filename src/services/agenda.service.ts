@@ -229,11 +229,18 @@ export function subscribeAgendaNotices(
 export async function addAgendaNotice(
   notice: Omit<AgendaNotice, 'id' | 'createdAt' | 'createdBy'>
 ): Promise<string> {
-  const docRef = await addDoc(collection(db, 'agenda_notices'), {
-    ...notice,
+  // Firestore não aceita `undefined` — omite campos opcionais quando não definidos
+  const data: Record<string, unknown> = {
+    title: notice.title,
+    urgent: notice.urgent,
     createdAt: serverTimestamp(),
     createdBy: uid(),
-  });
+  };
+  if (notice.text)      data.text      = notice.text;
+  if (notice.origin)    data.origin    = notice.origin;
+  if (notice.expiresAt) data.expiresAt = notice.expiresAt;
+
+  const docRef = await addDoc(collection(db, 'agenda_notices'), data);
   return docRef.id;
 }
 

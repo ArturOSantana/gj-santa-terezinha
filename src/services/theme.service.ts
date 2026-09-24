@@ -518,7 +518,7 @@ export function mergeThemes(
  * com base no tema ativo.
  */
 export function getDataTemaAttr(active: ActiveTheme | null): string {
-  if (!active) return 'terezinha';
+  if (!active) return 'default';
   const { theme } = active;
   if (theme.saintKey === 'nossa_senhora') {
     return `nossa_senhora${theme.marianInvocation ? `__${theme.marianInvocation}` : ''}`;

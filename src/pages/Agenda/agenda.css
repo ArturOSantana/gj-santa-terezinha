@@ -2262,8 +2262,8 @@
    (o bg real e a decoração SVG já preenchem o espaço)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.agenda-root[data-tema]:not([data-tema="terezinha"]) .ag-hero::before,
-.agenda-root[data-tema]:not([data-tema="terezinha"]) .ag-hero::after {
+.agenda-root[data-tema]:not([data-tema="terezinha"]):not([data-tema="default"]) .ag-hero::before,
+.agenda-root[data-tema]:not([data-tema="terezinha"]):not([data-tema="default"]) .ag-hero::after {
   opacity: 0.05;
 }
 
