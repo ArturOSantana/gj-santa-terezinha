@@ -144,8 +144,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       });
       resetNoticeForm();
       flash('Aviso publicado.');
-    } catch {
-      flash('Não foi possível publicar. Verifique a conexão.', false);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? '';
+      const msg  = (err as { message?: string })?.message ?? '';
+      console.error('[AdminPanel] Erro ao publicar aviso:', code, msg, err);
+      if (code === 'permission-denied') {
+        flash('Sem permissão. Faça logout e entre novamente.', false);
+      } else {
+        flash('Não foi possível publicar. Verifique a conexão.', false);
+      }
     } finally {
       setLoading(false);
     }

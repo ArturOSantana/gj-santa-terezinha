@@ -8,12 +8,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
+    // Lê o role do usuário autenticado.
+    // Prioriza o custom claim do token (setado via Admin SDK / Cloud Function)
+    // e usa fallback para o documento Firestore quando o claim não existe.
+    // IMPORTANTE: nunca chame getUserRole() dentro da regra de leitura de users/{userId}
+    // para o próprio documento — isso causa loop de dependência no Firestore Rules.
     function getUserRole() {
-      return isAuthenticated() ? getUserData().role : null;
+      return isAuthenticated()
+        ? (request.auth.token.get('role', null) != null
+            ? request.auth.token.role
+            : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role)
+        : null;
     }
 
     function isAdmin() {
@@ -32,11 +37,15 @@ service cloud.firestore {
     // 1. Coleção: users (Operadores e Líderes com Login)
     // =========================================================================
     match /users/{userId} {
-      // Usuário SEMPRE pode ler seu próprio documento (necessário para resolver o role no login)
-      // Admins e Coordenadores podem ler qualquer documento de usuário
+      // Usuário lê o próprio documento — avaliado SEM chamar getUserRole()
+      // para evitar dependência circular (getUserRole faz get(users/{uid})).
       allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      // Coordenadores e admins leem qualquer documento de usuário.
+      // Aqui getUserRole() é seguro porque userId != request.auth.uid
+      // (o próprio documento já foi coberto pela regra acima).
       allow read: if isCoordinator();
-      
+
       // Somente Admin pode criar/atualizar cargos (RBAC) ou excluir usuários
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'email']));
