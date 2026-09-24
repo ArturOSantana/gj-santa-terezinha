@@ -1,0 +1,77 @@
+/**
+ * Tipos da Agenda dos Jovens – Paróquia Santa Terezinha do Menino Jesus
+ */
+
+export type AgendaCategory = 'paroquia' | 'jovens' | 'crisma' | 'tlc' | 'outros';
+
+/** Origem do aviso — quem enviou */
+export type NoticeOrigin = 'tlc' | 'paroquia' | 'jovens' | 'crisma';
+
+export const NOTICE_ORIGIN_LABELS: Record<NoticeOrigin, string> = {
+  tlc: 'TLC',
+  paroquia: 'Paróquia',
+  jovens: 'Grupo de Jovens',
+  crisma: 'Crisma',
+};
+
+/** Evento lido do Google Sheets */
+export interface AgendaEvent {
+  id: string;
+  title: string;
+  /** Categoria: paroquia, jovens, crisma, tlc, outros */
+  g: AgendaCategory;
+  /** Data no formato YYYY-MM-DD */
+  date: string;
+  /** Horário no formato HH:MM (opcional) */
+  time?: string;
+  /** Local (máx. 80 chars) */
+  place?: string;
+  /** Descrição (máx. 800 chars) */
+  desc?: string;
+  /** URL da arte do evento */
+  art_url?: string;
+}
+
+/** Aviso publicado pelo admin — some automaticamente quando vence */
+export interface AgendaNotice {
+  id: string;
+  title: string;
+  text?: string;
+  urgent: boolean;
+  /** Origem do aviso: tlc, paroquia, jovens ou crisma */
+  origin?: NoticeOrigin;
+  /** Data de vencimento ISO string (YYYY-MM-DD). Se definida, some nessa data. */
+  expiresAt?: string;
+  createdAt?: Date;
+  createdBy?: string;
+}
+
+/** Aniversariante lido do Google Calendar */
+export interface AgendaBirthday {
+  id: string;
+  name: string;
+  /** Dia do mês: 1-31 */
+  d: number;
+  /** Mês: 1-12 */
+  m: number;
+}
+
+export type AgendaFilter = 'all' | AgendaCategory | 'novena';
+export type AgendaView = 'list' | 'calendar';
+export type AdminTab = 'notices';
+
+export const CATEGORY_LABELS: Record<AgendaFilter, string> = {
+  all: 'Tudo',
+  paroquia: 'Paróquia',
+  jovens: 'Grupo de Jovens',
+  crisma: 'Crisma',
+  tlc: 'TLC',
+  outros: 'Outros',
+  novena: 'Novena',
+};
+
+export const WEEKDAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'] as const;
+export const MONTHS = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+] as const;

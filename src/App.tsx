@@ -40,6 +40,9 @@ import PublicCalendar from './pages/PublicCalendar/PublicCalendar';
 import PublicAttendanceCheckin from './pages/PublicAttendanceCheckin/PublicAttendanceCheckin';
 import PublicScheduleResponse from './pages/PublicScheduleResponse/PublicScheduleResponse';
 
+// Agenda dos Jovens (Nova)
+import AgendaPage from './pages/Agenda/AgendaPage';
+
 // Permissions
 import { PERMISSIONS } from './utils/permissions';
 
@@ -53,8 +56,13 @@ function App() {
             {/* ========================================================= */}
             {/* ROTAS PÚBLICAS PARA OS JOVENS (SEM LOGIN)                 */}
             {/* ========================================================= */}
-            {/* Página Inicial Pública do Grupo de Jovens */}
-            <Route path="/" element={<PublicHomePage />} />
+            {/* Agenda dos Jovens – página principal */}
+            <Route path="/" element={<AgendaPage />} />
+            <Route path="/agenda" element={<AgendaPage />} />
+
+            {/* Página Institucional do Grupo de Jovens */}
+            <Route path="/home" element={<PublicHomePage />} />
+
             <Route path="/p/agenda" element={<PublicCalendar />} />
             <Route path="/p/checkin" element={<PublicAttendanceCheckin />} />
             <Route path="/p/escala/:token" element={<PublicScheduleResponse />} />

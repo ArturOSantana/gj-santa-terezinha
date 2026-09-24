@@ -239,5 +239,36 @@ service cloud.firestore {
       // Exclusão: Somente Admin
       allow delete: if isAdmin();
     }
+
+    // =========================================================================
+    // 15. Coleções da Agenda dos Jovens (agenda_events, agenda_notices, agenda_birthdays)
+    //     Leitura pública. Escrita apenas para admin/coordinator autenticados.
+    //     A verificação de permissão usa tanto custom claims (token.role)
+    //     quanto o documento do usuário no Firestore (fallback via getUserRole).
+    // =========================================================================
+    match /agenda_events/{docId} {
+      allow read: if true;
+      allow write: if isCoordinator();
+    }
+
+    match /agenda_notices/{docId} {
+      allow read: if true;
+      allow write: if isCoordinator();
+    }
+
+    match /agenda_birthdays/{docId} {
+      allow read: if true;
+      allow write: if isCoordinator();
+    }
+
+    // =========================================================================
+    // 16. Coleção: agenda_themes (Temas Festivos – novenas e festas dos santos)
+    //     Leitura pública (para o site aplicar o tema sem login).
+    //     Escrita apenas para admin/coordinator autenticados.
+    // =========================================================================
+    match /agenda_themes/{themeId} {
+      allow read: if true;
+      allow write: if isCoordinator();
+    }
   }
 }
