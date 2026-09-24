@@ -11,7 +11,7 @@ import {
   Link,
   Alert,
 } from '@mui/material';
-import { LockReset as LockResetIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { isValidEmail } from '../../utils/validation';
 import brasaoGJ from '../../assets/brasao-gj.png';

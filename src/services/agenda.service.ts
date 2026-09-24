@@ -43,13 +43,14 @@ const uid = () => auth.currentUser?.uid ?? 'unknown';
 // Coluna E: local (opcional)
 // Coluna F: descrição (opcional)
 // Coluna G: url_arte (opcional)
+// Coluna H: visível (Sim = público | Não = oculto; padrão: Sim quando vazio)
 //
 // Configure VITE_SHEETS_ID e VITE_SHEETS_API_KEY no .env
 // A planilha deve ser publicada para "Qualquer pessoa com o link pode ver"
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID ?? '';
 const SHEETS_API_KEY = import.meta.env.VITE_SHEETS_API_KEY ?? '';
-const EVENTS_RANGE = 'Eventos!A5:G';
+const EVENTS_RANGE = 'Eventos!A5:H';
 
 type SheetsCache<T> = { data: T[]; fetchedAt: number };
 let eventsCache: SheetsCache<AgendaEvent> | null = null;
@@ -89,11 +90,17 @@ async function fetchSheet<T>(range: string, mapper: (row: string[]) => T | null)
   return rows.map(mapper).filter((r): r is T => r !== null);
 }
 
+/** Normaliza o valor da coluna "Visível": vazio ou "Sim" → true; "Não" → false. */
+function normalizeVisible(raw: string | undefined): boolean {
+  if (!raw?.trim()) return true; // padrão: visível quando a célula está em branco
+  return raw.trim().toLowerCase() !== 'não' && raw.trim().toLowerCase() !== 'nao';
+}
+
 export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
   const now = Date.now();
   if (eventsCache && now - eventsCache.fetchedAt < CACHE_TTL) return eventsCache.data;
   const data = await fetchSheet<AgendaEvent>(EVENTS_RANGE, (row) => {
-    const [title, cat, date, time, place, desc, art_url] = row;
+    const [title, cat, date, time, place, desc, art_url, visible_raw] = row;
     if (!title?.trim() || !date?.trim()) return null;
     return {
       id: `${normalizeDate(date)}-${title.trim().slice(0,20).replace(/\s/g,'-')}`,
@@ -104,6 +111,7 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
       place: place?.trim() || undefined,
       desc: desc?.trim() || undefined,
       art_url: art_url?.trim() || undefined,
+      visible: normalizeVisible(visible_raw),
     };
   });
   eventsCache = { data, fetchedAt: now };

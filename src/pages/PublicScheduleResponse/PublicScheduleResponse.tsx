@@ -59,7 +59,7 @@ export const PublicScheduleResponse = () => {
       } else {
         setErrorMsg('Link expirado ou escala já respondida.');
       }
-    } catch (err) {
+    } catch {
       setErrorMsg('Erro ao registrar resposta da escala.');
     } finally {
       setLoading(false);

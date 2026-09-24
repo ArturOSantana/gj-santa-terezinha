@@ -390,11 +390,6 @@ export interface AuthContextType {
     email: string,
     password: string,
     displayName: string,
-    phone: string,
-    birthDate: Date,
-    gender: 'male' | 'female',
-    whatsappConsent?: boolean,
-    emailConsent?: boolean
   ) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;

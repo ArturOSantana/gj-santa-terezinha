@@ -14,10 +14,12 @@ export const EMAIL_CONFIG = {
   replyTo: 'grupodjovens@terezinha.santa',
   
   // Gmail SMTP (GRATUITO - até 500 e-mails/dia)
+  // porta 587 usa STARTTLS; requireTLS garante que a conexão seja sempre criptografada
   smtp: {
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // true para 465, false para outras portas
+    secure: false,    // false = STARTTLS na porta 587
+    requireTLS: true, // rejeita conexão se TLS não puder ser estabelecido
   },
   
   // Templates de e-mail

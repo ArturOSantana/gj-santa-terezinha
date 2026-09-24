@@ -1,5 +1,4 @@
 import React from 'react';
-import type { View } from 'react-big-calendar';
 import {
   Box,
   Typography,
@@ -14,10 +13,6 @@ import {
   useMediaQuery,
   Paper,
   Chip,
-  Grid,
-  alpha,
-  ToggleButtonGroup,
-  ToggleButton,
 } from '@mui/material';
 import {
   Add as AddIcon,

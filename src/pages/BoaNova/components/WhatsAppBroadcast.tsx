@@ -13,9 +13,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Grid,
   IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   QrCode2,

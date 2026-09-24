@@ -129,10 +129,11 @@ service cloud.firestore {
       allow create, delete: if isCoordinator();
       
       // Atualização de confirmação: Coordenação ou portador do token público válido
-      // Apenas os campos status, tokenUsed e updatedAt podem ser alterados via token
+      // Apenas os campos status e tokenUsed podem ser alterados via token público;
+      // updatedAt é controlado exclusivamente pelo servidor (não pelo cliente).
       allow update: if isCoordinator()
         || (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'tokenUsed', 'updatedAt'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'tokenUsed'])
           && resource.data.publicToken != null
           && request.resource.data.publicToken == resource.data.publicToken
           && resource.data.get('tokenUsed', false) == false

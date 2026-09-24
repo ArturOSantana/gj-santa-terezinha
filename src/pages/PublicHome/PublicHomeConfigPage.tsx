@@ -171,7 +171,8 @@ export const PublicHomeConfigPage: React.FC = () => {
     setError(null);
     setSaved(false);
     try {
-      const { updatedAt, ...rest } = config;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { updatedAt: _updatedAt, ...rest } = config;
       await TerezinhaService.savePublicPageConfig(rest, user?.displayName || 'ADM');
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -198,7 +199,8 @@ export const PublicHomeConfigPage: React.FC = () => {
 
   const openEditCard = (card: PublicCard) => {
     setEditingCard(card);
-    const { id, createdAt, updatedAt, ...rest } = card;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, createdAt: _createdAt, updatedAt: _cardUpdatedAt, ...rest } = card;
     setCardForm(rest);
     setCardDialogOpen(true);
   };

@@ -59,7 +59,6 @@ export const useCalendar = () => {
       try {
         const firestoreEvents = await TerezinhaService.getEvents();
         if (isMounted) {
-          console.log('[Firestore] Carregado:', firestoreEvents.length, 'eventos');
           // Preserva eventos do Google Calendar já carregados (evita race condition)
           setEvents(prev => {
             const googleEvents = prev.filter(e => e.id.startsWith('google-'));
@@ -96,8 +95,6 @@ export const useCalendar = () => {
           
           // Se cache ainda é válido (menos de 30 min), usar cache
           if (now - timestamp < CACHE_DURATION) {
-            console.log('[Google Calendar] Usando cache (valido por', Math.round((CACHE_DURATION - (now - timestamp)) / 60000), 'min)');
-            console.log('[Google Calendar] Total de eventos em cache:', cachedEvents.length);
             
             // Armazenar eventos do Google Calendar na ref
             const newGoogleEvents = cachedEvents.map((ge: any, index: number) => ({
@@ -109,12 +106,9 @@ export const useCalendar = () => {
             }));
             
             googleCalendarEvents.current = newGoogleEvents;
-            console.log('[Google Calendar] Eventos armazenados na ref:', newGoogleEvents.length);
             
             // Mesclar com eventos do Firestore
             setEvents(prevEvents => {
-              console.log('[Merge] Eventos do Firestore:', prevEvents.length);
-              console.log('[Merge] Total apos mesclar:', prevEvents.length + newGoogleEvents.length);
               return [...prevEvents, ...newGoogleEvents];
             });
             googleCalendarFetched.current = true;
@@ -123,7 +117,6 @@ export const useCalendar = () => {
         }
 
         // Cache expirado ou não existe - buscar da API
-        console.log('[Google Calendar] Buscando da API...');
         const googleEvents = await GoogleCalendarService.fetchEvents();
         
         if (googleEvents.length > 0) {
@@ -132,7 +125,6 @@ export const useCalendar = () => {
             events: googleEvents,
             timestamp: Date.now(),
           }));
-          console.log('[Google Calendar] Cache atualizado (valido por 30 min)');
 
           // Armazenar eventos do Google Calendar na ref
           const newGoogleEvents = googleEvents.map((ge, index) => ({
@@ -143,12 +135,9 @@ export const useCalendar = () => {
           }));
           
           googleCalendarEvents.current = newGoogleEvents;
-          console.log('[Google Calendar] Eventos armazenados na ref:', newGoogleEvents.length);
           
           // Mesclar com eventos do Firestore
           setEvents(prevEvents => {
-            console.log('[Merge] Eventos do Firestore:', prevEvents.length);
-            console.log('[Merge] Total apos mesclar:', prevEvents.length + newGoogleEvents.length);
             return [...prevEvents, ...newGoogleEvents];
           });
         }
@@ -166,22 +155,17 @@ export const useCalendar = () => {
 
   // Filtra eventos baseado nos filtros selecionados
   useEffect(() => {
-    console.log('[Filter] Filtrando eventos...');
-    console.log('[Filter] Total de eventos antes do filtro:', events.length);
-    console.log('[Filter] Filtros ativos:', filters);
     
     // Contar eventos por categoria
     const categoryCounts: Record<string, number> = {};
     events.forEach(event => {
       categoryCounts[event.category] = (categoryCounts[event.category] || 0) + 1;
     });
-    console.log('[Filter] Eventos por categoria:', categoryCounts);
     
     const filtered = events.filter((event) =>
       filters.includes(event.category)
     );
     
-    console.log('[Filter] Eventos apos filtro:', filtered.length);
     setFilteredEvents(filtered);
   }, [events, filters]);
 
@@ -206,7 +190,6 @@ export const useCalendar = () => {
           googleEventId = await GoogleCalendarService.createEvent(eventData);
           // Limpar cache do Google Calendar para forçar atualização
           localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
-          console.log('[Cache] Google Calendar limpo (evento criado)');
         } catch (error) {
           console.warn('Não foi possível criar no Google Calendar:', error);
         }
@@ -285,7 +268,6 @@ export const useCalendar = () => {
               await GoogleCalendarService.updateEvent(event.googleCalendarId, eventData);
               // Limpar cache do Google Calendar para forçar atualização
               localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
-              console.log('[Cache] Google Calendar limpo (evento atualizado)');
             } catch (error) {
               console.warn('Não foi possível atualizar no Google Calendar:', error);
             }
@@ -333,7 +315,6 @@ export const useCalendar = () => {
               await GoogleCalendarService.deleteEvent(event.googleCalendarId);
               // Limpar cache do Google Calendar para forçar atualização
               localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
-              console.log('[Cache] Google Calendar limpo (evento deletado)');
             } catch (error) {
               console.warn('Não foi possível deletar do Google Calendar:', error);
             }
@@ -349,7 +330,6 @@ export const useCalendar = () => {
               await GoogleCalendarService.deleteEvent(event.googleCalendarId);
               // Limpar cache do Google Calendar para forçar atualização
               localStorage.removeItem(GOOGLE_CALENDAR_CACHE_KEY);
-              console.log('[useCalendar] Cache do Google Calendar limpo (evento deletado)');
             } catch (error) {
               console.warn('Não foi possível deletar do Google Calendar:', error);
             }

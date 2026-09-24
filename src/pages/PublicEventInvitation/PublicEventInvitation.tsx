@@ -16,7 +16,6 @@ import {
   Share as ShareIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
-  CheckCircle as CheckCircleIcon,
   ArrowBack as ArrowBackIcon,
   Church as ChurchIcon,
   AppRegistration as AppRegistrationIcon,

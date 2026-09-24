@@ -116,11 +116,6 @@ export const Register: React.FC = () => {
         formData.email,
         formData.password,
         formData.name,
-        formData.phone,
-        new Date(formData.birthDate),
-        formData.gender,
-        formData.whatsappConsent,
-        formData.emailConsent
       );
       navigate('/', { replace: true });
     } catch (err: any) {

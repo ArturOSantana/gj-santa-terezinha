@@ -35,7 +35,7 @@ import { EmptyState, PageHeader, StatCard, UserCard } from '../../components/com
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { users, loading, error, createUser, updateUserRole, deleteUser, searchUsers, filterByRole } = useUsers();
+  const { users, loading, error, createUser, updateUserRole, deleteUser, filterByRole } = useUsers();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');

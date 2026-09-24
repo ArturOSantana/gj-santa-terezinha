@@ -1,0 +1,219 @@
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sistema de Temas Festivos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.6; background: #f7f8fa; color: #1f2328; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .sub { color: #57606a; font-size: 13px; margin-bottom: 28px; }
+  h2 { font-size: 14px; font-weight: 700; margin: 24px 0 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+  h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: #3b82d4; }
+
+  /* Tema chips */
+  .themes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid #e5e7eb;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Grid de temas */
+  .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 500px) { .theme-grid { grid-template-columns: 1fr; } }
+  .theme-card {
+    border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;
+  }
+  .theme-header { padding: 8px 12px; color: #fff; font-weight: 700; font-size: 13px; }
+  .theme-body { background: #fff; padding: 8px 12px; font-size: 12px; color: #57606a; }
+  .theme-body .feast { color: #1f2328; font-weight: 600; font-size: 12px; }
+  .theme-body .quote { font-style: italic; margin-top: 3px; color: #8b949e; font-size: 11px; }
+
+  /* Marian grid - mais estreita */
+  .marian-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  @media (max-width: 500px) { .marian-grid { grid-template-columns: 1fr 1fr; } }
+  .marian-card { border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+  .marian-h { padding: 6px 10px; color: #fff; font-size: 11px; font-weight: 700; }
+  .marian-b { padding: 5px 10px; font-size: 11px; color: #57606a; background: #fff; }
+
+  /* Flow */
+  .flow { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+  .flow-n { width: 20px; height: 20px; border-radius: 50%; background: #3b82d4; color: #fff;
+    font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .flow-t { font-size: 13px; }
+  .flow-t strong { font-weight: 600; }
+  .flow-t span { color: #57606a; font-size: 12px; }
+
+  /* File list */
+  .files { display: grid; gap: 4px; }
+  .file-row { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+  .file-path { font-family: monospace; background: #f0f0f0; padding: 1px 6px; border-radius: 3px; color: #1f2328; }
+  .file-desc { color: #57606a; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+  .badge.new  { background: #e6f4ea; color: #1a7a3c; }
+  .badge.edit { background: #fff8e1; color: #9a6000; }
+
+  footer { text-align: center; font-size: 11px; color: #8b949e; border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sistema de Temas Festivos</h1>
+  <p class="sub">Agenda dos Jovens · Paróquia Santa Terezinha do Menino Jesus · implementação completa</p>
+
+  <h2>Como funciona</h2>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-n">1</div>
+      <div class="flow-t"><strong>Datas litúrgicas hardcoded</strong> em <code>theme.service.ts</code> definem janelas de novena (9 dias antes) e festa para cada santo.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">2</div>
+      <div class="flow-t"><strong>API de novenas</strong> (<code>VITE_NOVENA_API_URL</code>) é consultada — se confirmar uma novena ativa cujo slug esteja mapeado, um tema virtual complementar é criado automaticamente.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">3</div>
+      <div class="flow-t"><strong>Firestore</strong> (<code>agenda_themes</code>) permite ao admin forçar ou ajustar qualquer tema em tempo real.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">4</div>
+      <div class="flow-t"><strong>Conflito</strong> resolvido por: forçado &gt; <code>priority:true</code> &gt; mais próximo da festa. <em>(ex: 12/out → Aparecida vence Carlo Acutis)</em></div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">5</div>
+      <div class="flow-t"><strong>CSS Cascade</strong> — <code>data-tema="slug"</code> em <code>.agenda-root</code> ativa tokens <code>--hero / --accent / --bg / --soft / --crest-bg</code> do tema vencedor.</div>
+    </div>
+  </div>
+
+  <h2>Santos principais — 7 temas</h2>
+  <div class="theme-grid">
+    <div class="theme-card">
+      <div class="theme-header" style="background:#2E2C5A">🌹 Santa Terezinha · padrão</div>
+      <div class="theme-body">
+        <div class="feast">Festa: 1 out · Novena: 22 set</div>
+        <div class="quote">"Passarei meu céu fazendo o bem sobre a terra."</div>
+      </div>
+    </div>
+    <div class="theme-card">
+      <div class="theme-header" style="background:#3B2A20">⚒ São José · 2 festas</div>
+      <div class="theme-body">
+        <div class="feast">19 mar (Esposo) · 1 mai (Operário)</div>
+        <div class="quote">"Ite ad Ioseph – Ide a José."</div>
+      </div>
+    </div>
+    <div class="theme-card">
+      <div class="theme-header" style="background:#1B3FA0">💻 São Carlo Acutis</div>
+      <div class="theme-body">
+        <div class="feast">Festa: 12 out · Novena: 3 out</div>
+        <div class="quote">"A Eucaristia é a minha autoestrada para o céu."</div>
+      </div>
+    </div>
+    <div class="theme-card">
+      <div class="theme-header" style="background:#23384B">⛰ Pier Giorgio Frassati</div>
+      <div class="theme-body">
+        <div class="feast">Festa: 4 jul · Novena: 25 jun</div>
+        <div class="quote">"Verso l'alto! Rumo ao alto!"</div>
+      </div>
+    </div>
+    <div class="theme-card">
+      <div class="theme-header" style="background:#2F3B4C">⚔ Santa Joana d'Arc</div>
+      <div class="theme-body">
+        <div class="feast">Festa: 30 mai · Novena: 21 mai</div>
+        <div class="quote">"Jesus, Maria."</div>
+      </div>
+    </div>
+    <div class="theme-card">
+      <div class="theme-header" style="background:#24201C">🔥 Santo Inácio de Loyola</div>
+      <div class="theme-body">
+        <div class="feast">Festa: 31 jul · Novena: 22 jul</div>
+        <div class="quote">"Ad maiorem Dei gloriam."</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Festas Marianas — 12 invocações</h2>
+  <div class="marian-grid">
+    <div class="marian-card">
+      <div class="marian-h" style="background:#2C2010">Candelária</div>
+      <div class="marian-b">02 fev · <code>candelaria</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#2C2456">Anunciação</div>
+      <div class="marian-b">25 mar · <code>anunciacao</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#142450">Fátima</div>
+      <div class="marian-b">13 mai · <code>fatima</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#1E3E2A">Visitação</div>
+      <div class="marian-b">31 mai · <code>visitacao</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#2A3B2C">Carmo</div>
+      <div class="marian-b">16 jul · <code>carmo</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#1A3B6A">Assunção ★dogma</div>
+      <div class="marian-b">15 ago · <code>assuncao</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#2D1C52">N.S. Rainha</div>
+      <div class="marian-b">22 ago · <code>rainha</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#1C3555">Natividade</div>
+      <div class="marian-b">08 set · <code>natividade</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#1D3A7A">Aparecida ★BR</div>
+      <div class="marian-b">12 out · prioridade</div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#281A4A">Apresentação</div>
+      <div class="marian-b">21 nov · <code>apresentacao</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#142450">N.S. Graças</div>
+      <div class="marian-b">27 nov · <code>gracas</code></div>
+    </div>
+    <div class="marian-card">
+      <div class="marian-h" style="background:#14285C">Imaculada ★dogma</div>
+      <div class="marian-b">08 dez · <code>imaculada</code></div>
+    </div>
+  </div>
+
+  <h2>Arquivos modificados nesta sessão</h2>
+  <div class="files">
+    <div class="file-row"><span class="file-path">src/types/theme.types.ts</span> <span class="badge edit">editado</span> <span class="file-desc">Adicionadas 7 novas invocações marianas ao tipo MarianInvocation</span></div>
+    <div class="file-row"><span class="file-path">src/services/theme.service.ts</span> <span class="badge edit">editado</span> <span class="file-desc">12→19 temas padrão (7 novas festas marianas) + frases específicas por santo + NOVENA_SLUG_TO_SAINT + NOVENA_SLUG_TO_INVOCATION</span></div>
+    <div class="file-row"><span class="file-path">src/hooks/useFeastTheme.ts</span> <span class="badge edit">editado</span> <span class="file-desc">Integração com API de novenas — buildApiThemes() cria temas virtuais a partir dos slugs confirmados pela API</span></div>
+    <div class="file-row"><span class="file-path">src/pages/Agenda/agenda.css</span> <span class="badge edit">editado</span> <span class="file-desc">10 novos blocos de tokens CSS para cada invocação mariana (assuncao, imaculada, visitacao, natividade, anunciacao, rainha, gracas, candelaria, apresentacao)</span></div>
+    <div class="file-row"><span class="file-path">src/types/novena.types.ts</span> <span class="badge edit">editado</span> <span class="file-desc">Removida definição duplicada de NovenaCalItem</span></div>
+  </div>
+
+  <h2>O que ativa automaticamente</h2>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-n">A</div>
+      <div class="flow-t"><strong>Data do dispositivo</strong> — basta hoje cair na janela <code>noveenaStart→endDate</code> de qualquer tema. Sem configuração.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">B</div>
+      <div class="flow-t"><strong>API de novenas</strong> — se <code>VITE_NOVENA_API_URL</code> estiver configurado e retornar um slug mapeado (ex: <code>nossa-senhora-carmo</code>), o tema mariano correspondente ativa mesmo que as datas hardcoded tenham leve divergência.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-n">C</div>
+      <div class="flow-t"><strong>Admin no painel</strong> — qualquer admin pode forçar um tema manualmente a qualquer momento via Firestore, para festas especiais ou missões.</div>
+    </div>
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

@@ -30,6 +30,11 @@ export interface AgendaEvent {
   desc?: string;
   /** URL da arte do evento */
   art_url?: string;
+  /**
+   * Visibilidade pública do evento.
+   * Coluna H da planilha: "Sim" = visível (padrão), "Não" = oculto.
+   */
+  visible: boolean;
 }
 
 /** Aviso publicado pelo admin — some automaticamente quando vence */

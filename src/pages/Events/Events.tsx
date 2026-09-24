@@ -14,14 +14,12 @@ import {
   TextField,
   MenuItem,
   Checkbox,
-  LinearProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Sync as SyncIcon,
   Share as ShareIcon,
   Link as LinkIcon,
-  CheckCircle as CheckIcon,
   People as PeopleIcon,
   AttachMoney as MoneyIcon,
   FormatListBulleted as ListIcon,
@@ -186,8 +184,6 @@ export const EventsPage = () => {
   const expectedTotal = max > 0 ? max * price : totalRegs * price;
   const receivedTotal = registrations.reduce((acc, r) => acc + (r.amountPaid || 0), 0);
   const pendingTotal = Math.max(0, expectedTotal - receivedTotal);
-  const estimatedBalance = receivedTotal;
-
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
       {/* Top Header */}

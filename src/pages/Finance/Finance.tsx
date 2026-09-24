@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -33,7 +32,7 @@ export const FinancePage = () => {
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<TransactionCategory>(TransactionCategory.MEETING_SNACK);
+  const category = TransactionCategory.MEETING_SNACK;
   const [personName, setPersonName] = useState('');
   const [hasReceipt, setHasReceipt] = useState(false);
 

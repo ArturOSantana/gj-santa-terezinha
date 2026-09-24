@@ -8,8 +8,6 @@ import {
   CircularProgress,
   ToggleButtonGroup,
   ToggleButton,
-  Divider,
-  LinearProgress,
   Table,
   TableBody,
   TableCell,
@@ -45,17 +43,16 @@ import {
   Print as PrintIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, getMonth, getYear } from 'date-fns';
+import { format, getMonth, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TerezinhaService } from '../../services/firestore.service';
-import { Event, Task, TaskStatus, TaskPriority, EventCategory } from '../../types';
+import { Event, Task, TaskStatus, TaskPriority } from '../../types';
 import { EVENT_CATEGORIES } from '../../utils/constants';
 
 // ─── Paleta do tema ────────────────────────────────────────────────────────────
 const ROSE = '#c15c71';
 const GOLD = '#d3a34c';
 const SAGE = '#7fa176';
-const BG = '#241019';
 const SURFACE = '#2f1522';
 const TEXT_MAIN = '#f4e6e9';
 const TEXT_DIM = '#e2cad2';

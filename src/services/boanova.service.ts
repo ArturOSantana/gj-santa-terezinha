@@ -7,7 +7,6 @@ import {
   orderBy, 
   updateDoc,
   doc,
-  Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -65,7 +64,6 @@ class BoaNovaService {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => {
         const data = doc.data();
-        const consent = data[consentField];
         const contact = channel === 'whatsapp' ? data.phone : data.email;
         
         return {

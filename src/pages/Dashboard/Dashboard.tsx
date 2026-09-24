@@ -55,13 +55,6 @@ export const Dashboard = () => {
   const nextEvent = upcomingEvents[0] || stats?.nextEvent || null;
   const userName = user?.displayName?.split(' ')[0] || user?.name?.split(' ')[0] || '';
 
-  const handleToggleTask = async (taskId: string, currentCompleted: boolean) => {
-    const newStatus = currentCompleted ? ('pending' as any) : ('completed' as any);
-    await TerezinhaService.updateTaskStatus(taskId, newStatus);
-    const updated = await TerezinhaService.getTasks();
-    setTasks(updated);
-  };
-
   const handleToggleEventChecklist = async (eventId: string, itemId: string) => {
     await TerezinhaService.toggleChecklistItem(eventId, itemId);
     const updated = await TerezinhaService.getEvents();

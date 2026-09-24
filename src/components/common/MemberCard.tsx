@@ -23,7 +23,7 @@ import {
   Female as FemaleIcon,
 } from '@mui/icons-material';
 import { Member, MemberStatus } from '../../types';
-import { format, getMonth } from 'date-fns';
+import { getMonth } from 'date-fns';
 
 interface MemberCardProps {
   member: Member;

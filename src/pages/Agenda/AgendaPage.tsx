@@ -160,7 +160,7 @@ const AgendaPage: React.FC = () => {
   const novenaDateSet = novenaDateSetFromApi;
 
   const upcomingFiltered = events
-    .filter((e) => e.date >= today && matchesFilter(e, filter))
+    .filter((e) => e.visible && e.date >= today && matchesFilter(e, filter))
     .sort((a, b) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')));
 
   const nextEvent = upcomingFiltered[0] ?? null;
@@ -172,7 +172,7 @@ const AgendaPage: React.FC = () => {
   // ── Calendário ─────────────────────────────────────────────────────────────
   const calMonthStr = `${calYear}-${pad(calMonth + 1)}`;
   const calFiltered = events.filter(
-    (e) => e.date.startsWith(calMonthStr) && matchesFilter(e, filter)
+    (e) => e.visible && e.date.startsWith(calMonthStr) && matchesFilter(e, filter)
   );
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstWeekday = new Date(calYear, calMonth, 1).getDay();
@@ -314,13 +314,14 @@ const AgendaPage: React.FC = () => {
           </div>
           {/* Botão de acesso sempre à direita */}
           <button
-            className="ag-login-btn"
+            className={`ag-login-btn${user ? '' : ' is-ghost'}`}
             onClick={() => {
               if (user && isAdmin) setPanelOpen(true);
               else setLoginOpen(true);
             }}
+            aria-label={user && isAdmin ? 'Abrir painel de administração' : 'Acesso da coordenação'}
           >
-            {user && isAdmin ? 'Painel' : 'Entrar'}
+            {user && isAdmin ? 'Painel' : 'Adm'}
           </button>
         </div>
 

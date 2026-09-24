@@ -245,7 +245,6 @@ export const useFinance = () => {
 
       await firestoreService.createTransaction(transactionData, user.role);
       setPage(0); // Volta para a primeira página
-      console.log('Transação criada com sucesso');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar transação';
       setError(errorMessage);
@@ -271,7 +270,6 @@ export const useFinance = () => {
       }
 
       await firestoreService.updateTransaction(id, transactionData, user.role);
-      console.log('Transação atualizada com sucesso');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar transação';
       setError(errorMessage);
@@ -296,7 +294,6 @@ export const useFinance = () => {
       await firestoreService.deleteTransaction(id, user.role);
       setIsDeleteDialogOpen(false);
       setTransactionToDelete(null);
-      console.log('Transação excluída com sucesso');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir transação';
       setError(errorMessage);
@@ -387,7 +384,6 @@ export const useFinance = () => {
    */
   const handleExportCSV = () => {
     // TODO: Implementar exportação real
-    console.log('Exportando transações:', filteredTransactions);
     alert('Exportação simulada! Em produção, isso geraria um arquivo CSV.');
   };
 

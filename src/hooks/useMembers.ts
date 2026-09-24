@@ -150,7 +150,6 @@ export const useMembers = () => {
       }
 
       await firestoreService.createMember(memberData, user.role);
-      console.log('Membro criado com sucesso');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar membro';
       setError(errorMessage);
@@ -173,7 +172,6 @@ export const useMembers = () => {
       }
 
       await firestoreService.updateMember(id, memberData, user.role);
-      console.log('Membro atualizado com sucesso');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar membro';
       setError(errorMessage);
@@ -197,7 +195,6 @@ export const useMembers = () => {
         }
 
         await firestoreService.deleteMember(id, user.role);
-        console.log('Membro excluído com sucesso');
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir membro';
         setError(errorMessage);

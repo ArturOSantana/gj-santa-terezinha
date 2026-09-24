@@ -3,7 +3,7 @@ import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Event, EventCategory } from '../../types';
+import { Event } from '../../types';
 import { EVENT_CATEGORIES } from '../../utils/constants';
 import { Box } from '@mui/material';
 

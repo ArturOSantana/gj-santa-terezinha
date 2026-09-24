@@ -184,8 +184,8 @@ export const updateUserProfile = async (
         photoUrl: photoURL || null,
         updatedAt: serverTimestamp(),
       });
-    } catch (error) {
-      console.warn('Atualização persistida no Auth, aguardando sincronização no users/{uid}');
+    } catch {
+      // Atualização persistida no Auth — sincronização no Firestore é best-effort
     }
   } catch (error: any) {
     console.error('Erro ao atualizar perfil:', error);

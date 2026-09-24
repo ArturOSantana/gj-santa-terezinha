@@ -981,7 +981,6 @@ export const firestoreService = {
 
   async createTransaction(
     tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>,
-    _role?: string
   ): Promise<Transaction> {
     return TerezinhaService.createTransaction(tx);
   },
@@ -989,7 +988,6 @@ export const firestoreService = {
   async updateTransaction(
     id: string,
     tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>,
-    _role?: string
   ): Promise<void> {
     const now = serverTimestamp();
     const amountCents = tx.amountCents ?? Math.round(tx.amount * 100);
@@ -1006,7 +1004,7 @@ export const firestoreService = {
     });
   },
 
-  async deleteTransaction(id: string, _role?: string): Promise<void> {
+  async deleteTransaction(id: string): Promise<void> {
     await deleteDoc(doc(db, 'transactions', id));
     await logAuditEvent('delete', 'transactions', id, {});
   },

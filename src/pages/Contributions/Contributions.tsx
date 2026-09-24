@@ -10,7 +10,6 @@ import {
 import {
   AttachMoney as AttachMoneyIcon,
   PendingActions as PendingActionsIcon,
-  WarningAmber as WarningAmberIcon,
   CalendarMonth as CalendarMonthIcon,
   Favorite as FavoriteIcon,
   CheckCircle as CheckCircleIcon,

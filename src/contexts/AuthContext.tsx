@@ -43,75 +43,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = async (email: string, password: string): Promise<void> => {
-    try {
-      const authUser = await authService.signIn(email, password);
-      setUser(authUser);
-    } catch (error) {
-      throw error;
-    }
+    const authUser = await authService.signIn(email, password);
+    setUser(authUser);
   };
 
   const signUp = async (
     email: string,
     password: string,
     displayName: string,
-    _phone?: string,
-    _birthDate?: Date,
-    _gender?: 'male' | 'female',
-    _whatsappConsent: boolean = true,
-    _emailConsent: boolean = true
   ): Promise<void> => {
-    try {
-      // Auto-cadastro cria conta com role 'pending' — sem acesso ao painel até aprovação por Admin
-      const created = await authService.createOperatorUser(email, password, displayName, 'pending');
-      const operatorDoc = await authService.getUserOperatorDoc(created.uid);
-      if (operatorDoc) {
-        setUser({
-          uid: created.uid,
-          email,
-          displayName,
-          role: operatorDoc.role,
-        });
-      }
-    } catch (error) {
-      throw error;
+    // Auto-cadastro cria conta com role 'pending' — sem acesso ao painel até aprovação por Admin
+    const created = await authService.createOperatorUser(email, password, displayName, 'pending');
+    const operatorDoc = await authService.getUserOperatorDoc(created.uid);
+    if (operatorDoc) {
+      setUser({
+        uid: created.uid,
+        email,
+        displayName,
+        role: operatorDoc.role,
+      });
     }
   };
 
   const signOut = async (): Promise<void> => {
-    try {
-      await authService.signOut();
-      setUser(null);
-    } catch (error) {
-      throw error;
-    }
+    await authService.signOut();
+    setUser(null);
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    try {
-      await authService.resetPassword(email);
-    } catch (error) {
-      throw error;
-    }
+    await authService.resetPassword(email);
   };
 
   const updateUserProfile = async (
     displayName: string,
     photoURL?: string
   ): Promise<void> => {
-    try {
-      await authService.updateUserProfile(displayName, photoURL);
-      
-      // Atualizar estado local
-      if (user) {
-        setUser({
-          ...user,
-          displayName,
-          photoURL: photoURL || null,
-        });
-      }
-    } catch (error) {
-      throw error;
+    await authService.updateUserProfile(displayName, photoURL);
+    if (user) {
+      setUser({
+        ...user,
+        displayName,
+        photoURL: photoURL || null,
+      });
     }
   };
 

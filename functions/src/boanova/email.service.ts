@@ -23,6 +23,7 @@ export function initializeEmailService(credentials: GmailCredentials): void {
     host: EMAIL_CONFIG.smtp.host,
     port: EMAIL_CONFIG.smtp.port,
     secure: EMAIL_CONFIG.smtp.secure,
+    requireTLS: EMAIL_CONFIG.smtp.requireTLS,
     auth: {
       user: credentials.user,
       pass: credentials.pass,
@@ -43,9 +44,24 @@ function ensureInitialized(): nodemailer.Transporter {
 }
 
 /**
+ * Escapa caracteres HTML para evitar XSS no template de e-mail.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
  * Construir template HTML do e-mail
  */
 export function buildEmailTemplate(message: string, imageUrl?: string): string {
+  const safeMessage = escapeHtml(message);
+  const safeImageUrl = imageUrl ? escapeHtml(imageUrl) : null;
+
   return `
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -75,14 +91,14 @@ export function buildEmailTemplate(message: string, imageUrl?: string): string {
               <!-- Content -->
               <tr>
                 <td style="padding: 30px 20px;">
-                  ${imageUrl ? `
+                  ${safeImageUrl ? `
                     <div style="text-align: center; margin-bottom: 20px;">
-                      <img src="${imageUrl}" alt="Imagem da mensagem" style="max-width: 100%; height: auto; border-radius: 8px;" />
+                      <img src="${safeImageUrl}" alt="Imagem da mensagem" style="max-width: 100%; height: auto; border-radius: 8px;" />
                     </div>
                   ` : ''}
                   
                   <div style="color: #333333; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">
-                    ${message}
+                    ${safeMessage}
                   </div>
                 </td>
               </tr>

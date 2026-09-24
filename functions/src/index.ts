@@ -52,7 +52,7 @@ export const sendEmailBroadcast = functions.https.onCall(async (data, context) =
 
   // Validar permissões (apenas coordenadores e admins)
   const userDoc = await admin.firestore()
-    .collection('members')
+    .collection('users')
     .doc(context.auth.uid)
     .get();
 
@@ -153,7 +153,7 @@ export const sendEmailBroadcast = functions.https.onCall(async (data, context) =
     console.error('❌ Erro ao enviar broadcast:', error);
     throw new functions.https.HttpsError(
       'internal',
-      `Erro ao enviar e-mails: ${error.message}`
+      'Erro interno ao enviar e-mails. Tente novamente mais tarde.'
     );
   }
 });
@@ -173,7 +173,7 @@ export const verifyEmail = functions.https.onCall(async (data, context) => {
 
   // Validar permissões
   const userDoc = await admin.firestore()
-    .collection('members')
+    .collection('users')
     .doc(context.auth.uid)
     .get();
 
@@ -194,9 +194,10 @@ export const verifyEmail = functions.https.onCall(async (data, context) => {
         : 'Erro ao verificar serviço de e-mail',
     };
   } catch (error: any) {
+    console.error('❌ Erro ao verificar serviço de e-mail:', error);
     throw new functions.https.HttpsError(
       'internal',
-      `Erro ao verificar serviço: ${error.message}`
+      'Erro interno ao verificar serviço de e-mail.'
     );
   }
 });
@@ -266,7 +267,7 @@ export const startWhatsAppSession = functions
 
   // Validar permissões
   const userDoc = await admin.firestore()
-    .collection('members')
+    .collection('users')
     .doc(context.auth.uid)
     .get();
 
@@ -290,7 +291,7 @@ export const startWhatsAppSession = functions
     console.error('❌ Erro ao iniciar sessão WhatsApp:', error);
     throw new functions.https.HttpsError(
       'internal',
-      `Erro ao iniciar sessão: ${error.message}`
+      'Erro interno ao iniciar sessão WhatsApp. Tente novamente mais tarde.'
     );
   }
 });
@@ -348,7 +349,7 @@ export const sendWhatsAppBroadcast = functions.https.onCall(async (data, context
 
   // Validar permissões
   const userDoc = await admin.firestore()
-    .collection('members')
+    .collection('users')
     .doc(context.auth.uid)
     .get();
 
@@ -451,7 +452,7 @@ export const sendWhatsAppBroadcast = functions.https.onCall(async (data, context
 
   } catch (error: any) {
     console.error('❌ Erro ao enviar broadcast WhatsApp:', error);
-    throw new functions.https.HttpsError('internal', `Erro ao enviar mensagens: ${error.message}`);
+    throw new functions.https.HttpsError('internal', 'Erro interno ao enviar mensagens. Tente novamente mais tarde.');
   }
 });
 

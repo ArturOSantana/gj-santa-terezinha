@@ -1,8 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
 
 // Validar variáveis obrigatórias
 const requiredEnvVars = {
@@ -16,7 +16,7 @@ const requiredEnvVars = {
 
 // Verificar se alguma variável está faltando
 const missingVars = Object.entries(requiredEnvVars)
-  .filter(([_, value]) => !value)
+  .filter(([, value]) => !value)
   .map(([key]) => key);
 
 if (missingVars.length > 0) {
@@ -41,17 +41,5 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'us-central1');
-
-// Conectar aos Firebase Emulators em desenvolvimento
-// Emuladores desabilitados — conectando direto ao Firebase em nuvem
-// Para reativar, descomente o bloco abaixo e rode: firebase emulators:start
-// if (import.meta.env.DEV) {
-//   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-//   connectFirestoreEmulator(db, '127.0.0.1', 8080);
-//   console.log('🔧 Usando Firebase Emulators:');
-//   console.log('   - Functions: http://127.0.0.1:5001');
-//   console.log('   - Firestore: http://127.0.0.1:8080');
-//   console.log('   - UI: http://127.0.0.1:4000');
-// }
 
 export default app;
