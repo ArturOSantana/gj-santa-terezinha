@@ -2509,3 +2509,34 @@ html[data-tema] {
 .ag-conflict-date {
   font-weight: 600;
 }
+
+/* ─── Botão de apagar evento (admin) no modal de detalhe ─────────────────── */
+.ag-event-delete-row {
+  margin: 16px 0 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ag-line);
+}
+
+.ag-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1.5px solid var(--ag-wine);
+  color: var(--ag-wine);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  clip-path: var(--ag-cut-xs);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.ag-btn-delete:hover {
+  background: var(--ag-wine);
+  color: #fff;
+}
+.ag-btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,7 +1,7 @@
 /**
  * Modal de detalhe de evento
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { AgendaEvent } from '../../types/agenda.types';
 import { CATEGORY_LABELS } from '../../types/agenda.types';
 import { formatWhen, getCatVar } from './agendaUtils';
@@ -74,9 +74,13 @@ function downloadICS(event: AgendaEvent): void {
 interface EventDetailModalProps {
   event: AgendaEvent | null;
   onClose: () => void;
+  /** Se true, exibe botão de apagar (apenas para admin) */
+  isAdmin?: boolean;
+  /** Chamado quando admin confirma apagar — recebe o id do evento */
+  onDelete?: (eventId: string) => Promise<void>;
 }
 
-const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose }) => {
+const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, isAdmin, onDelete }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   useSwipeDown(dialogRef, onClose);
 
@@ -110,6 +114,20 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose }) =
 
   const catColor = event ? getCatVar(event.g) : 'var(--ag-outros)';
   const catLabel = event ? (CATEGORY_LABELS[event.g] ?? 'Outros') : '';
+
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!event || !onDelete) return;
+    if (!confirm(`Apagar o evento "${event.title}"?`)) return;
+    setDeleting(true);
+    try {
+      await onDelete(event.id);
+      onClose();
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <dialog ref={dialogRef} className="ag-dialog" aria-label={event?.title ?? 'Detalhe do evento'}>
@@ -163,6 +181,19 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose }) =
 
             {event.desc && (
               <p className="ag-event-desc">{event.desc}</p>
+            )}
+
+            {isAdmin && onDelete && (
+              <div className="ag-event-delete-row">
+                <button
+                  className="ag-btn-delete"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  aria-label={`Apagar evento ${event.title}`}
+                >
+                  {deleting ? 'Apagando...' : '🗑 Apagar evento'}
+                </button>
+              </div>
             )}
 
             <div className="ag-add-cal">

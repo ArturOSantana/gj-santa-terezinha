@@ -32,6 +32,7 @@ import {
   subscribeAgendaNotices,
   subscribeAdminEvents,
   detectConflicts,
+  deleteAdminEvent,
 } from '../../services/agenda.service';
 import type { AgendaAdminEvent, AgendaConflict } from '../../types/agenda.types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -291,6 +292,18 @@ const AgendaPage: React.FC = () => {
     await signOut();
     setPanelOpen(false);
   };
+
+  // Apaga um evento admin pelo id (do modal de detalhe)
+  // Identifica se é evento do Firestore checando na lista adminEvents
+  const handleDeleteEventFromModal = useCallback(async (eventId: string) => {
+    const adminEv = adminEvents.find((e) => e.id === eventId);
+    if (!adminEv) {
+      // Evento da planilha — não é possível apagar diretamente; orienta o admin
+      alert('Este evento veio da planilha do Google Sheets.\nPara removê-lo, acesse a planilha e apague ou oculte a linha, ou abra o Painel → Eventos para criar um evento via painel (que pode ser apagado por aqui).');
+      return;
+    }
+    await deleteAdminEvent(adminEv.id, adminEv.sheetRowIndex);
+  }, [adminEvents]);
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
   const isThemeActive = !!(activeTheme && (activeTheme.isNovena || activeTheme.isFeast));
@@ -787,6 +800,8 @@ const AgendaPage: React.FC = () => {
       <EventDetailModal
         event={detailEvent}
         onClose={() => setDetailEvent(null)}
+        isAdmin={isAdmin}
+        onDelete={isAdmin ? handleDeleteEventFromModal : undefined}
       />
 
       {/* LoginModal sempre montado para responder imediatamente ao clique */}
