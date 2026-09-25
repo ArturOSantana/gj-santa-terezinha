@@ -335,7 +335,7 @@
   letter-spacing: .04em;
   text-transform: uppercase;
   padding: 2px 7px;
-  border-radius: 20px;
+  clip-path: var(--ag-cut-xs);
   margin-bottom: 5px;
   background: var(--ag-origin-bg, rgba(0,0,0,.08));
   color: var(--ag-origin-fg, inherit);
@@ -460,12 +460,13 @@
   font-weight: 600;
   font-size: 13px;
   color: var(--ag-mute);
+  clip-path: var(--ag-cut-xs);
   transition: all 0.15s;
   min-height: 36px;
 }
 .ag-seg.active {
-  background: var(--ag-navy);
-  border-color: var(--ag-navy);
+  background: var(--hero, var(--ag-navy));
+  border-color: var(--hero, var(--ag-navy));
   color: #fff;
 }
 
@@ -566,6 +567,7 @@
   background: var(--ag-card);
   color: var(--ag-ink);
   font-size: 20px;
+  clip-path: var(--ag-cut-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1207,11 +1209,11 @@
   font-weight: 400;
 }
 
-/* Card principal da novena */
+/* Card principal da novena — paleta ancorada nos tokens do tema ativo */
 .ag-nov-card {
-  background: var(--ag-nov-bg);
-  border: 1.5px solid var(--ag-nov-line);
-  border-radius: 14px;
+  background: color-mix(in srgb, var(--soft, var(--ag-rose)) 30%, var(--ag-card));
+  border: 1.5px solid color-mix(in srgb, var(--accent, var(--ag-wine)) 20%, transparent);
+  clip-path: var(--ag-cut);
   padding: 20px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -1243,7 +1245,7 @@
   font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 20px;
+  clip-path: var(--ag-cut-xs);
   white-space: nowrap;
 }
 
@@ -1258,7 +1260,7 @@
 .ag-nov-dot {
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  clip-path: var(--ag-cut-xs);
   border: 2px solid var(--ag-nov-line);
   background: var(--ag-card);
   color: var(--ag-mute);
@@ -1359,17 +1361,16 @@
   gap: 7px;
   width: 100%;
   padding: 11px 16px;
-  background: var(--ag-nov-active);
+  background: var(--accent, var(--ag-wine));
   color: #fff;
   border: none;
-  border-radius: 10px;
+  clip-path: var(--ag-cut-sm);
   font-size: 14px;
   font-weight: 700;
   font-family: 'Chakra Petch', system-ui, sans-serif;
   cursor: pointer;
   transition: filter 0.15s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
-  clip-path: var(--ag-cut-sm);
 }
 .ag-nov-cta:hover {
   filter: brightness(0.88);
@@ -1391,7 +1392,7 @@
   z-index: 90;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  clip-path: var(--ag-cut-sm);
   border: none;
   /* Usa --hero do tema quando disponível */
   background: var(--hero, var(--ag-navy));
@@ -1479,12 +1480,12 @@
 
 /* ── Sheet do dialog ─────────────────────────────────────────────────────── */
 .ag-nov-dialog {
-  /* Herda ag-dialog — só sobrescreve o necessário */
-  border-radius: 18px 18px 0 0;
+  /* Herda ag-dialog — sem cantos arredondados, corte chanfrado no topo */
+  clip-path: polygon(0 18px, 18px 0, 100% 0, 100% 100%, 0 100%);
 }
 @media (min-width: 640px) {
   .ag-nov-dialog {
-    border-radius: 14px;
+    clip-path: var(--ag-cut);
   }
 }
 
@@ -1539,10 +1540,10 @@
 .ag-nov-intencao {
   font-size: 11px;
   font-weight: 600;
-  background: color-mix(in srgb, var(--ag-nov) 12%, transparent);
-  color: var(--ag-nov);
-  border: 1px solid color-mix(in srgb, var(--ag-nov) 25%, transparent);
-  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent, var(--ag-wine)) 12%, transparent);
+  color: var(--accent, var(--ag-wine));
+  border: 1px solid color-mix(in srgb, var(--accent, var(--ag-wine)) 25%, transparent);
+  clip-path: var(--ag-cut-xs);
   padding: 2px 9px;
   white-space: nowrap;
 }
@@ -1591,6 +1592,31 @@
   color: var(--ag-ink);
 }
 
+/* Oração inicial/final — exibida aberta, sem collapsible */
+.ag-nov-oracao-fixa {
+  background: color-mix(in srgb, var(--ag-nov) 5%, var(--ag-card));
+  border: 1px solid var(--ag-nov-line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.ag-nov-oracao-fixa-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ag-nov);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.ag-nov-oracao-fixa p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ag-ink);
+  white-space: pre-line;
+}
+
 /* Texto da oração no DiaCard */
 .ag-nov-oracao-txt {
   font-size: 13px;
@@ -1609,7 +1635,7 @@
   color: var(--ag-nov-done);
   background: none;
   border: 1.5px solid var(--ag-nov-done);
-  border-radius: 20px;
+  clip-path: var(--ag-cut-xs);
   padding: 4px 12px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -1643,7 +1669,7 @@
 /* DiaCard: card de cada dia */
 .ag-nov-dia-card {
   border: 1.5px solid var(--ag-nov-line);
-  border-radius: 10px;
+  clip-path: var(--ag-cut-xs);
   overflow: hidden;
   transition: border-color 0.15s;
 }
@@ -1676,7 +1702,7 @@
   flex-shrink: 0;
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  clip-path: var(--ag-cut-xs);
   border: 1.5px solid var(--ag-nov-line);
   background: var(--ag-card);
   color: var(--ag-mute);
@@ -2032,16 +2058,21 @@
   .ag-hero-bg { transition: opacity 0.4s ease; }
 }
 
-/* ── Decoração SVG inline (fallback quando não há imagem) ──────────────── */
-.ag-hero-deco {
+/* ── Motivo decorativo SVG (canto direito, atrás do texto) ─────────────── */
+.ag-hero-motif {
   position: absolute;
-  inset: 0;
+  right: 0;
+  top: 0;
+  width: 260px;
+  height: 100%;
+  opacity: .28;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
+  object-fit: cover;
+  object-position: right top;
 }
 
-/* ── Todo conteúdo do hero fica acima do bg ─────────────────────────────── */
+/* ── Todo conteúdo do hero fica acima do bg e do motif ─────────────────── */
 .ag-top, .ag-hero-identity, .ag-headline, .ag-theme-counter {
   position: relative;
   z-index: 1;
@@ -2237,36 +2268,33 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DECORAÇÕES SVG INLINE POR TEMA  (fallback sem imagem de background)
-   Terezinha: pétalas animadas (deriva 14s, desliga com reduced-motion)
+   Tiles SVG em mosaico por tema (aplicados no hero via background-image)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@keyframes ag-petal-drift {
-  0%   { transform: translateY(0) rotate(0deg); }
-  50%  { transform: translateY(-8px) rotate(8deg); }
-  100% { transform: translateY(0) rotate(0deg); }
+/* Base: quando tile está disponível, aplica sobre a cor --hero */
+.agenda-root[data-tema="terezinha"] .ag-hero,
+.agenda-root[data-tema="jose"]      .ag-hero,
+.agenda-root[data-tema="carlo"]     .ag-hero,
+.agenda-root[data-tema="frassati"]  .ag-hero,
+.agenda-root[data-tema="joana"]     .ag-hero,
+.agenda-root[data-tema^="nossa_senhora"] .ag-hero,
+.agenda-root[data-tema="inacio"]    .ag-hero {
+  background-repeat: repeat;
+  background-position: center center;
 }
 
-.agenda-root[data-tema="terezinha"] .ag-hero-deco .petal {
-  animation: ag-petal-drift 14s ease-in-out infinite;
-}
-.agenda-root[data-tema="terezinha"] .ag-hero-deco .petal:nth-child(2) { animation-delay: -3s; }
-.agenda-root[data-tema="terezinha"] .ag-hero-deco .petal:nth-child(3) { animation-delay: -6s; }
-.agenda-root[data-tema="terezinha"] .ag-hero-deco .petal:nth-child(4) { animation-delay: -9s; }
+.agenda-root[data-tema="terezinha"]       .ag-hero { background-image: url('../../assets/tile-teresinha.svg'); background-size: 64px; }
+.agenda-root[data-tema="jose"]            .ag-hero { background-image: url('../../assets/tile-jose.svg');      background-size: 40px; }
+.agenda-root[data-tema="carlo"]           .ag-hero { background-image: url('../../assets/tile-carlo.svg');     background-size: 32px; }
+.agenda-root[data-tema="frassati"]        .ag-hero { background-image: url('../../assets/tile-frassati.svg'); background-size: 60px; }
+.agenda-root[data-tema="joana"]           .ag-hero { background-image: url('../../assets/tile-joana.svg');     background-size: 48px; }
+.agenda-root[data-tema^="nossa_senhora"]  .ag-hero { background-image: url('../../assets/tile-maria.svg');     background-size: 40px; }
+.agenda-root[data-tema="inacio"]          .ag-hero { background-image: url('../../assets/tile-inacio.svg');    background-size: 44px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .agenda-root[data-tema="terezinha"] .ag-hero-deco .petal { animation: none; }
-}
-
-/* Background já definido no bloco base via var(--bg) */
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   ESTRELAS MARIANA  (Nossa Senhora – ::after no hero quando tema maria/nossa_senhora)
-   São estrelas de 4 pontas em arco, desenhadas via SVG inline no HeroDecoration
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Cor das estrelas responde ao token */
-.ag-hero-deco [data-role="star"] {
-  fill: var(--accent-dark, #E3C25B);
+/* Quando há foto de fundo (.ag-hero-bg), o tile some — a foto já ocupa o espaço */
+.ag-hero-bg ~ * { /* descendentes não afetados */ }
+.ag-hero:has(.ag-hero-bg) {
+  background-image: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2274,9 +2302,10 @@
    (o bg real e a decoração SVG já preenchem o espaço)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.agenda-root[data-tema]:not([data-tema="terezinha"]):not([data-tema="default"]) .ag-hero::before,
-.agenda-root[data-tema]:not([data-tema="terezinha"]):not([data-tema="default"]) .ag-hero::after {
-  opacity: 0.05;
+/* Cruz animada: apaga quando tema festivo ativo (tile/motif já preenchem) */
+.agenda-root[data-tema]:not([data-tema="default"]) .ag-hero::before,
+.agenda-root[data-tema]:not([data-tema="default"]) .ag-hero::after {
+  opacity: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

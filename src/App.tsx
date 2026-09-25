@@ -29,10 +29,6 @@ import { Profile } from './pages/Profile';
 import ReportsPage from './pages/Reports/Reports';
 import UsersPage from './pages/Users/Users';
 import PublicHomeConfigPage from './pages/PublicHome/PublicHomeConfigPage';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { ForgotPassword } from './pages/ForgotPassword';
-
 // Pages - Públicas / Jovens (Sem login)
 import PublicHomePage from './pages/PublicHome/PublicHomePage';
 import PublicEventInvitation from './pages/PublicEventInvitation/PublicEventInvitation';
@@ -69,10 +65,10 @@ function App() {
             {/* Qualquer evento público por slug — inclui /p/retiro-fiat-2026 e outros */}
             <Route path="/p/:slug" element={<PublicEventInvitation />} />
 
-            {/* Rotas de Autenticação */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Rotas de Autenticação — redireciona para a AgendaPage (login via modal) */}
+            <Route path="/login" element={<Navigate to="/" replace />} />
+            <Route path="/register" element={<Navigate to="/" replace />} />
+            <Route path="/forgot-password" element={<Navigate to="/" replace />} />
 
             {/* ========================================================= */}
             {/* ROTAS PROTEGIDAS - PAINEL DA COORDENAÇÃO (/admin)        */}

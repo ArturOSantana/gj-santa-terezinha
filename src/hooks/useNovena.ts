@@ -65,6 +65,16 @@ export function useNovena(): UseNovenaReturn {
         }));
         setNovenas(states);
         setCalItems([...itemsAno, ...itemsProximo]);
+
+        // Carrega a novena completa em background para ter oracaoInicial/oracaoFinal
+        lista.forEach((hoje) => {
+          fetchNovenaCompleta(hoje.slug).then((completa) => {
+            if (cancelled || !completa) return;
+            setNovenas((prev) =>
+              prev.map((n) => n.hoje.slug === hoje.slug ? { ...n, completa } : n)
+            );
+          });
+        });
       })
       .catch(() => { /* novena é opcional — silencia */ })
       .finally(() => { if (!cancelled) setLoading(false); });

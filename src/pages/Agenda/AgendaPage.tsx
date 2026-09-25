@@ -299,11 +299,12 @@ const AgendaPage: React.FC = () => {
                 />
                 <div className="ag-logo-text">
                   <span className="ag-logo-text-grupo">Grupo de Jovens</span>
-                  <span className="ag-logo-text-jovens">Jovens</span>
                   <span className="ag-logo-text-sta">Sta. Terezinha</span>
-                  <span className="ag-logo-text-saint">
-                    {SAINT_LINE_NAMES[activeTheme!.theme.saintKey] ?? ''}
-                  </span>
+                  {activeTheme!.theme.saintKey !== 'terezinha' && (
+                    <span className="ag-logo-text-saint">
+                      {SAINT_LINE_NAMES[activeTheme!.theme.saintKey] ?? ''}
+                    </span>
+                  )}
                 </div>
               </>
             ) : (

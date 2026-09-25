@@ -160,6 +160,14 @@ const NovenaCard: React.FC<NovenaCardProps> = ({ state, onToggleDay, onLoadCompl
 
       <div className="ag-nov-divider" />
 
+      {/* Oração inicial — única para toda a novena, exibida aberta */}
+      {completa?.oracaoInicial && (
+        <div className="ag-nov-oracao-fixa">
+          <span className="ag-nov-oracao-fixa-label">Oração inicial</span>
+          <p>{completa.oracaoInicial}</p>
+        </div>
+      )}
+
       {/* Dia atual */}
       <div className="ag-nov-today">
         <span className="ag-nov-day-label">Dia {diaAtual} de {hoje.totalDias}</span>
@@ -182,14 +190,15 @@ const NovenaCard: React.FC<NovenaCardProps> = ({ state, onToggleDay, onLoadCompl
             {orExpanded ? 'Ver menos' : 'Ver oração completa'}
           </button>
         )}
-
-        {conteudo.meditacao && (
-          <details className="ag-nov-meditacao">
-            <summary>Meditação do dia</summary>
-            <p>{conteudo.meditacao}</p>
-          </details>
-        )}
       </div>
+
+      {/* Oração final — única para toda a novena, exibida aberta */}
+      {completa?.oracaoFinal && (
+        <div className="ag-nov-oracao-fixa">
+          <span className="ag-nov-oracao-fixa-label">Oração final</span>
+          <p>{completa.oracaoFinal}</p>
+        </div>
+      )}
 
       {/* CTA: marcar hoje */}
       {!progress.completedDays.includes(diaAtual) && (
@@ -218,13 +227,6 @@ const NovenaCard: React.FC<NovenaCardProps> = ({ state, onToggleDay, onLoadCompl
         <>
           <div className="ag-nov-divider" style={{ marginTop: 4 }} />
 
-          {completa.oracaoInicial && (
-            <details className="ag-nov-meditacao">
-              <summary>Oração inicial</summary>
-              <p>{completa.oracaoInicial}</p>
-            </details>
-          )}
-
           <div className="ag-nov-dias-list">
             {completa.dias.map((dia) => (
               <DiaCard
@@ -236,13 +238,6 @@ const NovenaCard: React.FC<NovenaCardProps> = ({ state, onToggleDay, onLoadCompl
               />
             ))}
           </div>
-
-          {completa.oracaoFinal && (
-            <details className="ag-nov-meditacao">
-              <summary>Oração final</summary>
-              <p>{completa.oracaoFinal}</p>
-            </details>
-          )}
         </>
       )}
     </div>
