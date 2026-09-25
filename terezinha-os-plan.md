@@ -1,4 +1,6 @@
-# Terezinha OS (V2) — Plano de Arquitetura e Implementação Incremental
+# Terezinha OS (V2) — Arquitetura e Roadmap
+
+> **Status atual:** Agenda Pública totalmente funcional em produção. Painel interno com estrutura base implementada. Subtarefas do OS em andamento conforme roadmap abaixo.
 
 ## 1. Visão Geral e Princípios Fundamentais
 
@@ -223,7 +225,22 @@ sync_logs/{logId}
 
 ## 4. Subtarefas e Roadmap de Execução Incremental
 
-### Subtarefa 1: Fundação de Segurança, Firestore Rules e Autenticação RBAC Estrita (Foco Atual)
+### ✅ Subtarefa 0: Agenda Pública (Concluída)
+- **O que foi construído:**
+  - Página pública `/agenda` sem login, mobile-first, CSS nativo
+  - Próximo evento em destaque, filtros por categoria, lista e calendário mensal
+  - Aniversariantes do mês com destaque para o dia atual
+  - Avisos da coordenação em tempo real via Firestore (urgência, vencimento, origem)
+  - **Temas festivos automáticos** com visuais distintos por santo (Santa Terezinha, São José, Frassati, Inácio, Carlos Acutis, Joana d'Arc, Nossa Senhora) — hero, brasão, motivos SVG, paleta de cores
+  - **Novenas do dia**: FAB flutuante → sheet com trilha de progresso, oração inicial, oração do dia, oração final; progresso persistido em localStorage sem login
+  - Painel da coordenação embutido na página pública (AdminPanel): publicação de avisos, gestão de temas festivos customizados, forçar tema manualmente
+  - Hook `useFeastTheme` que combina temas hardcoded por data litúrgica + temas customizados do Firestore + confirmação via API de novenas
+  - Hook `useNovena` que carrega novenas do dia e calendário anual (Set de datas para marcar no calendário)
+- **Status:** `[x] concluída`
+
+---
+
+### Subtarefa 1: Fundação de Segurança, Firestore Rules e Autenticação RBAC Estrita
 - **Intenção:** Estabelecer o fluxo de autenticação fail-closed onde somente usuários previamente criados em `users/{uid}` têm acesso ao painel, eliminar permissividade e fallbacks hardcoded (`admin@gj.com`), e configurar `firestore.rules` com RBAC e auditoria.
 - **Resultados Esperados:**
   - `src/contexts/AuthContext.tsx` e `src/services/auth.service.ts` refatorados: login valida existência prévia em `users/{uid}`; sem auto-criação.

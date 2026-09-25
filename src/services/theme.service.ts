@@ -427,6 +427,42 @@ function daysBetween(fromISO: string, toISO: string): number {
   return Math.round((to.getTime() - from.getTime()) / 86_400_000);
 }
 
+/**
+ * Retorna o próximo tema que ainda não começou e cuja novena inicia
+ * dentro dos próximos `windowDays` dias (padrão: 3).
+ *
+ * Usado para exibir um aviso antecipado sutil — ex:
+ *   "A Novena de São José começa em 2 dias"
+ *
+ * Retorna null se nenhum tema próximo for encontrado ou se já há um tema ativo.
+ */
+export function resolveUpcomingTheme(
+  themes: FeastTheme[],
+  todayISO: string,
+  windowDays = 3
+): { theme: FeastTheme; daysUntil: number } | null {
+  // Se já há tema ativo (coberto ou forçado), não mostra prévia
+  const alreadyActive = resolveActiveTheme(themes, todayISO);
+  if (alreadyActive) return null;
+
+  let best: { theme: FeastTheme; daysUntil: number } | null = null;
+
+  for (const t of themes) {
+    // Só considera temas que ainda não começaram
+    if (todayISO >= t.noveenaStart) continue;
+
+    const daysUntil = daysBetween(todayISO, t.noveenaStart);
+    if (daysUntil < 1 || daysUntil > windowDays) continue;
+
+    // Pega o mais próximo
+    if (!best || daysUntil < best.daysUntil) {
+      best = { theme: t, daysUntil };
+    }
+  }
+
+  return best;
+}
+
 // ─── Firestore — Temas customizados ──────────────────────────────────────────
 
 const COLLECTION = 'agenda_themes';

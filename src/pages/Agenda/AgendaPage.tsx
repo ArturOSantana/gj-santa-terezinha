@@ -45,6 +45,9 @@ import CrestPlate from './CrestPlate';
 
 // ─── Helpers locais ───────────────────────────────────────────────────────────
 
+const isNew = (n: AgendaNotice) =>
+  !!n.createdAt && Date.now() - n.createdAt.getTime() < 24 * 60 * 60 * 1000;
+
 const FILTER_ITEMS: [AgendaFilter, string][] = Object.entries(CATEGORY_LABELS) as [AgendaFilter, string][];
 
 const matchesFilter = (event: AgendaEvent, filter: AgendaFilter): boolean =>
@@ -115,7 +118,7 @@ const AgendaPage: React.FC = () => {
   const isAdmin = user?.role === 'admin' || user?.role === 'coordinator';
 
   // ── Tema Festivo ───────────────────────────────────────────────────────────
-  const { activeTheme, dataTema, allThemes } = useFeastTheme();
+  const { activeTheme, dataTema, allThemes, upcomingTeaser } = useFeastTheme();
 
   // ── Novena ─────────────────────────────────────────────────────────────────
   const {
@@ -387,6 +390,19 @@ const AgendaPage: React.FC = () => {
           </div>
         )}
 
+        {/* ─── Teaser: próxima novena ─────────────────────────────────────── */}
+        {upcomingTeaser && (
+          <div className="ag-teaser" role="note" aria-label={`Prévia: ${upcomingTeaser.theme.name}`}>
+            <span className="ag-teaser-dot" aria-hidden="true" />
+            <span className="ag-teaser-text">
+              {upcomingTeaser.daysUntil === 1
+                ? <>A <strong>{upcomingTeaser.theme.name}</strong> começa amanhã</>
+                : <>A <strong>{upcomingTeaser.theme.name}</strong> começa em {upcomingTeaser.daysUntil} dias</>
+              }
+            </span>
+          </div>
+        )}
+
         {/* ─── Avisos ────────────────────────────────────────────────────── */}
         {sortedNotices.length > 0 && (
           <>
@@ -395,11 +411,16 @@ const AgendaPage: React.FC = () => {
             </div>
             {sortedNotices.map((n) => (
               <div key={n.id} className={`ag-notice${n.urgent ? ' urgent' : ''}`}>
-                {n.origin && (
-                  <span className="ag-notice-origin" data-origin={n.origin}>
-                    {NOTICE_ORIGIN_LABELS[n.origin]}
-                  </span>
-                )}
+                <div className="ag-notice-meta">
+                  {n.origin && (
+                    <span className="ag-notice-origin" data-origin={n.origin}>
+                      {NOTICE_ORIGIN_LABELS[n.origin]}
+                    </span>
+                  )}
+                  {isNew(n) && (
+                    <span className="ag-notice-new" aria-label="Novo">Novo</span>
+                  )}
+                </div>
                 <h3>{n.title}</h3>
                 {n.text && <p>{n.text}</p>}
               </div>

@@ -23,6 +23,7 @@ import {
   defaultThemes,
   mergeThemes,
   resolveActiveTheme,
+  resolveUpcomingTheme,
   getDataTemaAttr,
   NOVENA_SLUG_TO_SAINT,
   NOVENA_SLUG_TO_INVOCATION,
@@ -89,6 +90,11 @@ interface UseFeastThemeReturn {
   /** Todos os temas (padrão + customizados), para o admin */
   allThemes: FeastTheme[];
   loading: boolean;
+  /**
+   * Próximo tema que começa em até 3 dias — usado para o banner de prévia.
+   * null quando há tema ativo ou nenhum tema próximo.
+   */
+  upcomingTeaser: { theme: FeastTheme; daysUntil: number } | null;
 }
 
 export function useFeastTheme(): UseFeastThemeReturn {
@@ -123,8 +129,9 @@ export function useFeastTheme(): UseFeastThemeReturn {
   const allThemesForAdmin = mergeThemes(customThemes, defaults);
   const allThemesForResolution = mergeThemes(allThemesForAdmin, apiThemes);
 
-  const activeTheme = resolveActiveTheme(allThemesForResolution, today);
-  const dataTema    = getDataTemaAttr(activeTheme);
+  const activeTheme  = resolveActiveTheme(allThemesForResolution, today);
+  const dataTema     = getDataTemaAttr(activeTheme);
+  const upcomingTeaser = resolveUpcomingTheme(allThemesForResolution, today);
 
-  return { activeTheme, dataTema, allThemes: allThemesForAdmin, loading };
+  return { activeTheme, dataTema, allThemes: allThemesForAdmin, loading, upcomingTeaser };
 }
