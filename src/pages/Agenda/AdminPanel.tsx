@@ -6,12 +6,12 @@
  *  2. Temas    – gerenciar temas festivos: escolher santo, datas, forçar/resetar
  */
 import React, { useEffect, useRef, useState } from 'react';
-import type { AgendaNotice, NoticeOrigin } from '../../types/agenda.types';
-import { NOTICE_ORIGIN_LABELS } from '../../types/agenda.types';
+import type { AgendaNotice, NoticeOrigin, AgendaAdminEvent, AgendaCategory } from '../../types/agenda.types';
+import { NOTICE_ORIGIN_LABELS, CATEGORY_LABELS } from '../../types/agenda.types';
 import type { FeastTheme, SaintKey, MarianInvocation, ActiveTheme } from '../../types/theme.types';
 import { SAINT_DISPLAY_NAMES } from '../../types/theme.types';
 import { useSwipeDown } from './useSwipeDown';
-import { addAgendaNotice, deleteAgendaNotice } from '../../services/agenda.service';
+import { addAgendaNotice, deleteAgendaNotice, addAdminEvent, deleteAdminEvent } from '../../services/agenda.service';
 import {
   addFeastTheme,
   updateFeastTheme,
@@ -41,6 +41,7 @@ interface AdminPanelProps {
   open: boolean;
   displayName: string;
   notices: AgendaNotice[];
+  adminEvents: AgendaAdminEvent[];
   allThemes: FeastTheme[];
   activeTheme: ActiveTheme | null;
   onClose: () => void;
@@ -75,6 +76,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   open,
   displayName,
   notices,
+  adminEvents,
   allThemes,
   activeTheme,
   onClose,
@@ -83,7 +85,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const dialogRef = useRef<HTMLDialogElement>(null);
   useSwipeDown(dialogRef, onClose);
 
-  const [tab, setTab] = useState<'notices' | 'themes'>('notices');
+  const [tab, setTab] = useState<'notices' | 'events' | 'themes'>('notices');
   const [status, setStatus] = useState<{ msg: string; ok: boolean } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,6 +96,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [urgent, setUrgent] = useState(false);
   const [origin, setOrigin] = useState<NoticeOrigin | ''>('');
   const [expiresAt, setExpiresAt] = useState('');
+
+  // ── Campos do formulário de evento ────────────────────────────────────────
+  const [evTitle, setEvTitle] = useState('');
+  const [evCat, setEvCat] = useState<AgendaCategory>('jovens');
+  const [evDate, setEvDate] = useState('');
+  const [evTime, setEvTime] = useState('');
+  const [evTimeEnd, setEvTimeEnd] = useState('');
+  const [evPlace, setEvPlace] = useState('');
+  const [evDesc, setEvDesc] = useState('');
+  const [evVisible, setEvVisible] = useState(true);
 
   // ── Campos do formulário de tema ───────────────────────────────────────────
   const [thSaint, setThSaint] = useState<SaintKey>('terezinha');
@@ -123,6 +135,55 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const flash = (msg: string, ok = true) => {
     setStatus({ msg, ok });
     setTimeout(() => setStatus(null), 4000);
+  };
+
+  // ── Handlers de eventos ───────────────────────────────────────────────────
+  const resetEventForm = () => {
+    setEvTitle(''); setEvCat('jovens'); setEvDate(''); setEvTime('');
+    setEvTimeEnd(''); setEvPlace(''); setEvDesc(''); setEvVisible(true);
+  };
+
+  const handleAddEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!evTitle.trim() || !evDate) return;
+    setLoading(true);
+    try {
+      await addAdminEvent({
+        title: evTitle.trim().slice(0, 100),
+        g: evCat,
+        date: evDate,
+        time: evTime || undefined,
+        timeEnd: evTimeEnd || undefined,
+        place: evPlace.trim().slice(0, 80) || undefined,
+        desc: evDesc.trim().slice(0, 800) || undefined,
+        visible: evVisible,
+      });
+      resetEventForm();
+      flash('Evento adicionado.');
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? '';
+      console.error('[AdminPanel] Erro ao adicionar evento:', code, err);
+      if (code === 'permission-denied') {
+        flash('Sem permissão. Faça logout e entre novamente.', false);
+      } else {
+        flash('Não foi possível salvar. Verifique a conexão.', false);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string, t: string) => {
+    if (!confirm(`Remover o evento "${t}"?`)) return;
+    setDeleting(id);
+    try {
+      await deleteAdminEvent(id);
+      flash('Evento removido.');
+    } catch {
+      flash('Sem permissão para remover.', false);
+    } finally {
+      setDeleting(null);
+    }
   };
 
   // ── Handlers de avisos ────────────────────────────────────────────────────
@@ -294,6 +355,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           </button>
           <button
             role="tab"
+            className={`ag-panel-tab${tab === 'events' ? ' active' : ''}`}
+            aria-selected={tab === 'events'}
+            onClick={() => setTab('events')}
+          >
+            Eventos
+          </button>
+          <button
+            role="tab"
             className={`ag-panel-tab${tab === 'themes' ? ' active' : ''}`}
             aria-selected={tab === 'themes'}
             onClick={() => setTab('themes')}
@@ -409,6 +478,141 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 </button>
               </div>
             ))}
+          </>
+        )}
+
+        {/* ════════════════════ ABA: EVENTOS ══════════════════════════════ */}
+        {tab === 'events' && (
+          <>
+            <form className="ag-form" onSubmit={handleAddEvent} noValidate>
+              <label className="ag-label">
+                Título *
+                <input
+                  type="text"
+                  className="ag-input"
+                  value={evTitle}
+                  onChange={(e) => setEvTitle(e.target.value)}
+                  maxLength={100}
+                  required
+                />
+              </label>
+
+              <div className="ag-two-col">
+                <label className="ag-label">
+                  Categoria
+                  <select
+                    className="ag-select"
+                    value={evCat}
+                    onChange={(e) => setEvCat(e.target.value as AgendaCategory)}
+                  >
+                    {(Object.entries(CATEGORY_LABELS).filter(([k]) => k !== 'all') as [AgendaCategory, string][]).map(([k, label]) => (
+                      <option key={k} value={k}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="ag-label">
+                  Data *
+                  <input
+                    type="date"
+                    className="ag-input"
+                    value={evDate}
+                    onChange={(e) => setEvDate(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="ag-two-col">
+                <label className="ag-label">
+                  Horário início
+                  <input
+                    type="time"
+                    className="ag-input"
+                    value={evTime}
+                    onChange={(e) => setEvTime(e.target.value)}
+                  />
+                </label>
+                <label className="ag-label">
+                  Horário fim
+                  <input
+                    type="time"
+                    className="ag-input"
+                    value={evTimeEnd}
+                    onChange={(e) => setEvTimeEnd(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <label className="ag-label">
+                Local
+                <input
+                  type="text"
+                  className="ag-input"
+                  value={evPlace}
+                  onChange={(e) => setEvPlace(e.target.value)}
+                  maxLength={80}
+                  placeholder="Ex: Salão Paroquial"
+                />
+              </label>
+
+              <label className="ag-label">
+                Descrição
+                <textarea
+                  className="ag-textarea"
+                  value={evDesc}
+                  onChange={(e) => setEvDesc(e.target.value)}
+                  rows={3}
+                  maxLength={800}
+                />
+              </label>
+
+              <label className="ag-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={evVisible}
+                  onChange={(e) => setEvVisible(e.target.checked)}
+                />
+                Visível na agenda pública
+              </label>
+
+              <button type="submit" className="ag-btn" disabled={loading} style={{ marginTop: 4 }}>
+                {loading ? 'Salvando...' : 'Adicionar evento'}
+              </button>
+            </form>
+
+            {adminEvents.length === 0 ? (
+              <p style={{ color: 'var(--ag-mute)', fontSize: 14, marginTop: 12 }}>
+                Nenhum evento criado aqui ainda.
+              </p>
+            ) : (
+              <>
+                <h3 style={{ marginTop: 20, marginBottom: 8, fontSize: 14 }}>Eventos criados</h3>
+                {adminEvents.map((ev) => (
+                  <div className="ag-item-row" key={ev.id}>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="ag-item-label">
+                        {!ev.visible && (
+                          <span style={{ color: 'var(--ag-mute)', fontWeight: 400, fontSize: 11, marginRight: 4 }}>[oculto]</span>
+                        )}
+                        {ev.title}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ag-mute)', marginTop: 2 }}>
+                        {ev.date}{ev.time ? ` • ${ev.time}${ev.timeEnd ? `–${ev.timeEnd}` : ''}` : ''}{ev.place ? ` • ${ev.place}` : ''}
+                      </div>
+                    </div>
+                    <button
+                      className="ag-btn-ghost"
+                      onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                      disabled={deleting === ev.id}
+                      aria-label={`Remover evento ${ev.title}`}
+                    >
+                      {deleting === ev.id ? '...' : 'Remover'}
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
           </>
         )}
 

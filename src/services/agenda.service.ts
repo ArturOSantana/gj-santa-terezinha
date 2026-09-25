@@ -1,7 +1,8 @@
 /**
  * Serviço da Agenda dos Jovens
  *
- * Eventos:         lidos do Google Sheets (somente leitura pública)
+ * Eventos Sheets:  lidos do Google Sheets (somente leitura pública)
+ * Eventos Admin:   criados pelo admin no Firestore (collection agenda_events)
  * Aniversariantes: lidos do Google Calendar (somente leitura pública)
  * Avisos:          salvos no Firestore, gerenciados pelo admin
  */
@@ -20,7 +21,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
-import type { AgendaEvent, AgendaNotice, AgendaBirthday } from '../types/agenda.types';
+import type { AgendaEvent, AgendaNotice, AgendaBirthday, AgendaAdminEvent, AgendaConflict } from '../types/agenda.types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -139,6 +140,125 @@ let birthdaysCache: SheetsCache<AgendaBirthday> | null = null;
 export function invalidateSheetsCache(): void {
   eventsCache = null;
   birthdaysCache = null;
+}
+
+// ─── Eventos Admin (Firestore) ────────────────────────────────────────────────
+//
+// Estrutura do documento em agenda_events/:
+//   title, g, date, time?, timeEnd?, place?, desc?, visible, createdAt, createdBy
+
+export function subscribeAdminEvents(
+  callback: (events: AgendaAdminEvent[]) => void
+): Unsubscribe {
+  const q = query(collection(db, 'agenda_events'), orderBy('date', 'asc'));
+  return onSnapshot(q, (snap) => {
+    const events: AgendaAdminEvent[] = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        title: data.title ?? '',
+        g: data.g ?? 'outros',
+        date: data.date ?? '',
+        time: data.time ?? undefined,
+        timeEnd: data.timeEnd ?? undefined,
+        place: data.place ?? undefined,
+        desc: data.desc ?? undefined,
+        visible: data.visible !== false,
+        createdAt: toDate(data.createdAt),
+        createdBy: data.createdBy ?? undefined,
+      } satisfies AgendaAdminEvent;
+    });
+    callback(events);
+  });
+}
+
+export async function addAdminEvent(
+  event: Omit<AgendaAdminEvent, 'id' | 'createdAt' | 'createdBy'>
+): Promise<string> {
+  const data: Record<string, unknown> = {
+    title: event.title,
+    g: event.g,
+    date: event.date,
+    visible: event.visible,
+    createdAt: serverTimestamp(),
+    createdBy: uid(),
+  };
+  if (event.time)    data.time    = event.time;
+  if (event.timeEnd) data.timeEnd = event.timeEnd;
+  if (event.place)   data.place   = event.place;
+  if (event.desc)    data.desc    = event.desc;
+
+  const docRef = await addDoc(collection(db, 'agenda_events'), data);
+  return docRef.id;
+}
+
+export async function deleteAdminEvent(id: string): Promise<void> {
+  await deleteDoc(doc(db, 'agenda_events', id));
+}
+
+/**
+ * Detecta conflitos de local + dia + sobreposição de horário entre todos os
+ * eventos visíveis (Sheets + Admin). Retorna apenas conflitos reais.
+ *
+ * Regra: dois eventos conflitam se têm o mesmo dia E o mesmo local
+ * (case-insensitive) E os horários se sobrepõem (ou ambos sem horário).
+ */
+export function detectConflicts(
+  sheetsEvents: AgendaEvent[],
+  adminEvents: AgendaAdminEvent[]
+): AgendaConflict[] {
+  // Normaliza em lista unificada (apenas visíveis com local preenchido)
+  type SimpleEvent = { id: string; title: string; date: string; place: string; time?: string; timeEnd?: string };
+  const all: SimpleEvent[] = [
+    ...sheetsEvents
+      .filter((e) => e.visible && e.place)
+      .map((e) => ({ id: e.id, title: e.title, date: e.date, place: e.place!, time: e.time, timeEnd: e.timeEnd })),
+    ...adminEvents
+      .filter((e) => e.visible && e.place)
+      .map((e) => ({ id: e.id, title: e.title, date: e.date, place: e.place!, time: e.time, timeEnd: e.timeEnd })),
+  ];
+
+  const conflicts: AgendaConflict[] = [];
+
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) {
+      const a = all[i];
+      const b = all[j];
+      if (a.date !== b.date) continue;
+      if (a.place.toLowerCase().trim() !== b.place.toLowerCase().trim()) continue;
+      if (timesOverlap(a.time, a.timeEnd, b.time, b.timeEnd)) {
+        conflicts.push({
+          eventA: { id: a.id, title: a.title, time: a.time, timeEnd: a.timeEnd },
+          eventB: { id: b.id, title: b.title, time: b.time, timeEnd: b.timeEnd },
+          date: a.date,
+          place: a.place,
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
+/** Retorna true se os intervalos [a.time, a.timeEnd] e [b.time, b.timeEnd] se sobrepõem. */
+function timesOverlap(
+  aStart?: string, aEnd?: string,
+  bStart?: string, bEnd?: string
+): boolean {
+  // Se nenhum tem horário, ou ambos não têm → conflito de dia inteiro
+  if (!aStart && !bStart) return true;
+  // Se apenas um não tem horário → considera sobreposição conservadora
+  if (!aStart || !bStart) return true;
+  // Ambos têm horário de início
+  const toMin = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const aS = toMin(aStart);
+  const aE = aEnd ? toMin(aEnd) : aS + 60; // assume 1h de duração se sem fim
+  const bS = toMin(bStart);
+  const bE = bEnd ? toMin(bEnd) : bS + 60;
+  return aS < bE && bS < aE;
 }
 
 export async function fetchAgendaBirthdays(): Promise<AgendaBirthday[]> {

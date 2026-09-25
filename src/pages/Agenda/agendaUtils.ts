@@ -28,6 +28,7 @@ export const getCatVar = (cat: AgendaCategory | AgendaFilter): string => {
   const map: Record<string, string> = {
     paroquia:     'var(--ag-paroquia)',
     jovens:       'var(--ag-jovens)',
+    joana:        'var(--ag-joana)',
     crisma:       'var(--ag-crisma)',
     tlc:          'var(--ag-tlc)',
     catequese:    'var(--ag-catequese)',

@@ -30,7 +30,10 @@ import {
   fetchAgendaEvents,
   fetchAgendaBirthdays,
   subscribeAgendaNotices,
+  subscribeAdminEvents,
+  detectConflicts,
 } from '../../services/agenda.service';
+import type { AgendaAdminEvent, AgendaConflict } from '../../types/agenda.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNovena } from '../../hooks/useNovena';
 import { useFeastTheme } from '../../hooks/useFeastTheme';
@@ -113,6 +116,8 @@ const AgendaPage: React.FC = () => {
   const [events, setEvents] = useState<AgendaEvent[]>([]);
   const [notices, setNotices] = useState<AgendaNotice[]>([]);
   const [birthdays, setBirthdays] = useState<AgendaBirthday[]>([]);
+  const [adminEvents, setAdminEvents] = useState<AgendaAdminEvent[]>([]);
+  const [conflicts, setConflicts] = useState<AgendaConflict[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   // isAdmin derivado direto do role já resolvido pelo AuthContext — sem fetch extra
   const isAdmin = user?.role === 'admin' || user?.role === 'coordinator';
@@ -159,11 +164,41 @@ const AgendaPage: React.FC = () => {
     return unsub;
   }, []);
 
+  // ── Subscription de eventos admin (tempo real) ────────────────────────────
+  useEffect(() => {
+    const unsub = subscribeAdminEvents((data) => setAdminEvents(data));
+    return unsub;
+  }, []);
+
+  // ── Detectar conflitos sempre que eventos mudarem ─────────────────────────
+  useEffect(() => {
+    setConflicts(detectConflicts(events, adminEvents));
+  }, [events, adminEvents]);
+
   // ── Dados derivados ────────────────────────────────────────────────────────
   // novenaDateSet e novenaCalItems vêm do hook (API /datas?ano=) — cobre o ano inteiro
   const novenaDateSet = novenaDateSetFromApi;
 
-  const upcomingFiltered = events
+  // Combina eventos do Sheets com eventos do admin criados no Firestore
+  const allEvents: AgendaEvent[] = [
+    ...events,
+    ...adminEvents
+      .filter((e) => e.visible)
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        g: e.g,
+        date: e.date,
+        time: e.time,
+        timeEnd: e.timeEnd,
+        place: e.place,
+        desc: e.desc,
+        art_url: undefined,
+        visible: e.visible,
+      })),
+  ];
+
+  const upcomingFiltered = allEvents
     .filter((e) => e.visible && e.date >= today && matchesFilter(e, filter))
     .sort((a, b) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')));
 
@@ -175,7 +210,7 @@ const AgendaPage: React.FC = () => {
 
   // ── Calendário ─────────────────────────────────────────────────────────────
   const calMonthStr = `${calYear}-${pad(calMonth + 1)}`;
-  const calFiltered = events.filter(
+  const calFiltered = allEvents.filter(
     (e) => e.visible && e.date.startsWith(calMonthStr) && matchesFilter(e, filter)
   );
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -386,6 +421,30 @@ const AgendaPage: React.FC = () => {
               <div className="ag-next-when">
                 Volte em breve, a coordenação publica novidades aqui.
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Avisos de conflito (visível para todos) ──────────────────── */}
+        {conflicts.length > 0 && (
+          <div className="ag-conflict-banner" role="alert" aria-label="Conflitos de agenda detectados">
+            <div className="ag-conflict-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div className="ag-conflict-body">
+              <strong>Conflito de agenda</strong>
+              {conflicts.map((c, i) => (
+                <p key={i} className="ag-conflict-item">
+                  <span className="ag-conflict-place">{c.place}</span>{' '}em{' '}
+                  <span className="ag-conflict-date">{parseDate(c.date).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}</span>
+                  {': '}
+                  <em>{c.eventA.title}{c.eventA.time ? ` (${c.eventA.time})` : ''}</em>
+                  {' × '}
+                  <em>{c.eventB.title}{c.eventB.time ? ` (${c.eventB.time})` : ''}</em>
+                </p>
+              ))}
             </div>
           </div>
         )}
@@ -735,6 +794,7 @@ const AgendaPage: React.FC = () => {
           open={panelOpen}
           displayName={user?.displayName ?? ''}
           notices={notices}
+          adminEvents={adminEvents}
           allThemes={allThemes}
           activeTheme={activeTheme}
           onClose={() => setPanelOpen(false)}

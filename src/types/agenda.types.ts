@@ -5,6 +5,7 @@
 export type AgendaCategory =
   | 'paroquia'
   | 'jovens'
+  | 'joana'
   | 'crisma'
   | 'tlc'
   | 'catequese'
@@ -74,12 +75,36 @@ export interface AgendaBirthday {
 
 export type AgendaFilter = 'all' | AgendaCategory;
 export type AgendaView = 'list' | 'calendar';
-export type AdminTab = 'notices';
+export type AdminTab = 'notices' | 'events';
+
+/** Evento criado pelo admin direto no Firestore (visível publicamente) */
+export interface AgendaAdminEvent {
+  id: string;
+  title: string;
+  g: AgendaCategory;
+  date: string;       // YYYY-MM-DD
+  time?: string;      // HH:MM
+  timeEnd?: string;   // HH:MM
+  place?: string;
+  desc?: string;
+  visible: boolean;
+  createdAt?: Date;
+  createdBy?: string;
+}
+
+/** Conflito detectado entre dois eventos (mesmo local + dia + sobreposição de horário) */
+export interface AgendaConflict {
+  eventA: { id: string; title: string; time?: string; timeEnd?: string };
+  eventB: { id: string; title: string; time?: string; timeEnd?: string };
+  date: string;
+  place: string;
+}
 
 export const CATEGORY_LABELS: Record<AgendaFilter, string> = {
   all: 'Tudo',
   paroquia: 'Paróquia',
   jovens: 'Grupo de Jovens',
+  joana: 'Sta Joana',
   crisma: 'Crisma',
   tlc: 'TLC',
   catequese: 'Catequese',
