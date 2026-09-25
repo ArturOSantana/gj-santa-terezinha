@@ -31,8 +31,10 @@ import {
   fetchAgendaBirthdays,
   subscribeAgendaNotices,
   subscribeAdminEvents,
+  subscribeHiddenEvents,
   detectConflicts,
   deleteAdminEvent,
+  hideEvent,
 } from '../../services/agenda.service';
 import type { AgendaAdminEvent, AgendaConflict } from '../../types/agenda.types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -118,6 +120,7 @@ const AgendaPage: React.FC = () => {
   const [notices, setNotices] = useState<AgendaNotice[]>([]);
   const [birthdays, setBirthdays] = useState<AgendaBirthday[]>([]);
   const [adminEvents, setAdminEvents] = useState<AgendaAdminEvent[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [conflicts, setConflicts] = useState<AgendaConflict[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   // isAdmin derivado direto do role já resolvido pelo AuthContext — sem fetch extra
@@ -171,6 +174,12 @@ const AgendaPage: React.FC = () => {
     return unsub;
   }, []);
 
+  // ── Subscription de eventos ocultos pelo admin (tempo real) ──────────────
+  useEffect(() => {
+    const unsub = subscribeHiddenEvents((ids) => setHiddenIds(ids));
+    return unsub;
+  }, []);
+
   // ── Detectar conflitos sempre que eventos mudarem ─────────────────────────
   useEffect(() => {
     setConflicts(detectConflicts(events, adminEvents));
@@ -180,7 +189,7 @@ const AgendaPage: React.FC = () => {
   // novenaDateSet e novenaCalItems vêm do hook (API /datas?ano=) — cobre o ano inteiro
   const novenaDateSet = novenaDateSetFromApi;
 
-  // Combina eventos do Sheets com eventos do admin criados no Firestore
+  // Combina eventos do Sheets com eventos do admin — filtra os ocultados pelo admin
   const allEvents: AgendaEvent[] = [
     ...events,
     ...adminEvents
@@ -197,7 +206,7 @@ const AgendaPage: React.FC = () => {
         art_url: undefined,
         visible: e.visible,
       })),
-  ];
+  ].filter((e) => !hiddenIds.has(e.id));
 
   const upcomingFiltered = allEvents
     .filter((e) => e.visible && e.date >= today && matchesFilter(e, filter))
@@ -293,16 +302,18 @@ const AgendaPage: React.FC = () => {
     setPanelOpen(false);
   };
 
-  // Apaga um evento admin pelo id (do modal de detalhe)
-  // Identifica se é evento do Firestore checando na lista adminEvents
+  // Apaga/oculta um evento (do modal de detalhe)
+  // - Evento do Firestore (criado pelo painel): apaga do Firestore + planilha
+  // - Evento da planilha: oculta via agenda_hidden (some da agenda imediatamente)
   const handleDeleteEventFromModal = useCallback(async (eventId: string) => {
     const adminEv = adminEvents.find((e) => e.id === eventId);
-    if (!adminEv) {
-      // Evento da planilha — não é possível apagar diretamente; orienta o admin
-      alert('Este evento veio da planilha do Google Sheets.\nPara removê-lo, acesse a planilha e apague ou oculte a linha, ou abra o Painel → Eventos para criar um evento via painel (que pode ser apagado por aqui).');
-      return;
+    if (adminEv) {
+      // Criado pelo painel — apaga do Firestore e da planilha
+      await deleteAdminEvent(adminEv.id, adminEv.sheetRowIndex);
+    } else {
+      // Veio da planilha — oculta via Firestore (agenda_hidden)
+      await hideEvent(eventId);
     }
-    await deleteAdminEvent(adminEv.id, adminEv.sheetRowIndex);
   }, [adminEvents]);
 
   // ─── RENDER ────────────────────────────────────────────────────────────────

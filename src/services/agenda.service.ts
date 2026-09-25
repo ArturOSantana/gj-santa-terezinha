@@ -245,6 +245,34 @@ export async function deleteAdminEvent(
   await deleteDoc(doc(db, 'agenda_events', id));
 }
 
+// ─── Eventos Ocultos (agenda_hidden) ─────────────────────────────────────────
+//
+// Permite ao admin ocultar qualquer evento (inclusive os da planilha)
+// sem precisar editar a planilha. O evento some da agenda publicamente
+// em tempo real via onSnapshot.
+//
+// Documento: agenda_hidden/{eventId}  →  { hiddenAt, hiddenBy }
+
+export function subscribeHiddenEvents(
+  callback: (hiddenIds: Set<string>) => void
+): Unsubscribe {
+  return onSnapshot(collection(db, 'agenda_hidden'), (snap) => {
+    callback(new Set(snap.docs.map((d) => d.id)));
+  });
+}
+
+export async function hideEvent(eventId: string): Promise<void> {
+  const { setDoc } = await import('firebase/firestore');
+  await setDoc(doc(db, 'agenda_hidden', eventId), {
+    hiddenAt: serverTimestamp(),
+    hiddenBy: uid(),
+  });
+}
+
+export async function unhideEvent(eventId: string): Promise<void> {
+  await deleteDoc(doc(db, 'agenda_hidden', eventId));
+}
+
 /**
  * Detecta conflitos de local + dia + sobreposição de horário entre todos os
  * eventos visíveis (Sheets + Admin). Retorna apenas conflitos reais.

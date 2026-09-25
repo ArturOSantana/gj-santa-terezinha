@@ -280,5 +280,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isCoordinator();
     }
+
+    // =========================================================================
+    // 17. Coleção: agenda_hidden (Eventos ocultados pelo admin da agenda)
+    //     Leitura pública (para filtrar na agenda sem login).
+    //     Escrita apenas para admin/coordinator.
+    // =========================================================================
+    match /agenda_hidden/{eventId} {
+      allow read: if true;
+      allow write: if isCoordinator();
+    }
   }
 }
