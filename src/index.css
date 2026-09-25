@@ -37,15 +37,25 @@
 
 html {
   scroll-behavior: smooth;
+  /* Fundo html = fundo da agenda para não vazar nas bordas */
+  background-color: #2E2C5A;
+}
+
+@media (prefers-color-scheme: dark) {
+  html { background-color: #121127; }
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--surface);
+  background-color: #2E2C5A;
   color: var(--ink);
   font-family: var(--font-sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  body { background-color: #121127; }
 }
 
 a {
@@ -55,6 +65,11 @@ a {
 
 #root {
   min-height: 100vh;
+  background-color: #2E2C5A;
+}
+
+@media (prefers-color-scheme: dark) {
+  #root { background-color: #121127; }
 }
 
 /* Utilitários tipográficos */

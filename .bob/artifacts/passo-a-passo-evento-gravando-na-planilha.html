@@ -1,0 +1,320 @@
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Passo a Passo — Evento gravando na Planilha</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 48px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2328;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #57606a;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 16px;
+  }
+
+  /* Seções */
+  .section {
+    margin-bottom: 28px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2328;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #3b82d4;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Passos */
+  ol { list-style: none; counter-reset: step; padding: 0; }
+  ol li {
+    counter-increment: step;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  ol li::before {
+    content: counter(step);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    font-size: 11px;
+    font-weight: 700;
+    color: #57606a;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Alerta */
+  .alert {
+    display: flex;
+    gap: 10px;
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-left: 4px solid #f59e0b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #78350f;
+    margin: 12px 0;
+  }
+  .alert-info {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    border-left-color: #3b82d4;
+    color: #1e40af;
+  }
+  .alert-ok {
+    background: #f0fdf4;
+    border-color: #86efac;
+    border-left-color: #22c55e;
+    color: #15803d;
+  }
+
+  /* Code */
+  code {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12.5px;
+    color: #cf222e;
+    word-break: break-all;
+  }
+  pre {
+    background: #1f2328;
+    color: #e6edf3;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  pre .comment { color: #8b949e; }
+  pre .key { color: #79c0ff; }
+  pre .val { color: #a5d6ff; }
+  pre .cmd { color: #7ee787; }
+
+  /* Tabela de colunas */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+  th {
+    background: #f7f8fa;
+    text-align: left;
+    padding: 7px 10px;
+    border: 1px solid #e5e7eb;
+    font-weight: 600;
+    color: #57606a;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  td {
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f7f8fa; }
+  td code { border: none; background: transparent; padding: 0; }
+
+  /* Divider */
+  .sep { border: none; border-top: 1px dashed #e5e7eb; margin: 20px 0; }
+
+  /* Footer */
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 11px;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📋 Evento gravando na Planilha do Google Sheets</h1>
+  <p class="subtitle">Configuração da Cloud Function <code>appendSheetEvent</code> — projeto <strong>gj-santaterezinha</strong></p>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">✦</span> Como funciona</div>
+    <div class="alert alert-info">
+      <span>ℹ</span>
+      <div>Quando você cria um evento no <strong>Painel Admin → aba Eventos</strong>, o app faz duas coisas ao mesmo tempo: salva no <strong>Firestore</strong> (aparece na agenda na hora) e chama a Cloud Function <code>appendSheetEvent</code> que grava uma nova linha na aba <strong>Eventos</strong> da planilha. Se a planilha falhar por qualquer motivo, o evento continua aparecendo normalmente.</div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">1</span> Ativar a Google Sheets API no Cloud Console</div>
+    <ol>
+      <li>Acesse <strong>console.cloud.google.com</strong> e selecione o projeto <code>gj-santaterezinha</code></li>
+      <li>No menu lateral: <strong>APIs e Serviços → Biblioteca</strong></li>
+      <li>Pesquise por <strong>"Google Sheets API"</strong> e clique em <strong>Ativar</strong></li>
+    </ol>
+    <div class="alert" style="margin-top:10px">
+      <span>⚠</span>
+      <div>Se você já ativou a <strong>Google Calendar API</strong> anteriormente, o projeto e a chave já existem — só precisa <em>ativar mais a Sheets API</em> no mesmo projeto.</div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">2</span> Criar (ou reusar) a Service Account</div>
+    <ol>
+      <li>Ainda no Cloud Console: <strong>IAM e administrador → Contas de serviço</strong></li>
+      <li>Se já existe uma conta de serviço para o projeto (pode ser a do Calendar), clique nela</li>
+      <li>Se não existe: clique <strong>Criar conta de serviço</strong>, dê um nome (ex: <em>agenda-gj</em>) e clique <strong>Criar</strong></li>
+      <li>Na conta de serviço aberta: aba <strong>Chaves → Adicionar chave → Criar nova chave → JSON</strong></li>
+      <li>Clique <strong>Criar</strong> — o arquivo <code>.json</code> será baixado automaticamente</li>
+      <li>Anote o campo <code>"client_email"</code> dentro desse JSON — você vai precisar no Passo 3</li>
+    </ol>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">3</span> Compartilhar a planilha com a Service Account</div>
+    <ol>
+      <li>Abra sua planilha em <strong>sheets.google.com</strong></li>
+      <li>Clique em <strong>Compartilhar</strong> (botão verde no canto superior direito)</li>
+      <li>No campo "Adicionar pessoas", cole o e-mail da service account (campo <code>client_email</code> do JSON) — ex: <code>agenda-gj@gj-santaterezinha.iam.gserviceaccount.com</code></li>
+      <li>Defina a permissão como <strong>Editor</strong></li>
+      <li>Clique em <strong>Enviar</strong> (pode aparecer aviso de "conta externa" — ignore e confirme)</li>
+    </ol>
+    <div class="alert alert-ok" style="margin-top:10px">
+      <span>✓</span>
+      <div>Este é o passo mais importante. Sem ele, a Cloud Function recebe erro 403 da planilha.</div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">4</span> Configurar as variáveis de ambiente nas Functions</div>
+    <p style="margin-bottom:10px">Abra o arquivo <code>functions/.env</code> (se não existir, copie de <code>functions/.env.example</code>) e adicione:</p>
+    <pre><span class="comment"># Cole o conteúdo INTEIRO do JSON da service account, numa só linha:</span>
+<span class="key">GOOGLE_SERVICE_ACCOUNT_KEY</span>=<span class="val">{"type":"service_account","project_id":"gj-santaterezinha","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"agenda-gj@gj-santaterezinha.iam.gserviceaccount.com",...}</span>
+
+<span class="comment"># ID da planilha — copie da URL da planilha:</span>
+<span class="comment"># https://docs.google.com/spreadsheets/d/  ESTE_TRECHO  /edit</span>
+<span class="key">SHEETS_ID</span>=<span class="val">1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</span></pre>
+
+    <div class="alert" style="margin-top:8px">
+      <span>⚠</span>
+      <div>O JSON deve estar em <strong>uma única linha</strong>. Se abrir o arquivo baixado, selecione tudo (<kbd>Ctrl+A</kbd>), copie e cole removendo as quebras de linha. Ferramentas online como <em>jsonminifier.com</em> fazem isso automaticamente.</div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">5</span> Fazer deploy das Cloud Functions</div>
+    <p style="margin-bottom:10px">No terminal, na raiz do projeto:</p>
+    <pre><span class="cmd">firebase deploy --only functions</span></pre>
+    <p style="margin-top:8px">Ou somente a função nova:</p>
+    <pre><span class="cmd">firebase deploy --only functions:appendSheetEvent</span></pre>
+    <p style="margin-top:8px;color:#57606a;font-size:13px">Aguarde o deploy terminar (aprox. 1–2 min). Você verá <code>✔ Deploy complete!</code> ao final.</p>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">6</span> Verificar a estrutura da aba "Eventos" na planilha</div>
+    <p style="margin-bottom:10px">A Cloud Function escreve exatamente nessa ordem de colunas (a partir da linha 5):</p>
+    <table>
+      <tr><th>Col.</th><th>Campo</th><th>Exemplo</th></tr>
+      <tr><td><code>A</code></td><td>Título</td><td>Encontro de Jovens</td></tr>
+      <tr><td><code>B</code></td><td>Categoria</td><td><code>jovens</code></td></tr>
+      <tr><td><code>C</code></td><td>Data</td><td><code>2025-08-15</code></td></tr>
+      <tr><td><code>D</code></td><td>Horário início</td><td><code>19:30</code></td></tr>
+      <tr><td><code>E</code></td><td>Horário fim</td><td><code>21:00</code></td></tr>
+      <tr><td><code>F</code></td><td>Local</td><td>Salão Paroquial</td></tr>
+      <tr><td><code>G</code></td><td>Descrição</td><td>Venha participar!</td></tr>
+      <tr><td><code>H</code></td><td>URL da arte</td><td><em>(vazio quando criado pelo painel)</em></td></tr>
+      <tr><td><code>I</code></td><td>Visível</td><td><code>Sim</code> ou <code>Não</code></td></tr>
+    </table>
+    <div class="alert alert-info" style="margin-top:10px">
+      <span>ℹ</span>
+      <div>Linhas 1–4 são o cabeçalho (título, subtítulo, em branco, nomes das colunas). A função insere novos registros sempre a partir da primeira linha vazia, sem sobrescrever nada.</div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">7</span> Testar</div>
+    <ol>
+      <li>Acesse a agenda, clique em <strong>Painel</strong> (logado como admin)</li>
+      <li>Vá na aba <strong>Eventos → preencha o formulário → clique "Adicionar evento"</strong></li>
+      <li>O evento aparece na agenda imediatamente (via Firestore)</li>
+      <li>Abra a planilha — uma nova linha deve ter aparecido na aba <strong>Eventos</strong></li>
+    </ol>
+    <div class="alert" style="margin-top:10px">
+      <span>⚠</span>
+      <div>Se a linha <strong>não</strong> aparecer na planilha mas o evento aparecer na agenda, abra o console do navegador (F12) e procure por mensagens <code>[Agenda] Planilha não atualizada</code>. Isso indica qual etapa ficou faltando (deploy, permissão ou variável de ambiente).</div>
+    </div>
+  </div>
+
+  <hr class="sep" />
+
+  
+  <div class="section">
+    <div class="section-title"><span class="badge">✓</span> Checklist rápido</div>
+    <table>
+      <tr><th>O que fazer</th><th>Onde</th><th>Status esperado</th></tr>
+      <tr><td>Ativar Google Sheets API</td><td>console.cloud.google.com</td><td>API habilitada</td></tr>
+      <tr><td>Criar/baixar chave JSON da Service Account</td><td>IAM → Contas de serviço</td><td>Arquivo .json baixado</td></tr>
+      <tr><td>Compartilhar planilha com e-mail da SA</td><td>Google Sheets → Compartilhar</td><td>Permissão "Editor"</td></tr>
+      <tr><td>Preencher <code>functions/.env</code></td><td>Pasta <code>functions/</code></td><td><code>GOOGLE_SERVICE_ACCOUNT_KEY</code> e <code>SHEETS_ID</code> preenchidos</td></tr>
+      <tr><td>Deploy das Functions</td><td>Terminal: <code>firebase deploy --only functions</code></td><td><code>Deploy complete!</code></td></tr>
+    </table>
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

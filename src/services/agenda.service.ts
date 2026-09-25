@@ -3,6 +3,7 @@
  *
  * Eventos Sheets:  lidos do Google Sheets (somente leitura pública)
  * Eventos Admin:   criados pelo admin no Firestore (collection agenda_events)
+ *                  + gravados na planilha via Cloud Function appendSheetEvent
  * Aniversariantes: lidos do Google Calendar (somente leitura pública)
  * Avisos:          salvos no Firestore, gerenciados pelo admin
  */
@@ -20,7 +21,8 @@ import {
   Unsubscribe,
   Timestamp,
 } from 'firebase/firestore';
-import { db, auth } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, auth, functions as fbFunctions } from '../config/firebase';
 import type { AgendaEvent, AgendaNotice, AgendaBirthday, AgendaAdminEvent, AgendaConflict } from '../types/agenda.types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -188,7 +190,32 @@ export async function addAdminEvent(
   if (event.place)   data.place   = event.place;
   if (event.desc)    data.desc    = event.desc;
 
+  // 1. Salva no Firestore (fonte primária, tempo real)
   const docRef = await addDoc(collection(db, 'agenda_events'), data);
+
+  // 2. Grava também na planilha via Cloud Function (best-effort — não bloqueia)
+  //    Se a Cloud Function falhar (service account não configurada, etc.),
+  //    o evento ainda fica disponível pelo Firestore.
+  try {
+    const appendFn = httpsCallable(fbFunctions, 'appendSheetEvent');
+    await appendFn({
+      title:    event.title,
+      category: event.g,
+      date:     event.date,
+      time:     event.time     ?? '',
+      timeEnd:  event.timeEnd  ?? '',
+      place:    event.place    ?? '',
+      desc:     event.desc     ?? '',
+      artUrl:   '',
+      visible:  event.visible,
+    });
+  } catch (sheetErr: unknown) {
+    // Loga mas não propaga — o Firestore já garantiu a persistência
+    const code = (sheetErr as { code?: string })?.code ?? '';
+    const msg  = (sheetErr as { message?: string })?.message ?? '';
+    console.warn('[Agenda] Planilha não atualizada (continuando com Firestore):', code, msg);
+  }
+
   return docRef.id;
 }
 
