@@ -148,12 +148,88 @@ export const appendSheetEvent = functions.https.onCall(async (data: unknown, con
     ev.visible ? 'Sim' : 'Não',
   ];
 
-  await sheets.spreadsheets.values.append({
+  const appendRes = await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: 'Eventos!A:I',
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
+  });
+
+  // Extrai o número da linha gravada do range retornado (ex: "Eventos!A12:I12" → 12)
+  const updatedRange = appendRes.data.updates?.updatedRange ?? '';
+  const rowMatch = updatedRange.match(/:([A-Z]+)(\d+)$/);
+  const rowIndex = rowMatch ? parseInt(rowMatch[2], 10) : null;
+
+  return { success: true, rowIndex };
+});
+
+// ─── deleteSheetEvent ─────────────────────────────────────────────────────────
+
+export const deleteSheetEvent = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  // 1. Autenticação
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login necessário.');
+  }
+
+  // 2. Verificar role
+  const userSnap = await admin.firestore()
+    .collection('users')
+    .doc(context.auth.uid)
+    .get();
+  const role = userSnap.data()?.role as string | undefined;
+  if (role !== 'admin' && role !== 'coordinator') {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Apenas admin ou coordenador podem remover eventos da planilha.'
+    );
+  }
+
+  // 3. Validar payload: precisa do rowIndex (número da linha, 1-based)
+  const d = data as Record<string, unknown>;
+  const rowIndex = typeof d?.rowIndex === 'number' ? d.rowIndex : null;
+  if (!rowIndex || rowIndex < 2) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'rowIndex inválido ou não informado.'
+    );
+  }
+
+  // 4. Obter o spreadsheetId da planilha
+  const spreadsheetId = getSheetsId();
+
+  // 5. Precisamos do sheetId numérico da aba "Eventos" para deletar via batchUpdate
+  const authClient = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+  const metaRes = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheet = metaRes.data.sheets?.find(
+    (s) => s.properties?.title === 'Eventos'
+  );
+  if (!sheet?.properties?.sheetId == null) {
+    throw new functions.https.HttpsError(
+      'not-found',
+      'Aba "Eventos" não encontrada na planilha.'
+    );
+  }
+  const sheetId = sheet!.properties!.sheetId as number;
+
+  // 6. Deletar a linha via batchUpdate (DeleteDimensionRequest)
+  // startIndex é 0-based, endIndex é exclusivo → linha rowIndex (1-based) = startIndex rowIndex-1
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId,
+            dimension: 'ROWS',
+            startIndex: rowIndex - 1,
+            endIndex: rowIndex,
+          },
+        },
+      }],
+    },
   });
 
   return { success: true };

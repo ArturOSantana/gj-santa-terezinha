@@ -173,11 +173,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  const handleDeleteEvent = async (id: string, t: string) => {
+  const handleDeleteEvent = async (id: string, t: string, sheetRowIndex?: number) => {
     if (!confirm(`Remover o evento "${t}"?`)) return;
     setDeleting(id);
     try {
-      await deleteAdminEvent(id);
+      await deleteAdminEvent(id, sheetRowIndex);
       flash('Evento removido.');
     } catch {
       flash('Sem permissão para remover.', false);
@@ -603,7 +603,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     </div>
                     <button
                       className="ag-btn-ghost"
-                      onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                      onClick={() => handleDeleteEvent(ev.id, ev.title, ev.sheetRowIndex)}
                       disabled={deleting === ev.id}
                       aria-label={`Remover evento ${ev.title}`}
                     >

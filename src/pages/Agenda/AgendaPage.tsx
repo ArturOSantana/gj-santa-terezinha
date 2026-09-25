@@ -319,6 +319,17 @@ const AgendaPage: React.FC = () => {
     return null;
   })();
 
+  // Sincroniza data-tema no <html> para que o body possa usar o mesmo fundo
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (dataTema) {
+      root.setAttribute('data-tema', dataTema);
+    } else {
+      root.removeAttribute('data-tema');
+    }
+    return () => root.removeAttribute('data-tema');
+  }, [dataTema]);
+
   return (
     <div className="agenda-root" data-tema={dataTema}>
       {/* ═══════════════════ HERO ══════════════════════════════════════════ */}

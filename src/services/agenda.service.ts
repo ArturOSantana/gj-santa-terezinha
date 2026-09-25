@@ -166,6 +166,7 @@ export function subscribeAdminEvents(
         place: data.place ?? undefined,
         desc: data.desc ?? undefined,
         visible: data.visible !== false,
+        sheetRowIndex: typeof data.sheetRowIndex === 'number' ? data.sheetRowIndex : undefined,
         createdAt: toDate(data.createdAt),
         createdBy: data.createdBy ?? undefined,
       } satisfies AgendaAdminEvent;
@@ -193,12 +194,14 @@ export async function addAdminEvent(
   // 1. Salva no Firestore (fonte primária, tempo real)
   const docRef = await addDoc(collection(db, 'agenda_events'), data);
 
-  // 2. Grava também na planilha via Cloud Function (best-effort — não bloqueia)
-  //    Se a Cloud Function falhar (service account não configurada, etc.),
-  //    o evento ainda fica disponível pelo Firestore.
+  // 2. Grava também na planilha via Cloud Function (best-effort)
+  //    Se falhar, o evento continua disponível pelo Firestore.
+  //    Se tiver sucesso, salva o rowIndex no doc do Firestore para poder deletar depois.
   try {
-    const appendFn = httpsCallable(fbFunctions, 'appendSheetEvent');
-    await appendFn({
+    const appendFn = httpsCallable<unknown, { success: boolean; rowIndex: number | null }>(
+      fbFunctions, 'appendSheetEvent'
+    );
+    const result = await appendFn({
       title:    event.title,
       category: event.g,
       date:     event.date,
@@ -209,8 +212,12 @@ export async function addAdminEvent(
       artUrl:   '',
       visible:  event.visible,
     });
+    // Persiste o número da linha no Firestore para uso futuro na deleção
+    if (result.data.rowIndex) {
+      const { updateDoc } = await import('firebase/firestore');
+      await updateDoc(docRef, { sheetRowIndex: result.data.rowIndex });
+    }
   } catch (sheetErr: unknown) {
-    // Loga mas não propaga — o Firestore já garantiu a persistência
     const code = (sheetErr as { code?: string })?.code ?? '';
     const msg  = (sheetErr as { message?: string })?.message ?? '';
     console.warn('[Agenda] Planilha não atualizada (continuando com Firestore):', code, msg);
@@ -219,7 +226,22 @@ export async function addAdminEvent(
   return docRef.id;
 }
 
-export async function deleteAdminEvent(id: string): Promise<void> {
+export async function deleteAdminEvent(
+  id: string,
+  sheetRowIndex?: number
+): Promise<void> {
+  // 1. Apaga da planilha via Cloud Function (best-effort)
+  if (sheetRowIndex) {
+    try {
+      const deleteFn = httpsCallable(fbFunctions, 'deleteSheetEvent');
+      await deleteFn({ rowIndex: sheetRowIndex });
+    } catch (sheetErr: unknown) {
+      const code = (sheetErr as { code?: string })?.code ?? '';
+      const msg  = (sheetErr as { message?: string })?.message ?? '';
+      console.warn('[Agenda] Linha da planilha não removida (continuando):', code, msg);
+    }
+  }
+  // 2. Apaga do Firestore (sempre)
   await deleteDoc(doc(db, 'agenda_events', id));
 }
 

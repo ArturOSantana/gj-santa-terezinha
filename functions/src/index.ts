@@ -21,7 +21,7 @@ export {
 } from './googleCalendar';
 
 // Importar Agenda Functions
-export { appendSheetEvent } from './agenda/appendSheetEvent';
+export { appendSheetEvent, deleteSheetEvent } from './agenda/appendSheetEvent';
 
 // Inicializar Firebase Admin
 admin.initializeApp();

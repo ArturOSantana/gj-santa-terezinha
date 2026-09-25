@@ -88,6 +88,8 @@ export interface AgendaAdminEvent {
   place?: string;
   desc?: string;
   visible: boolean;
+  /** Número da linha na planilha (1-based). Salvo pelo addAdminEvent após appendSheetEvent. */
+  sheetRowIndex?: number;
   createdAt?: Date;
   createdBy?: string;
 }

@@ -41,6 +41,8 @@
   background: var(--bg, var(--ag-bg));
   color: var(--ag-ink);
   min-height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -1831,10 +1833,33 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SISTEMA DE TEMAS FESTIVOS  –  v2
-   Ativação: data-tema="<slug>" em .agenda-root
+   Ativação: data-tema="<slug>" em .agenda-root E em html (via useEffect no React)
    Tokens: --hero (topo), --accent (destaque), --accent-dark (destaque escuro),
            --bg (fundo), --soft (faixa aniversariantes), --crest-bg (placa brasão)
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── --agenda-page-bg no html sincroniza o body com o fundo do tema ──────
+   O AgendaPage coloca data-tema no <html> via useEffect.
+   Isso faz o body ter exatamente o mesmo fundo da página, eliminando bordas. */
+html                                        { --agenda-page-bg: #F0EFF5; }
+html[data-tema="jose"]                      { --agenda-page-bg: #F5F1EA; }
+html[data-tema="carlo"]                     { --agenda-page-bg: #EFF2FA; }
+html[data-tema="frassati"]                  { --agenda-page-bg: #EEF2F5; }
+html[data-tema="joana"]                     { --agenda-page-bg: #EFF1F4; }
+html[data-tema^="nossa_senhora"],
+html[data-tema="maria"]                     { --agenda-page-bg: #EEF3FA; }
+html[data-tema="inacio"]                    { --agenda-page-bg: #F6F1EC; }
+
+@media (prefers-color-scheme: dark) {
+  html                                      { --agenda-page-bg: #121127; }
+  html[data-tema="jose"]                    { --agenda-page-bg: #1A1208; }
+  html[data-tema="carlo"]                   { --agenda-page-bg: #080E28; }
+  html[data-tema="frassati"]                { --agenda-page-bg: #080E14; }
+  html[data-tema="joana"]                   { --agenda-page-bg: #0A0C10; }
+  html[data-tema^="nossa_senhora"],
+  html[data-tema="maria"]                   { --agenda-page-bg: #060E20; }
+  html[data-tema="inacio"]                  { --agenda-page-bg: #130C08; }
+}
 
 /* ── Padrão: Santa Terezinha (ativa o ano todo) ────────────────────────── */
 .agenda-root {
