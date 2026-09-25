@@ -1842,6 +1842,8 @@
    O AgendaPage coloca data-tema no <html> via useEffect.
    Isso faz o body ter exatamente o mesmo fundo da página, eliminando bordas. */
 html                                        { --agenda-page-bg: #F0EFF5; }
+html[data-tema="terezinha"]                 { --agenda-page-bg: #F0EFF5; }
+html[data-tema="default"]                   { --agenda-page-bg: #F0EFF5; }
 html[data-tema="jose"]                      { --agenda-page-bg: #F5F1EA; }
 html[data-tema="carlo"]                     { --agenda-page-bg: #EFF2FA; }
 html[data-tema="frassati"]                  { --agenda-page-bg: #EEF2F5; }
@@ -1850,8 +1852,15 @@ html[data-tema^="nossa_senhora"],
 html[data-tema="maria"]                     { --agenda-page-bg: #EEF3FA; }
 html[data-tema="inacio"]                    { --agenda-page-bg: #F6F1EC; }
 
+/* Garante que o html também use o mesmo fundo da agenda (evita vazar cor do :root global) */
+html[data-tema] {
+  background-color: var(--agenda-page-bg);
+}
+
 @media (prefers-color-scheme: dark) {
   html                                      { --agenda-page-bg: #121127; }
+  html[data-tema="terezinha"]               { --agenda-page-bg: #121127; }
+  html[data-tema="default"]                 { --agenda-page-bg: #121127; }
   html[data-tema="jose"]                    { --agenda-page-bg: #1A1208; }
   html[data-tema="carlo"]                   { --agenda-page-bg: #080E28; }
   html[data-tema="frassati"]                { --agenda-page-bg: #080E14; }
