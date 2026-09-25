@@ -17,17 +17,18 @@ function toICSDate(dateStr: string, timeStr?: string): string {
   return `${y}${m}${d}T${hh}${mm}00`;
 }
 
+function addOneHour(time: string): string {
+  const [hh, mm] = time.split(':').map(Number);
+  const endMin = mm + 60;
+  return `${String((hh + Math.floor(endMin / 60)) % 24).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+}
+
 function buildGoogleCalendarUrl(event: AgendaEvent): string {
   const base = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
   const start = toICSDate(event.date, event.time);
-  // Se tiver hora: evento de 1h. Se all-day: passa só a data
+  // Usa timeEnd se disponível; senão +1h; senão all-day
   const end = event.time
-    ? (() => {
-        const [hh, mm] = event.time.split(':').map(Number);
-        const endMin = mm + 60;
-        const endH = hh + Math.floor(endMin / 60);
-        return toICSDate(event.date, `${String(endH % 24).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`);
-      })()
+    ? toICSDate(event.date, event.timeEnd ?? addOneHour(event.time))
     : toICSDate(event.date);
   const params = new URLSearchParams({
     text: event.title,
@@ -41,12 +42,7 @@ function buildGoogleCalendarUrl(event: AgendaEvent): string {
 function downloadICS(event: AgendaEvent): void {
   const start = toICSDate(event.date, event.time);
   const end = event.time
-    ? (() => {
-        const [hh, mm] = event.time.split(':').map(Number);
-        const endMin = mm + 60;
-        const endH = hh + Math.floor(endMin / 60);
-        return toICSDate(event.date, `${String(endH % 24).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`);
-      })()
+    ? toICSDate(event.date, event.timeEnd ?? addOneHour(event.time))
     : toICSDate(event.date);
   const allDay = !event.time;
   const dtStart = allDay ? `DTSTART;VALUE=DATE:${start}` : `DTSTART:${start}`;
@@ -152,7 +148,10 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose }) =
 
             <dl className="ag-dl">
               <dt>Quando</dt>
-              <dd>{formatWhen(event.date, event.time)}</dd>
+              <dd>
+                {formatWhen(event.date, event.time)}
+                {event.timeEnd && ` até ${event.timeEnd}`}
+              </dd>
 
               {event.place && (
                 <>

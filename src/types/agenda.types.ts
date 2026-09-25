@@ -2,7 +2,16 @@
  * Tipos da Agenda dos Jovens – Paróquia Santa Terezinha do Menino Jesus
  */
 
-export type AgendaCategory = 'paroquia' | 'jovens' | 'crisma' | 'tlc' | 'outros';
+export type AgendaCategory =
+  | 'paroquia'
+  | 'jovens'
+  | 'crisma'
+  | 'tlc'
+  | 'catequese'
+  | 'oratorio'
+  | 'perseveranca'
+  | 'servidores'
+  | 'outros';
 
 /** Origem do aviso — quem enviou */
 export type NoticeOrigin = 'tlc' | 'paroquia' | 'jovens' | 'crisma';
@@ -18,12 +27,14 @@ export const NOTICE_ORIGIN_LABELS: Record<NoticeOrigin, string> = {
 export interface AgendaEvent {
   id: string;
   title: string;
-  /** Categoria: paroquia, jovens, crisma, tlc, outros */
+  /** Categoria: paroquia, jovens, crisma, tlc, catequese, oratorio, perseveranca, servidores, outros */
   g: AgendaCategory;
   /** Data no formato YYYY-MM-DD */
   date: string;
-  /** Horário no formato HH:MM (opcional) */
+  /** Horário inicial no formato HH:MM (opcional) */
   time?: string;
+  /** Horário final no formato HH:MM (opcional) */
+  timeEnd?: string;
   /** Local (máx. 80 chars) */
   place?: string;
   /** Descrição (máx. 800 chars) */
@@ -71,6 +82,10 @@ export const CATEGORY_LABELS: Record<AgendaFilter, string> = {
   jovens: 'Grupo de Jovens',
   crisma: 'Crisma',
   tlc: 'TLC',
+  catequese: 'Catequese',
+  oratorio: 'Oratório',
+  perseveranca: 'Perseverança',
+  servidores: 'Servidores',
   outros: 'Outros',
 };
 

@@ -26,13 +26,17 @@ export const formatWhen = (date: string, time?: string): string => {
 
 export const getCatVar = (cat: AgendaCategory | AgendaFilter): string => {
   const map: Record<string, string> = {
-    paroquia: 'var(--ag-paroquia)',
-    jovens:   'var(--ag-jovens)',
-    crisma:   'var(--ag-crisma)',
-    tlc:      'var(--ag-tlc)',
-    outros:   'var(--ag-outros)',
-    all:      'var(--ag-navy)',
-    novena:   'var(--ag-gold)',
+    paroquia:     'var(--ag-paroquia)',
+    jovens:       'var(--ag-jovens)',
+    crisma:       'var(--ag-crisma)',
+    tlc:          'var(--ag-tlc)',
+    catequese:    'var(--ag-catequese)',
+    oratorio:     'var(--ag-oratorio)',
+    perseveranca: 'var(--ag-perseveranca)',
+    servidores:   'var(--ag-servidores)',
+    outros:       'var(--ag-outros)',
+    all:          'var(--ag-navy)',
+    novena:       'var(--ag-gold)',
   };
   return map[cat] ?? 'var(--ag-outros)';
 };

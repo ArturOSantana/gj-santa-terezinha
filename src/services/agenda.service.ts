@@ -37,20 +37,21 @@ const uid = () => auth.currentUser?.uid ?? 'unknown';
 //
 // Estrutura esperada da planilha (aba "Eventos"):
 // Coluna A: título
-// Coluna B: categoria (paroquia | jovens | crisma | tlc | outros)
+// Coluna B: categoria (paroquia | jovens | crisma | tlc | catequese | oratorio | perseveranca | servidores | outros)
 // Coluna C: data (YYYY-MM-DD ou DD/MM/YYYY)
-// Coluna D: horário (HH:MM, opcional)
-// Coluna E: local (opcional)
-// Coluna F: descrição (opcional)
-// Coluna G: url_arte (opcional)
-// Coluna H: visível (Sim = público | Não = oculto; padrão: Sim quando vazio)
+// Coluna D: Horário Inicial (HH:MM, opcional)
+// Coluna E: Horário Final   (HH:MM, opcional)
+// Coluna F: local (opcional)
+// Coluna G: descrição (opcional)
+// Coluna H: url_arte (opcional)
+// Coluna I: visível (Sim = público | Não = oculto; padrão: Sim quando vazio)
 //
 // Configure VITE_SHEETS_ID e VITE_SHEETS_API_KEY no .env
 // A planilha deve ser publicada para "Qualquer pessoa com o link pode ver"
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID ?? '';
 const SHEETS_API_KEY = import.meta.env.VITE_SHEETS_API_KEY ?? '';
-const EVENTS_RANGE = 'Eventos!A5:H';
+const EVENTS_RANGE = 'Eventos!A5:I';
 
 type SheetsCache<T> = { data: T[]; fetchedAt: number };
 let eventsCache: SheetsCache<AgendaEvent> | null = null;
@@ -71,6 +72,10 @@ function normalizeCategory(raw: string): AgendaEvent['g'] {
     jovens: 'jovens', 'grupo de jovens': 'jovens',
     crisma: 'crisma',
     tlc: 'tlc',
+    catequese: 'catequese',
+    oratorio: 'oratorio', oratório: 'oratorio',
+    perseveranca: 'perseveranca', perseverança: 'perseveranca',
+    servidores: 'servidores',
     outros: 'outros',
   };
   return map[raw.toLowerCase().trim()] ?? 'outros';
@@ -100,7 +105,7 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
   const now = Date.now();
   if (eventsCache && now - eventsCache.fetchedAt < CACHE_TTL) return eventsCache.data;
   const data = await fetchSheet<AgendaEvent>(EVENTS_RANGE, (row) => {
-    const [title, cat, date, time, place, desc, art_url, visible_raw] = row;
+    const [title, cat, date, time, timeEnd, place, desc, art_url, visible_raw] = row;
     if (!title?.trim() || !date?.trim()) return null;
     return {
       id: `${normalizeDate(date)}-${title.trim().slice(0,20).replace(/\s/g,'-')}`,
@@ -108,6 +113,7 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
       g: normalizeCategory(cat ?? ''),
       date: normalizeDate(date),
       time: time?.trim() || undefined,
+      timeEnd: timeEnd?.trim() || undefined,
       place: place?.trim() || undefined,
       desc: desc?.trim() || undefined,
       art_url: art_url?.trim() || undefined,
