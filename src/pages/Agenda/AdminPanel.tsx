@@ -101,6 +101,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [evTitle, setEvTitle] = useState('');
   const [evCat, setEvCat] = useState<AgendaCategory>('jovens');
   const [evDate, setEvDate] = useState('');
+  const [evDateEnd, setEvDateEnd] = useState('');
   const [evTime, setEvTime] = useState('');
   const [evTimeEnd, setEvTimeEnd] = useState('');
   const [evPlace, setEvPlace] = useState('');
@@ -139,8 +140,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // ── Handlers de eventos ───────────────────────────────────────────────────
   const resetEventForm = () => {
-    setEvTitle(''); setEvCat('jovens'); setEvDate(''); setEvTime('');
-    setEvTimeEnd(''); setEvPlace(''); setEvDesc(''); setEvVisible(true);
+    setEvTitle(''); setEvCat('jovens'); setEvDate(''); setEvDateEnd('');
+    setEvTime(''); setEvTimeEnd(''); setEvPlace(''); setEvDesc(''); setEvVisible(true);
   };
 
   const handleAddEvent = async (e: React.FormEvent) => {
@@ -152,6 +153,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         title: evTitle.trim().slice(0, 100),
         g: evCat,
         date: evDate,
+        dateEnd: evDateEnd || undefined,
         time: evTime || undefined,
         timeEnd: evTimeEnd || undefined,
         place: evPlace.trim().slice(0, 80) || undefined,
@@ -512,7 +514,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 </label>
 
                 <label className="ag-label">
-                  Data *
+                  Data inicial *
                   <input
                     type="date"
                     className="ag-input"
@@ -521,6 +523,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     required
                   />
                 </label>
+              </div>
+
+              <div className="ag-two-col">
+                <label className="ag-label">
+                  Data final
+                  <input
+                    type="date"
+                    className="ag-input"
+                    value={evDateEnd}
+                    min={evDate || undefined}
+                    onChange={(e) => setEvDateEnd(e.target.value)}
+                  />
+                </label>
+                <p className="ag-hint" style={{ alignSelf: 'flex-end', marginBottom: 6 }}>
+                  Deixe em branco se for evento de um dia só.
+                </p>
               </div>
 
               <div className="ag-two-col">
@@ -598,7 +616,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         {ev.title}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--ag-mute)', marginTop: 2 }}>
-                        {ev.date}{ev.time ? ` • ${ev.time}${ev.timeEnd ? `–${ev.timeEnd}` : ''}` : ''}{ev.place ? ` • ${ev.place}` : ''}
+                        {ev.date}{ev.dateEnd ? ` → ${ev.dateEnd}` : ''}{ev.time ? ` • ${ev.time}${ev.timeEnd ? `–${ev.timeEnd}` : ''}` : ''}{ev.place ? ` • ${ev.place}` : ''}
                       </div>
                     </div>
                     <button

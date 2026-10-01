@@ -30,8 +30,10 @@ export interface AgendaEvent {
   title: string;
   /** Categoria: paroquia, jovens, crisma, tlc, catequese, oratorio, perseveranca, servidores, outros */
   g: AgendaCategory;
-  /** Data no formato YYYY-MM-DD */
+  /** Data inicial no formato YYYY-MM-DD */
   date: string;
+  /** Data final no formato YYYY-MM-DD (opcional — vazio = evento de um dia só) */
+  dateEnd?: string;
   /** Horário inicial no formato HH:MM (opcional) */
   time?: string;
   /** Horário final no formato HH:MM (opcional) */
@@ -44,7 +46,7 @@ export interface AgendaEvent {
   art_url?: string;
   /**
    * Visibilidade pública do evento.
-   * Coluna H da planilha: "Sim" = visível (padrão), "Não" = oculto.
+   * Coluna J da planilha: "Sim" = visível (padrão), "Não" = oculto.
    */
   visible: boolean;
 }
@@ -83,6 +85,7 @@ export interface AgendaAdminEvent {
   title: string;
   g: AgendaCategory;
   date: string;       // YYYY-MM-DD
+  dateEnd?: string;   // YYYY-MM-DD (opcional — vazio = evento de um dia só)
   time?: string;      // HH:MM
   timeEnd?: string;   // HH:MM
   place?: string;

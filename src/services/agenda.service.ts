@@ -40,21 +40,22 @@ const uid = () => auth.currentUser?.uid ?? 'unknown';
 //
 // Estrutura esperada da planilha (aba "Eventos"):
 // Coluna A: título
-// Coluna B: categoria (paroquia | jovens | crisma | tlc | catequese | oratorio | perseveranca | servidores | outros)
-// Coluna C: data (YYYY-MM-DD ou DD/MM/YYYY)
-// Coluna D: Horário Inicial (HH:MM, opcional)
-// Coluna E: Horário Final   (HH:MM, opcional)
-// Coluna F: local (opcional)
-// Coluna G: descrição (opcional)
-// Coluna H: url_arte (opcional)
-// Coluna I: visível (Sim = público | Não = oculto; padrão: Sim quando vazio)
+// Coluna B: categoria (paroquia | jovens | joana | crisma | tlc | catequese | oratorio | perseveranca | servidores | outros)
+// Coluna C: data inicial (YYYY-MM-DD ou DD/MM/YYYY)
+// Coluna D: data final   (YYYY-MM-DD ou DD/MM/YYYY — opcional; vazio = evento de um dia)
+// Coluna E: Horário Inicial (HH:MM, opcional)
+// Coluna F: Horário Final   (HH:MM, opcional)
+// Coluna G: local (opcional)
+// Coluna H: descrição (opcional)
+// Coluna I: url_arte (opcional)
+// Coluna J: visível (Sim = público | Não = oculto; padrão: Sim quando vazio)
 //
 // Configure VITE_SHEETS_ID e VITE_SHEETS_API_KEY no .env
 // A planilha deve ser publicada para "Qualquer pessoa com o link pode ver"
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID ?? '';
 const SHEETS_API_KEY = import.meta.env.VITE_SHEETS_API_KEY ?? '';
-const EVENTS_RANGE = 'Eventos!A5:I';
+const EVENTS_RANGE = 'Eventos!A5:J';
 
 type SheetsCache<T> = { data: T[]; fetchedAt: number };
 let eventsCache: SheetsCache<AgendaEvent> | null = null;
@@ -73,6 +74,7 @@ function normalizeCategory(raw: string): AgendaEvent['g'] {
   const map: Record<string, AgendaEvent['g']> = {
     paroquia: 'paroquia', paróquia: 'paroquia',
     jovens: 'jovens', 'grupo de jovens': 'jovens',
+    joana: 'joana', 'santa joana': 'joana', 'sta joana': 'joana', "santa joana d'arc": 'joana',
     crisma: 'crisma',
     tlc: 'tlc',
     catequese: 'catequese',
@@ -108,13 +110,14 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
   const now = Date.now();
   if (eventsCache && now - eventsCache.fetchedAt < CACHE_TTL) return eventsCache.data;
   const data = await fetchSheet<AgendaEvent>(EVENTS_RANGE, (row) => {
-    const [title, cat, date, time, timeEnd, place, desc, art_url, visible_raw] = row;
+    const [title, cat, date, dateEnd, time, timeEnd, place, desc, art_url, visible_raw] = row;
     if (!title?.trim() || !date?.trim()) return null;
     return {
       id: `${normalizeDate(date)}-${title.trim().slice(0,20).replace(/\s/g,'-')}`,
       title: title.trim(),
       g: normalizeCategory(cat ?? ''),
       date: normalizeDate(date),
+      dateEnd: dateEnd?.trim() ? normalizeDate(dateEnd) : undefined,
       time: time?.trim() || undefined,
       timeEnd: timeEnd?.trim() || undefined,
       place: place?.trim() || undefined,
@@ -161,6 +164,7 @@ export function subscribeAdminEvents(
         title: data.title ?? '',
         g: data.g ?? 'outros',
         date: data.date ?? '',
+        dateEnd: data.dateEnd ?? undefined,
         time: data.time ?? undefined,
         timeEnd: data.timeEnd ?? undefined,
         place: data.place ?? undefined,
@@ -186,6 +190,7 @@ export async function addAdminEvent(
     createdAt: serverTimestamp(),
     createdBy: uid(),
   };
+  if (event.dateEnd) data.dateEnd = event.dateEnd;
   if (event.time)    data.time    = event.time;
   if (event.timeEnd) data.timeEnd = event.timeEnd;
   if (event.place)   data.place   = event.place;
@@ -205,6 +210,7 @@ export async function addAdminEvent(
       title:    event.title,
       category: event.g,
       date:     event.date,
+      dateEnd:  event.dateEnd  ?? '',
       time:     event.time     ?? '',
       timeEnd:  event.timeEnd  ?? '',
       place:    event.place    ?? '',

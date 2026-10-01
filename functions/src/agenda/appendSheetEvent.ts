@@ -75,6 +75,7 @@ interface EventPayload {
   title: string;
   category: string;
   date: string;
+  dateEnd?: string;
   time?: string;
   timeEnd?: string;
   place?: string;
@@ -95,6 +96,7 @@ function validate(data: unknown): EventPayload {
     title:    (d.title    as string).trim().slice(0, 100),
     category: (d.category as string | undefined)?.trim() || 'outros',
     date:     (d.date     as string).trim(),
+    dateEnd:  (d.dateEnd  as string | undefined)?.trim() || '',
     time:     (d.time     as string | undefined)?.trim() || '',
     timeEnd:  (d.timeEnd  as string | undefined)?.trim() || '',
     place:    (d.place    as string | undefined)?.trim().slice(0, 80) || '',
@@ -133,13 +135,14 @@ export const appendSheetEvent = functions.https.onCall(async (data: unknown, con
   const sheets = google.sheets({ version: 'v4', auth });
   const spreadsheetId = getSheetsId();
 
-  // Monta a linha na ordem das colunas A→I da aba "Eventos"
-  // A: título  B: categoria  C: data  D: hora início  E: hora fim
-  // F: local   G: descrição  H: url_arte  I: visível
+  // Monta a linha na ordem das colunas A→J da aba "Eventos"
+  // A: título  B: categoria  C: data inicial  D: data final  E: hora início  F: hora fim
+  // G: local   H: descrição  I: url_arte  J: visível
   const row = [
     ev.title,
     ev.category,
     ev.date,
+    ev.dateEnd ?? '',
     ev.time,
     ev.timeEnd,
     ev.place,
@@ -150,7 +153,7 @@ export const appendSheetEvent = functions.https.onCall(async (data: unknown, con
 
   const appendRes = await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: 'Eventos!A:I',
+    range: 'Eventos!A:J',
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
