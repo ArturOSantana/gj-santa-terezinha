@@ -18,17 +18,17 @@
   --ag-line:   #D9D7E6;
   --ag-gold:   #C8A850;
 
-  /* categorias */
-  --ag-paroquia:     #2E2C5A;
-  --ag-jovens:       #7A1424;
-  --ag-joana:        #C2185B;
-  --ag-crisma:       #A8741C;
-  --ag-tlc:          #2B6A5E;
-  --ag-catequese:    #1A5F8A;
-  --ag-oratorio:     #6B3FA0;
-  --ag-perseveranca: #8A3A00;
-  --ag-servidores:   #1A6B50;
-  --ag-outros:       #68667F;
+  /* categorias – cores perceptualmente distintas entre si */
+  --ag-paroquia:     #2E2C5A;   /* índigo escuro           */
+  --ag-jovens:       #B01010;   /* vermelho vivo           */
+  --ag-joana:        #C2185B;   /* magenta/rosa            */
+  --ag-crisma:       #A8741C;   /* âmbar/dourado           */
+  --ag-tlc:          #0D6B6B;   /* ciano escuro            */
+  --ag-catequese:    #1255A0;   /* azul real               */
+  --ag-oratorio:     #6B3FA0;   /* roxo                    */
+  --ag-perseveranca: #D45A00;   /* laranja queimado        */
+  --ag-servidores:   #1A7A35;   /* verde saturado          */
+  --ag-outros:       #68667F;   /* cinza/lilás             */
 
   /* clip-path padrão */
   --ag-cut: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
@@ -56,16 +56,16 @@
     --ag-line:     #33315B;
     --ag-rose:     #3A1A2A;
     --ag-wine:     #E58A9B;
-    --ag-paroquia:     #A7A4FF;
-    --ag-jovens:       #F0798D;
-    --ag-joana:        #F48FB1;
-    --ag-crisma:       #E0AA4E;
-    --ag-tlc:          #5CC2AE;
-    --ag-catequese:    #5BB8F5;
-    --ag-oratorio:     #C084F5;
-    --ag-perseveranca: #F5A05B;
-    --ag-servidores:   #4DD9A8;
-    --ag-outros:       #A3A1BB;
+    --ag-paroquia:     #A7A4FF;   /* índigo claro            */
+    --ag-jovens:       #FF6B6B;   /* vermelho coral          */
+    --ag-joana:        #F48FB1;   /* rosa claro              */
+    --ag-crisma:       #E0AA4E;   /* âmbar claro             */
+    --ag-tlc:          #2DD4C8;   /* ciano vivo              */
+    --ag-catequese:    #5BB8F5;   /* azul céu                */
+    --ag-oratorio:     #C084F5;   /* lilás                   */
+    --ag-perseveranca: #FF8C42;   /* laranja vivo            */
+    --ag-servidores:   #3DCA6E;   /* verde lima              */
+    --ag-outros:       #A3A1BB;   /* cinza/lilás claro       */
     --ag-gold:         #E0C060;
   }
 }
@@ -79,16 +79,16 @@
   --ag-line:     #33315B;
   --ag-rose:     #3A1A2A;
   --ag-wine:     #E58A9B;
-  --ag-paroquia:     #A7A4FF;
-  --ag-jovens:       #F0798D;
-  --ag-joana:        #F48FB1;
-  --ag-crisma:       #E0AA4E;
-  --ag-tlc:          #5CC2AE;
-  --ag-catequese:    #5BB8F5;
-  --ag-oratorio:     #C084F5;
-  --ag-perseveranca: #F5A05B;
-  --ag-servidores:   #4DD9A8;
-  --ag-outros:       #A3A1BB;
+  --ag-paroquia:     #A7A4FF;   /* índigo claro            */
+  --ag-jovens:       #FF6B6B;   /* vermelho coral          */
+  --ag-joana:        #F48FB1;   /* rosa claro              */
+  --ag-crisma:       #E0AA4E;   /* âmbar claro             */
+  --ag-tlc:          #2DD4C8;   /* ciano vivo              */
+  --ag-catequese:    #5BB8F5;   /* azul céu                */
+  --ag-oratorio:     #C084F5;   /* lilás                   */
+  --ag-perseveranca: #FF8C42;   /* laranja vivo            */
+  --ag-servidores:   #3DCA6E;   /* verde lima              */
+  --ag-outros:       #A3A1BB;   /* cinza/lilás claro       */
   --ag-gold:         #E0C060;
 }
 

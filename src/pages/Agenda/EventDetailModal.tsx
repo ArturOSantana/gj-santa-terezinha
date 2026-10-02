@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { AgendaEvent } from '../../types/agenda.types';
 import { CATEGORY_LABELS } from '../../types/agenda.types';
-import { formatDateRange, getCatVar } from './agendaUtils';
+import { formatDateRange, getCatVar, pad } from './agendaUtils';
 import { useSwipeDown } from './useSwipeDown';
 
 // ─── Helpers "Adicionar ao calendário" ───────────────────────────────────────
@@ -26,10 +26,23 @@ function addOneHour(time: string): string {
 function buildGoogleCalendarUrl(event: AgendaEvent): string {
   const base = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
   const start = toICSDate(event.date, event.time);
-  // Usa timeEnd se disponível; senão +1h; senão all-day
-  const end = event.time
-    ? toICSDate(event.date, event.timeEnd ?? addOneHour(event.time))
-    : toICSDate(event.date);
+  // Evento multi-dia: end é o dia seguinte ao último (convenção Google Calendar)
+  // Evento de 1 dia com hora: usa timeEnd ou +1h
+  // Evento de 1 dia sem hora: all-day (mesmo dateStr)
+  let end: string;
+  if (event.dateEnd && event.dateEnd !== event.date) {
+    // multi-dia all-day → end = dia seguinte ao dateEnd
+    const [y, m, d] = event.dateEnd.split('-').map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    end = toICSDate(
+      `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`,
+      event.timeEnd
+    );
+  } else if (event.time) {
+    end = toICSDate(event.date, event.timeEnd ?? addOneHour(event.time));
+  } else {
+    end = toICSDate(event.date);
+  }
   const params = new URLSearchParams({
     text: event.title,
     dates: `${start}/${end}`,
@@ -41,9 +54,20 @@ function buildGoogleCalendarUrl(event: AgendaEvent): string {
 
 function downloadICS(event: AgendaEvent): void {
   const start = toICSDate(event.date, event.time);
-  const end = event.time
-    ? toICSDate(event.date, event.timeEnd ?? addOneHour(event.time))
-    : toICSDate(event.date);
+  // Evento multi-dia: end = dia seguinte ao dateEnd (padrão iCalendar DTEND exclusive)
+  let end: string;
+  if (event.dateEnd && event.dateEnd !== event.date) {
+    const [y, m, d] = event.dateEnd.split('-').map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    end = toICSDate(
+      `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`,
+      event.timeEnd
+    );
+  } else if (event.time) {
+    end = toICSDate(event.date, event.timeEnd ?? addOneHour(event.time));
+  } else {
+    end = toICSDate(event.date);
+  }
   const allDay = !event.time;
   const dtStart = allDay ? `DTSTART;VALUE=DATE:${start}` : `DTSTART:${start}`;
   const dtEnd   = allDay ? `DTEND;VALUE=DATE:${end}`     : `DTEND:${end}`;

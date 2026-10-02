@@ -39,15 +39,11 @@ import {
 import type { AgendaAdminEvent, AgendaConflict } from '../../types/agenda.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNovena } from '../../hooks/useNovena';
-import { useFeastTheme } from '../../hooks/useFeastTheme';
-
 import { pad, todayStr, parseDate, formatWhen, formatDateRange, getCatVar } from './agendaUtils';
 import EventDetailModal from './EventDetailModal';
 import LoginModal from './LoginModal';
 import AdminPanel from './AdminPanel';
 import NovenaSection from './NovenaSection';
-import HeroDecoration from './HeroDecoration';
-import CrestPlate from './CrestPlate';
 
 // ─── Helpers locais ───────────────────────────────────────────────────────────
 
@@ -106,17 +102,6 @@ const EventCard = memo<EventCardProps>(({ event, today, onOpen }) => {
 });
 EventCard.displayName = 'EventCard';
 
-// ─── Mapa de nomes dos santos para o logotipo temático ───────────────────────
-const SAINT_LINE_NAMES: Record<string, string> = {
-  terezinha:    'Santa Terezinha',
-  jose:         'São José',
-  carlo:        'São Carlo Acutis',
-  frassati:     'Pier Giorgio Frassati',
-  nossa_senhora:'Nossa Senhora',
-  joana:        "Santa Joana d'Arc",
-  inacio:       'Santo Inácio de Loyola',
-};
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 const AgendaPage: React.FC = () => {
@@ -132,9 +117,6 @@ const AgendaPage: React.FC = () => {
   const [dataLoading, setDataLoading] = useState(true);
   // isAdmin derivado direto do role já resolvido pelo AuthContext — sem fetch extra
   const isAdmin = user?.role === 'admin' || user?.role === 'coordinator';
-
-  // ── Tema Festivo ───────────────────────────────────────────────────────────
-  const { activeTheme, dataTema, allThemes, upcomingTeaser } = useFeastTheme();
 
   // ── Novena ─────────────────────────────────────────────────────────────────
   const {
@@ -229,8 +211,18 @@ const AgendaPage: React.FC = () => {
 
   // ── Calendário ─────────────────────────────────────────────────────────────
   const calMonthStr = `${calYear}-${pad(calMonth + 1)}`;
+
+  // Primeiro e último dia do mês exibido (como string YYYY-MM-DD)
+  const calMonthFirst = `${calMonthStr}-01`;
+  const calMonthLast  = `${calMonthStr}-${pad(new Date(calYear, calMonth + 1, 0).getDate())}`;
+
+  // Inclui eventos cujo intervalo [date, dateEnd] cruza qualquer dia do mês
   const calFiltered = allEvents.filter(
-    (e) => e.visible && e.date.startsWith(calMonthStr) && matchesFilter(e, filter)
+    (e) =>
+      e.visible &&
+      matchesFilter(e, filter) &&
+      e.date <= calMonthLast &&
+      (e.dateEnd ?? e.date) >= calMonthFirst
   );
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstWeekday = new Date(calYear, calMonth, 1).getDay();
@@ -250,7 +242,11 @@ const AgendaPage: React.FC = () => {
 
   // Eventos a mostrar na lista do calendário
   const calListEvents = calFiltered
-    .filter((e) => !selectedDay || +e.date.slice(8) === selectedDay)
+    .filter((e) => {
+      if (!selectedDay) return true;
+      const dateStr = `${calMonthStr}-${pad(selectedDay)}`;
+      return e.date <= dateStr && (e.dateEnd ?? e.date) >= dateStr;
+    })
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? ''));
 
   // Itens de novena a mostrar na lista do calendário — expandidos por dia, filtrados pelo mês visível
@@ -326,76 +322,24 @@ const AgendaPage: React.FC = () => {
   }, [adminEvents]);
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
-  const isThemeActive = !!(activeTheme && (activeTheme.isNovena || activeTheme.isFeast));
 
-  // Título e subtítulo do hero
-  const heroTitle = isThemeActive
-    ? activeTheme!.theme.name
-    : 'Agenda dos jovens';
-  const heroSubtitle = isThemeActive
-    ? activeTheme!.theme.subtitle
-    : (() => {
-        const d = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-        return d.charAt(0).toUpperCase() + d.slice(1);
-      })();
-
-  // Etiqueta-contador no hero
-  const counter = (() => {
-    if (!activeTheme) return null;
-    if (activeTheme.isFeast) return { label: 'Hoje é a festa', isFeast: true };
-    if (activeTheme.isNovena && activeTheme.novenaDay !== null)
-      return { label: `Dia ${activeTheme.novenaDay} de 9 da novena`, isFeast: false };
-    // Antes da novena: faltam N dias
-    const start = new Date(activeTheme.theme.noveenaStart + 'T00:00:00');
-    const diff = Math.round((start.getTime() - new Date().setHours(0,0,0,0)) / 86_400_000);
-    if (diff > 0) return { label: `Faltam ${diff} dia${diff !== 1 ? 's' : ''} para a novena`, isFeast: false };
-    return null;
+  const heroSubtitle = (() => {
+    const d = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return d.charAt(0).toUpperCase() + d.slice(1);
   })();
 
-  // Sincroniza data-tema no <html> para que o body possa usar o mesmo fundo
-  React.useEffect(() => {
-    const root = document.documentElement;
-    if (dataTema) {
-      root.setAttribute('data-tema', dataTema);
-    } else {
-      root.removeAttribute('data-tema');
-    }
-    return () => root.removeAttribute('data-tema');
-  }, [dataTema]);
-
   return (
-    <div className="agenda-root" data-tema={dataTema}>
+    <div className="agenda-root">
       {/* ═══════════════════ HERO ══════════════════════════════════════════ */}
       <header className="ag-hero">
-        {/* Background real + decoração SVG (aria-hidden) */}
-        {isThemeActive && <HeroDecoration saintKey={activeTheme!.theme.saintKey} />}
-
-        {/* ── Identidade: brasão + texto real do logotipo ─────────────── */}
-        <div className={`ag-hero-identity${isThemeActive ? '' : ' is-default'}`}>
+        {/* ── Identidade: logo ────────────────────────────────────────── */}
+        <div className="ag-hero-identity is-default">
           <div className="ag-hero-identity-left">
-            {isThemeActive ? (
-              <>
-                <CrestPlate
-                  saintKey={activeTheme!.theme.saintKey}
-                  crestUrl={activeTheme!.theme.crestUrl}
-                />
-                <div className="ag-logo-text">
-                  <span className="ag-logo-text-grupo">Grupo de Jovens</span>
-                  <span className="ag-logo-text-sta">Sta. Terezinha</span>
-                  {activeTheme!.theme.saintKey !== 'terezinha' && (
-                    <span className="ag-logo-text-saint">
-                      {SAINT_LINE_NAMES[activeTheme!.theme.saintKey] ?? ''}
-                    </span>
-                  )}
-                </div>
-              </>
-            ) : (
-              <img
-                src={logoHoriz}
-                alt="Grupo de Jovens – Sta. Terezinha"
-                className="ag-logo"
-              />
-            )}
+            <img
+              src={logoHoriz}
+              alt="Grupo de Jovens – Sta. Terezinha"
+              className="ag-logo"
+            />
           </div>
           {/* Botão de acesso sempre à direita */}
           <button
@@ -412,20 +356,10 @@ const AgendaPage: React.FC = () => {
 
         {/* ── Título e frase ──────────────────────────────────────────── */}
         <div className="ag-headline">
-          <h1>{heroTitle}</h1>
+          <h1>Agenda dos jovens</h1>
           <p>{heroSubtitle}</p>
-          {/* Etiqueta-contador da novena/festa */}
-          {counter && (
-            <div className={`ag-theme-counter${counter.isFeast ? ' is-feast' : ''}`}
-              aria-live="polite">
-              <span className="ag-theme-counter-dot" aria-hidden="true" />
-              {counter.label}
-            </div>
-          )}
         </div>
       </header>
-
-      {/* FeastBanner removido — as informações estão integradas no hero */}
 
       {/* ═══════════════════ MAIN ══════════════════════════════════════════ */}
       <main className="ag-main" ref={mainRef}>
@@ -490,19 +424,6 @@ const AgendaPage: React.FC = () => {
                 </p>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ─── Teaser: próxima novena ─────────────────────────────────────── */}
-        {upcomingTeaser && (
-          <div className="ag-teaser" role="note" aria-label={`Prévia: ${upcomingTeaser.theme.name}`}>
-            <span className="ag-teaser-dot" aria-hidden="true" />
-            <span className="ag-teaser-text">
-              {upcomingTeaser.daysUntil === 1
-                ? <>A <strong>{upcomingTeaser.theme.name}</strong> começa amanhã</>
-                : <>A <strong>{upcomingTeaser.theme.name}</strong> começa em {upcomingTeaser.daysUntil} dias</>
-              }
-            </span>
           </div>
         )}
 
@@ -650,14 +571,13 @@ const AgendaPage: React.FC = () => {
               {Array.from({ length: daysInMonth }, (_, i) => {
                 const dayNum = i + 1;
                 const dateStr = `${calMonthStr}-${pad(dayNum)}`;
-                const dayEvents = calFiltered.filter((e) => +e.date.slice(8) === dayNum);
+                const dayEvents = calFiltered.filter((e) => e.date <= dateStr && (e.dateEnd ?? e.date) >= dateStr);
                 const hasBd = birthdays.some(
                   (b) => b.m === calMonth + 1 && b.d === dayNum
                 );
                 const isToday = dateStr === today;
                 const isSelected = selectedDay === dayNum;
                 const isNovenaDay = showNovenas && novenaDateSet.has(dateStr);
-                const isFrassatiFeast = activeTheme?.theme.saintKey === 'frassati' && dateStr === activeTheme.theme.feastDate;
 
                 const classes = [
                   'ag-day',
@@ -665,7 +585,6 @@ const AgendaPage: React.FC = () => {
                   isSelected ? 'selected' : '',
                   hasBd ? 'has-birthday' : '',
                   isNovenaDay ? 'novena-event' : '',
-                  isFrassatiFeast ? 'frassati-feast' : '',
                 ].filter(Boolean).join(' ');
 
                 return (
@@ -778,11 +697,6 @@ const AgendaPage: React.FC = () => {
           )}
         </div>
 
-        {/* ─── Lema do tema Inácio ────────────────────────────────────────── */}
-        {activeTheme?.theme.saintKey === 'inacio' && (
-          <p className="ag-tema-footer">Ad maiorem Dei gloriam — Para a maior glória de Deus</p>
-        )}
-
         {/* ─── Rodapé ────────────────────────────────────────────────────── */}
         <footer className="ag-footer">
           <p>Paróquia Santa Terezinha do Menino Jesus</p>
@@ -841,8 +755,6 @@ const AgendaPage: React.FC = () => {
           displayName={user?.displayName ?? ''}
           notices={notices}
           adminEvents={adminEvents}
-          allThemes={allThemes}
-          activeTheme={activeTheme}
           onClose={() => setPanelOpen(false)}
           onSignOut={handleSignOut}
         />
