@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { AgendaEvent } from '../../types/agenda.types';
 import { CATEGORY_LABELS } from '../../types/agenda.types';
-import { formatWhen, getCatVar } from './agendaUtils';
+import { formatDateRange, getCatVar } from './agendaUtils';
 import { useSwipeDown } from './useSwipeDown';
 
 // ─── Helpers "Adicionar ao calendário" ───────────────────────────────────────
@@ -167,8 +167,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, isA
             <dl className="ag-dl">
               <dt>Quando</dt>
               <dd>
-                {formatWhen(event.date, event.time)}
-                {event.timeEnd && ` até ${event.timeEnd}`}
+                {formatDateRange(event.date, event.dateEnd, event.time, event.timeEnd)}
               </dd>
 
               {event.place && (

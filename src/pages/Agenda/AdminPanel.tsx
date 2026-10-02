@@ -6,8 +6,8 @@
  *  2. Temas    – gerenciar temas festivos: escolher santo, datas, forçar/resetar
  */
 import React, { useEffect, useRef, useState } from 'react';
-import type { AgendaNotice, NoticeOrigin, AgendaAdminEvent, AgendaCategory } from '../../types/agenda.types';
-import { NOTICE_ORIGIN_LABELS, CATEGORY_LABELS } from '../../types/agenda.types';
+import type { AgendaNotice, NoticeOrigin, AgendaAdminEvent, AgendaCategory, RecurrenceFreq } from '../../types/agenda.types';
+import { NOTICE_ORIGIN_LABELS, CATEGORY_LABELS, RECURRENCE_LABELS } from '../../types/agenda.types';
 import type { FeastTheme, SaintKey, MarianInvocation, ActiveTheme } from '../../types/theme.types';
 import { SAINT_DISPLAY_NAMES } from '../../types/theme.types';
 import { useSwipeDown } from './useSwipeDown';
@@ -107,6 +107,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [evPlace, setEvPlace] = useState('');
   const [evDesc, setEvDesc] = useState('');
   const [evVisible, setEvVisible] = useState(true);
+  const [evRecurFreq, setEvRecurFreq] = useState<RecurrenceFreq | ''>('');
+  const [evRecurUntil, setEvRecurUntil] = useState('');
 
   // ── Campos do formulário de tema ───────────────────────────────────────────
   const [thSaint, setThSaint] = useState<SaintKey>('terezinha');
@@ -142,14 +144,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const resetEventForm = () => {
     setEvTitle(''); setEvCat('jovens'); setEvDate(''); setEvDateEnd('');
     setEvTime(''); setEvTimeEnd(''); setEvPlace(''); setEvDesc(''); setEvVisible(true);
+    setEvRecurFreq(''); setEvRecurUntil('');
   };
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!evTitle.trim() || !evDate) return;
+    if (evRecurFreq && !evRecurUntil) {
+      flash('Para eventos recorrentes, informe até quando se repete.', false);
+      return;
+    }
     setLoading(true);
     try {
-      await addAdminEvent({
+      const count = await addAdminEvent({
         title: evTitle.trim().slice(0, 100),
         g: evCat,
         date: evDate,
@@ -159,9 +166,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         place: evPlace.trim().slice(0, 80) || undefined,
         desc: evDesc.trim().slice(0, 800) || undefined,
         visible: evVisible,
+        recurrence: evRecurFreq ? { freq: evRecurFreq, until: evRecurUntil } : undefined,
       });
       resetEventForm();
-      flash('Evento adicionado.');
+      flash(typeof count === 'number' && count > 1 ? `${count} eventos criados na série.` : 'Evento adicionado.');
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
       console.error('[AdminPanel] Erro ao adicionar evento:', code, err);
@@ -536,9 +544,62 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     onChange={(e) => setEvDateEnd(e.target.value)}
                   />
                 </label>
-                <p className="ag-hint" style={{ alignSelf: 'flex-end', marginBottom: 6 }}>
+                <p className="ag-hint" style={{ alignSelf: 'flex-end', marginBottom: 6, fontSize: 12, color: 'var(--ag-mute)' }}>
                   Deixe em branco se for evento de um dia só.
                 </p>
+              </div>
+
+              {/* ── Recorrência ─────────────────────────────────────────── */}
+              <div style={{ background: 'var(--ag-bg)', border: '1px solid var(--ag-line)', padding: '12px 14px', marginTop: -4 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--ag-mute)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Recorrência (opcional)
+                </p>
+                <div className="ag-two-col">
+                  <label className="ag-label">
+                    Repetir
+                    <select
+                      className="ag-select"
+                      value={evRecurFreq}
+                      onChange={(e) => {
+                        setEvRecurFreq(e.target.value as RecurrenceFreq | '');
+                        if (!e.target.value) setEvRecurUntil('');
+                      }}
+                    >
+                      <option value="">— não repete —</option>
+                      {(Object.entries(RECURRENCE_LABELS) as [RecurrenceFreq, string][]).map(([k, label]) => (
+                        <option key={k} value={k}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="ag-label" style={{ opacity: evRecurFreq ? 1 : 0.4 }}>
+                    Até quando *
+                    <input
+                      type="date"
+                      className="ag-input"
+                      value={evRecurUntil}
+                      min={evDate || undefined}
+                      disabled={!evRecurFreq}
+                      onChange={(e) => setEvRecurUntil(e.target.value)}
+                      required={!!evRecurFreq}
+                    />
+                  </label>
+                </div>
+                {evRecurFreq && evDate && evRecurUntil && (
+                  <p style={{ fontSize: 11, color: 'var(--ag-mute)', marginTop: 8 }}>
+                    {(() => {
+                      let count = 0;
+                      const cur = new Date(evDate + 'T12:00:00');
+                      const end = new Date(evRecurUntil + 'T12:00:00');
+                      while (cur <= end) {
+                        count++;
+                        if (evRecurFreq === 'weekly')   cur.setDate(cur.getDate() + 7);
+                        else if (evRecurFreq === 'biweekly') cur.setDate(cur.getDate() + 14);
+                        else { cur.setMonth(cur.getMonth() + 1); }
+                      }
+                      return `${count} evento${count !== 1 ? 's' : ''} serão criados`;
+                    })()}
+                  </p>
+                )}
               </div>
 
               <div className="ag-two-col">
@@ -595,7 +656,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               </label>
 
               <button type="submit" className="ag-btn" disabled={loading} style={{ marginTop: 4 }}>
-                {loading ? 'Salvando...' : 'Adicionar evento'}
+                {loading ? 'Salvando...' : evRecurFreq ? 'Criar série de eventos' : 'Adicionar evento'}
               </button>
             </form>
 
@@ -613,10 +674,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         {!ev.visible && (
                           <span style={{ color: 'var(--ag-mute)', fontWeight: 400, fontSize: 11, marginRight: 4 }}>[oculto]</span>
                         )}
+                        {ev.recurrence && (
+                          <span style={{ color: 'var(--ag-crisma)', fontWeight: 700, fontSize: 10, marginRight: 4 }}>↻</span>
+                        )}
                         {ev.title}
+                        {ev.recurrence && ev.seriesIds && (
+                          <span style={{ color: 'var(--ag-mute)', fontWeight: 400, fontSize: 10, marginLeft: 4 }}>
+                            ({ev.seriesIds.length + 1} datas)
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--ag-mute)', marginTop: 2 }}>
                         {ev.date}{ev.dateEnd ? ` → ${ev.dateEnd}` : ''}{ev.time ? ` • ${ev.time}${ev.timeEnd ? `–${ev.timeEnd}` : ''}` : ''}{ev.place ? ` • ${ev.place}` : ''}
+                        {ev.recurrence && ` • repete ${RECURRENCE_LABELS[ev.recurrence.freq]} até ${ev.recurrence.until}`}
                       </div>
                     </div>
                     <button

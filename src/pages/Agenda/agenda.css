@@ -594,7 +594,25 @@
 .ag-event-meta {
   font-size: 13px;
   color: var(--ag-mute);
-  margin-top: 2px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Badge "Em andamento" para eventos multi-dia em curso */
+.ag-event-ongoing {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  background: color-mix(in srgb, var(--cat-color, #625F80) 18%, transparent);
+  color: var(--cat-color, #625F80);
+  border: 1px solid color-mix(in srgb, var(--cat-color, #625F80) 35%, transparent);
+  align-self: flex-start;
+  margin-bottom: 1px;
 }
 
 .ag-thumb {

@@ -41,7 +41,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNovena } from '../../hooks/useNovena';
 import { useFeastTheme } from '../../hooks/useFeastTheme';
 
-import { pad, todayStr, parseDate, formatWhen, getCatVar } from './agendaUtils';
+import { pad, todayStr, parseDate, formatWhen, formatDateRange, getCatVar } from './agendaUtils';
 import EventDetailModal from './EventDetailModal';
 import LoginModal from './LoginModal';
 import AdminPanel from './AdminPanel';
@@ -70,7 +70,8 @@ interface EventCardProps {
 const EventCard = memo<EventCardProps>(({ event, today, onOpen }) => {
   const d = parseDate(event.date);
   const catColor = getCatVar(event.g);
-  const isToday = event.date === today;
+  const isToday = event.date === today || (!!event.dateEnd && today >= event.date && today <= event.dateEnd);
+  const isOngoing = !!event.dateEnd && event.dateEnd !== event.date && today > event.date && today <= event.dateEnd;
   return (
     <button
       className={`ag-event-card${isToday ? ' today-event' : ''}`}
@@ -85,11 +86,17 @@ const EventCard = memo<EventCardProps>(({ event, today, onOpen }) => {
       <div>
         <div className="ag-event-cat">{CATEGORY_LABELS[event.g] ?? 'Outros'}</div>
         <h3>{event.title}</h3>
-        {(event.time || event.place) && (
-          <div className="ag-event-meta">
-            {[event.time, event.place].filter(Boolean).join(' – ')}
-          </div>
-        )}
+        <div className="ag-event-meta">
+          {isOngoing && <span className="ag-event-ongoing">Em andamento</span>}
+          {event.dateEnd && event.dateEnd !== event.date && (
+            <span>
+              {formatDateRange(event.date, event.dateEnd, event.time, event.timeEnd)}
+            </span>
+          )}
+          {(!event.dateEnd || event.dateEnd === event.date) && (event.time || event.place) && (
+            <span>{[event.time, event.place].filter(Boolean).join(' – ')}</span>
+          )}
+        </div>
       </div>
       {event.art_url && (
         <img className="ag-thumb" src={event.art_url} alt="" aria-hidden="true" />
@@ -208,8 +215,10 @@ const AgendaPage: React.FC = () => {
       })),
   ].filter((e) => !hiddenIds.has(e.id));
 
+  // Inclui eventos que ainda não começaram (date >= today) OU eventos multi-dia
+  // que já começaram mas ainda não terminaram (dateEnd >= today)
   const upcomingFiltered = allEvents
-    .filter((e) => e.visible && e.date >= today && matchesFilter(e, filter))
+    .filter((e) => e.visible && (e.date >= today || (e.dateEnd ?? '') >= today) && matchesFilter(e, filter))
     .sort((a, b) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')));
 
   const nextEvent = upcomingFiltered[0] ?? null;

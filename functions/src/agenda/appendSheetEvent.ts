@@ -167,6 +167,74 @@ export const appendSheetEvent = functions.https.onCall(async (data: unknown, con
   return { success: true, rowIndex };
 });
 
+// ─── appendSheetEventBatch ────────────────────────────────────────────────────
+//
+// Grava múltiplas linhas de uma vez na aba "Eventos" (série recorrente).
+// Payload: { rows: EventPayload[] }
+// Retorna: { success: true, rowIndexes: (number|null)[] }
+
+export const appendSheetEventBatch = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login necessário.');
+  }
+
+  const userSnap = await admin.firestore()
+    .collection('users')
+    .doc(context.auth.uid)
+    .get();
+  const role = userSnap.data()?.role as string | undefined;
+  if (role !== 'admin' && role !== 'coordinator') {
+    throw new functions.https.HttpsError('permission-denied', 'Apenas admin ou coordenador podem adicionar eventos.');
+  }
+
+  const d = data as Record<string, unknown>;
+  if (!Array.isArray(d?.rows) || d.rows.length === 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'Payload deve conter "rows" como array não vazio.');
+  }
+  if (d.rows.length > 200) {
+    throw new functions.https.HttpsError('invalid-argument', 'Máximo de 200 ocorrências por série.');
+  }
+
+  const events: EventPayload[] = (d.rows as unknown[]).map(validate);
+
+  const auth  = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const spreadsheetId = getSheetsId();
+
+  // Monta todas as linhas
+  const values = events.map((ev) => [
+    ev.title,
+    ev.category,
+    ev.date,
+    ev.dateEnd ?? '',
+    ev.time,
+    ev.timeEnd,
+    ev.place,
+    ev.desc,
+    ev.artUrl,
+    ev.visible ? 'Sim' : 'Não',
+  ]);
+
+  const appendRes = await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: 'Eventos!A:J',
+    valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values },
+  });
+
+  // Extrai o range atualizado para descobrir os índices das linhas inseridas.
+  // O Sheets API retorna algo como "Eventos!A12:J21" quando insere 10 linhas.
+  const updatedRange = appendRes.data.updates?.updatedRange ?? '';
+  const rangeMatch = updatedRange.match(/(\d+):.*?(\d+)$/);
+  const firstRow = rangeMatch ? parseInt(rangeMatch[1], 10) : null;
+  const rowIndexes: (number | null)[] = events.map((_, i) =>
+    firstRow !== null ? firstRow + i : null
+  );
+
+  return { success: true, rowIndexes };
+});
+
 // ─── deleteSheetEvent ─────────────────────────────────────────────────────────
 
 export const deleteSheetEvent = functions.https.onCall(async (data: unknown, context: functions.https.CallableContext) => {

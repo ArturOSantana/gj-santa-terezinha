@@ -24,6 +24,22 @@ export const formatWhen = (date: string, time?: string): string => {
   return `${wd}, ${day} de ${month}${time ? ` às ${time}` : ''}`;
 };
 
+/**
+ * Formata um intervalo de datas (date → dateEnd).
+ * Se só tiver uma data, retorna o mesmo que formatWhen.
+ * Ex: "sáb, 5 de julho a dom, 13 de julho"
+ */
+export const formatDateRange = (date: string, dateEnd?: string, time?: string, timeEnd?: string): string => {
+  const start = formatWhen(date, time);
+  if (!dateEnd || dateEnd === date) return start + (timeEnd ? ` até ${timeEnd}` : '');
+  const dEnd = parseDate(dateEnd);
+  const wdEnd = WEEKDAYS[dEnd.getDay()];
+  const dayEnd = dEnd.getDate();
+  const monthEnd = MONTHS[dEnd.getMonth()];
+  const endStr = `${wdEnd}, ${dayEnd} de ${monthEnd}${timeEnd ? ` às ${timeEnd}` : ''}`;
+  return `${start} até ${endStr}`;
+};
+
 export const getCatVar = (cat: AgendaCategory | AgendaFilter): string => {
   const map: Record<string, string> = {
     paroquia:     'var(--ag-paroquia)',

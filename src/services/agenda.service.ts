@@ -20,10 +20,11 @@ import {
   orderBy,
   Unsubscribe,
   Timestamp,
+  type DocumentReference,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, auth, functions as fbFunctions } from '../config/firebase';
-import type { AgendaEvent, AgendaNotice, AgendaBirthday, AgendaAdminEvent, AgendaConflict } from '../types/agenda.types';
+import type { AgendaEvent, AgendaNotice, AgendaBirthday, AgendaAdminEvent, AgendaConflict, RecurrenceRule } from '../types/agenda.types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,9 @@ const uid = () => auth.currentUser?.uid ?? 'unknown';
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID ?? '';
 const SHEETS_API_KEY = import.meta.env.VITE_SHEETS_API_KEY ?? '';
-const EVENTS_RANGE = 'Eventos!A5:J';
+// Lê até a coluna K (recorrência)
+// Coluna K: recorrência no formato "weekly:2025-12-31" | "biweekly:..." | "monthly:..."
+const EVENTS_RANGE = 'Eventos!A5:K';
 
 type SheetsCache<T> = { data: T[]; fetchedAt: number };
 let eventsCache: SheetsCache<AgendaEvent> | null = null;
@@ -106,12 +109,56 @@ function normalizeVisible(raw: string | undefined): boolean {
   return raw.trim().toLowerCase() !== 'não' && raw.trim().toLowerCase() !== 'nao';
 }
 
+/**
+ * Parseia a coluna K de recorrência.
+ * Formato esperado: "weekly:2025-12-31" | "biweekly:2025-12-31" | "monthly:2025-12-31"
+ */
+function parseSheetRecurrence(raw: string | undefined): RecurrenceRule | undefined {
+  if (!raw?.trim()) return undefined;
+  const [freq, until] = raw.trim().split(':');
+  if (!freq || !until) return undefined;
+  if (freq !== 'weekly' && freq !== 'biweekly' && freq !== 'monthly') return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return undefined;
+  return { freq: freq as import('../types/agenda.types').RecurrenceFreq, until };
+}
+
+/**
+ * Expande um evento da planilha com recorrência em múltiplas ocorrências.
+ * O evento original é retornado como primeiro item; as demais são cópias com
+ * datas incrementadas conforme a regra.
+ */
+function expandSheetEvent(base: AgendaEvent, rule: import('../types/agenda.types').RecurrenceRule): AgendaEvent[] {
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const toStr = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+  const result: AgendaEvent[] = [];
+  const cur = new Date(`${base.date}T12:00:00`);
+  const end = new Date(`${rule.until}T12:00:00`);
+  let idx = 0;
+
+  while (cur <= end) {
+    const dateStr = toStr(cur);
+    result.push({
+      ...base,
+      id: idx === 0 ? base.id : `${base.id}-${dateStr}`,
+      date: dateStr,
+    });
+    if (rule.freq === 'weekly')        cur.setDate(cur.getDate() + 7);
+    else if (rule.freq === 'biweekly') cur.setDate(cur.getDate() + 14);
+    else /* monthly */                 cur.setMonth(cur.getMonth() + 1);
+    idx++;
+  }
+  return result;
+}
+
 export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
   const now = Date.now();
   if (eventsCache && now - eventsCache.fetchedAt < CACHE_TTL) return eventsCache.data;
-  const data = await fetchSheet<AgendaEvent>(EVENTS_RANGE, (row) => {
-    const [title, cat, date, dateEnd, time, timeEnd, place, desc, art_url, visible_raw] = row;
+
+  const rawEvents = await fetchSheet<AgendaEvent>(EVENTS_RANGE, (row) => {
+    const [title, cat, date, dateEnd, time, timeEnd, place, desc, art_url, visible_raw, recur_raw] = row;
     if (!title?.trim() || !date?.trim()) return null;
+    const recurrence = parseSheetRecurrence(recur_raw);
     return {
       id: `${normalizeDate(date)}-${title.trim().slice(0,20).replace(/\s/g,'-')}`,
       title: title.trim(),
@@ -124,8 +171,20 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
       desc: desc?.trim() || undefined,
       art_url: art_url?.trim() || undefined,
       visible: normalizeVisible(visible_raw),
+      recurrence,
     };
   });
+
+  // Expande eventos com recorrência em múltiplas ocorrências
+  const data: AgendaEvent[] = [];
+  for (const ev of rawEvents) {
+    if (ev.recurrence) {
+      data.push(...expandSheetEvent(ev, ev.recurrence));
+    } else {
+      data.push(ev);
+    }
+  }
+
   eventsCache = { data, fetchedAt: now };
   return data;
 }
@@ -159,6 +218,7 @@ export function subscribeAdminEvents(
   return onSnapshot(q, (snap) => {
     const events: AgendaAdminEvent[] = snap.docs.map((d) => {
       const data = d.data();
+      const recur = data.recurrence as { freq?: string; until?: string } | undefined;
       return {
         id: d.id,
         title: data.title ?? '',
@@ -170,7 +230,12 @@ export function subscribeAdminEvents(
         place: data.place ?? undefined,
         desc: data.desc ?? undefined,
         visible: data.visible !== false,
+        recurrence: recur?.freq && recur?.until
+          ? { freq: recur.freq as import('../types/agenda.types').RecurrenceFreq, until: recur.until }
+          : undefined,
+        seriesIds: Array.isArray(data.seriesIds) ? data.seriesIds : undefined,
         sheetRowIndex: typeof data.sheetRowIndex === 'number' ? data.sheetRowIndex : undefined,
+        seriesRowIndexes: Array.isArray(data.seriesRowIndexes) ? data.seriesRowIndexes : undefined,
         createdAt: toDate(data.createdAt),
         createdBy: data.createdBy ?? undefined,
       } satisfies AgendaAdminEvent;
@@ -179,37 +244,116 @@ export function subscribeAdminEvents(
   });
 }
 
+// ─── Helpers de recorrência ───────────────────────────────────────────────────
+
+/** Gera a sequência de datas (YYYY-MM-DD) de uma série recorrente a partir de
+ *  startDate até until (inclusive), aplicando a frequência escolhida. */
+function expandRecurrenceDates(startDate: string, rule: RecurrenceRule): string[] {
+  const dates: string[] = [];
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const toStr = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+  const cur = new Date(`${startDate}T12:00:00`);
+  const end = new Date(`${rule.until}T12:00:00`);
+
+  while (cur <= end) {
+    dates.push(toStr(cur));
+    if (rule.freq === 'weekly')        cur.setDate(cur.getDate() + 7);
+    else if (rule.freq === 'biweekly') cur.setDate(cur.getDate() + 14);
+    else /* monthly */                 cur.setMonth(cur.getMonth() + 1);
+  }
+  return dates;
+}
+
 export async function addAdminEvent(
   event: Omit<AgendaAdminEvent, 'id' | 'createdAt' | 'createdBy'>
-): Promise<string> {
-  const data: Record<string, unknown> = {
-    title: event.title,
-    g: event.g,
-    date: event.date,
-    visible: event.visible,
+): Promise<number> {
+  const baseData: Record<string, unknown> = {
+    title:    event.title,
+    g:        event.g,
+    date:     event.date,
+    visible:  event.visible,
     createdAt: serverTimestamp(),
     createdBy: uid(),
   };
-  if (event.dateEnd) data.dateEnd = event.dateEnd;
-  if (event.time)    data.time    = event.time;
-  if (event.timeEnd) data.timeEnd = event.timeEnd;
-  if (event.place)   data.place   = event.place;
-  if (event.desc)    data.desc    = event.desc;
+  if (event.dateEnd) baseData.dateEnd = event.dateEnd;
+  if (event.time)    baseData.time    = event.time;
+  if (event.timeEnd) baseData.timeEnd = event.timeEnd;
+  if (event.place)   baseData.place   = event.place;
+  if (event.desc)    baseData.desc    = event.desc;
 
-  // 1. Salva no Firestore (fonte primária, tempo real)
-  const docRef = await addDoc(collection(db, 'agenda_events'), data);
+  // Sem recorrência — comportamento original (único evento)
+  if (!event.recurrence) {
+    const docRef = await addDoc(collection(db, 'agenda_events'), baseData);
+    try {
+      const appendFn = httpsCallable<unknown, { success: boolean; rowIndex: number | null }>(
+        fbFunctions, 'appendSheetEvent'
+      );
+      const result = await appendFn({
+        title:    event.title,
+        category: event.g,
+        date:     event.date,
+        dateEnd:  event.dateEnd  ?? '',
+        time:     event.time     ?? '',
+        timeEnd:  event.timeEnd  ?? '',
+        place:    event.place    ?? '',
+        desc:     event.desc     ?? '',
+        artUrl:   '',
+        visible:  event.visible,
+      });
+      if (result.data.rowIndex) {
+        const { updateDoc } = await import('firebase/firestore');
+        await updateDoc(docRef, { sheetRowIndex: result.data.rowIndex });
+      }
+    } catch (sheetErr: unknown) {
+      const code = (sheetErr as { code?: string })?.code ?? '';
+      const msg  = (sheetErr as { message?: string })?.message ?? '';
+      console.warn('[Agenda] Planilha não atualizada (continuando com Firestore):', code, msg);
+    }
+    return 1;
+  }
 
-  // 2. Grava também na planilha via Cloud Function (best-effort)
-  //    Se falhar, o evento continua disponível pelo Firestore.
-  //    Se tiver sucesso, salva o rowIndex no doc do Firestore para poder deletar depois.
+  // Com recorrência — gera série de datas e cria um doc por ocorrência
+  const rule = event.recurrence;
+  const dates = expandRecurrenceDates(event.date, rule);
+  if (dates.length === 0) {
+    // Nenhuma data válida — cria evento único sem recorrência
+    await addDoc(collection(db, 'agenda_events'), baseData);
+    return 1;
+  }
+
+  // 1. Cria todos os docs no Firestore (o primeiro é o "raiz" com a rule)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const docRefs: DocumentReference<any>[] = [];
+  for (let i = 0; i < dates.length; i++) {
+    const data: Record<string, unknown> = {
+      ...baseData,
+      date: dates[i],
+      createdAt: serverTimestamp(),
+    };
+    // Só o doc raiz (i=0) guarda a recorrência e os seriesIds
+    if (i === 0) {
+      data.recurrence = { freq: rule.freq, until: rule.until };
+    }
+    const ref = await addDoc(collection(db, 'agenda_events'), data);
+    docRefs.push(ref);
+  }
+
+  // Salva seriesIds no doc raiz (os IDs das ocorrências seguintes)
+  if (docRefs.length > 1) {
+    const { updateDoc } = await import('firebase/firestore');
+    await updateDoc(docRefs[0], { seriesIds: docRefs.slice(1).map((r) => r.id) });
+  }
+
+  // 2. Grava todas as linhas na planilha via Cloud Function batch (best-effort)
   try {
-    const appendFn = httpsCallable<unknown, { success: boolean; rowIndex: number | null }>(
-      fbFunctions, 'appendSheetEvent'
+    const batchFn = httpsCallable<unknown, { success: boolean; rowIndexes: (number | null)[] }>(
+      fbFunctions, 'appendSheetEventBatch'
     );
-    const result = await appendFn({
+    const rows = dates.map((date) => ({
       title:    event.title,
       category: event.g,
-      date:     event.date,
+      date,
       dateEnd:  event.dateEnd  ?? '',
       time:     event.time     ?? '',
       timeEnd:  event.timeEnd  ?? '',
@@ -217,19 +361,22 @@ export async function addAdminEvent(
       desc:     event.desc     ?? '',
       artUrl:   '',
       visible:  event.visible,
-    });
-    // Persiste o número da linha no Firestore para uso futuro na deleção
-    if (result.data.rowIndex) {
-      const { updateDoc } = await import('firebase/firestore');
-      await updateDoc(docRef, { sheetRowIndex: result.data.rowIndex });
+    }));
+    const result = await batchFn({ rows });
+    // Persiste os rowIndexes: o primeiro no doc raiz, os demais em cada doc filho
+    const { updateDoc } = await import('firebase/firestore');
+    const indexes = result.data.rowIndexes;
+    if (indexes[0]) await updateDoc(docRefs[0], { sheetRowIndex: indexes[0], seriesRowIndexes: indexes.filter(Boolean) });
+    for (let i = 1; i < docRefs.length; i++) {
+      if (indexes[i]) await updateDoc(docRefs[i], { sheetRowIndex: indexes[i] });
     }
   } catch (sheetErr: unknown) {
     const code = (sheetErr as { code?: string })?.code ?? '';
     const msg  = (sheetErr as { message?: string })?.message ?? '';
-    console.warn('[Agenda] Planilha não atualizada (continuando com Firestore):', code, msg);
+    console.warn('[Agenda] Planilha (série) não atualizada (continuando com Firestore):', code, msg);
   }
 
-  return docRef.id;
+  return dates.length;
 }
 
 export async function deleteAdminEvent(

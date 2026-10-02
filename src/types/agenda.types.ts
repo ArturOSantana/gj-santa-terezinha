@@ -2,6 +2,23 @@
  * Tipos da Agenda dos Jovens – Paróquia Santa Terezinha do Menino Jesus
  */
 
+/** Frequência de recorrência de um evento */
+export type RecurrenceFreq = 'weekly' | 'biweekly' | 'monthly';
+
+/** Regra de recorrência salva junto com o evento */
+export interface RecurrenceRule {
+  /** Frequência: semanal, quinzenal ou mensal */
+  freq: RecurrenceFreq;
+  /** Data limite da série (YYYY-MM-DD, inclusive) */
+  until: string;
+}
+
+export const RECURRENCE_LABELS: Record<RecurrenceFreq, string> = {
+  weekly:   'Toda semana',
+  biweekly: 'A cada 2 semanas',
+  monthly:  'Todo mês (mesmo dia)',
+};
+
 export type AgendaCategory =
   | 'paroquia'
   | 'jovens'
@@ -49,6 +66,11 @@ export interface AgendaEvent {
    * Coluna J da planilha: "Sim" = visível (padrão), "Não" = oculto.
    */
   visible: boolean;
+  /**
+   * Regra de recorrência (lida da coluna K da planilha, ex: "weekly:2025-12-31").
+   * Presente apenas em eventos expandidos automaticamente — não é persistida por ocorrência.
+   */
+  recurrence?: RecurrenceRule;
 }
 
 /** Aviso publicado pelo admin — some automaticamente quando vence */
@@ -91,8 +113,14 @@ export interface AgendaAdminEvent {
   place?: string;
   desc?: string;
   visible: boolean;
+  /** Regra de recorrência (presente apenas no documento raiz da série) */
+  recurrence?: RecurrenceRule;
+  /** IDs dos documentos filhos gerados para a série (salvo no documento raiz) */
+  seriesIds?: string[];
   /** Número da linha na planilha (1-based). Salvo pelo addAdminEvent após appendSheetEvent. */
   sheetRowIndex?: number;
+  /** Números das linhas de toda a série na planilha */
+  seriesRowIndexes?: number[];
   createdAt?: Date;
   createdBy?: string;
 }
