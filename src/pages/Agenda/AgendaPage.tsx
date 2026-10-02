@@ -142,6 +142,17 @@ const AgendaPage: React.FC = () => {
   const [loginOpen, setLoginOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
+  // ── Sincronizar fundo do body com a cor do hero (evita bordas contrastantes) ──
+  useEffect(() => {
+    const prev = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = '#2E2C5A';
+    document.documentElement.style.backgroundColor = '#2E2C5A';
+    return () => {
+      document.body.style.backgroundColor = prev;
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, []);
+
   // ── Carregar eventos (Sheets) e aniversariantes (Calendar) ────────────────
   useEffect(() => {
     setDataLoading(true);
